@@ -1,0 +1,18 @@
+[build]
+  builder = "nixpacks"
+
+[[services]]
+  name = "api"
+  source = "api/"
+  [services.build]
+    buildCommand = "cargo build --release"
+    startCommand = "./target/release/skyhigh-api"
+  [services.deploy]
+    healthcheckPath = "/health"
+
+[[services]]
+  name = "web"
+  source = "web/"
+  [services.build]
+    buildCommand = "npm run build"
+    startCommand = "npm run start"

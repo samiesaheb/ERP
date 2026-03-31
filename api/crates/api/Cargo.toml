@@ -1,0 +1,32 @@
+[package]
+name = "skyhigh-api"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "skyhigh-api"
+path = "src/main.rs"
+
+[dependencies]
+domain = { path = "../domain" }
+db = { path = "../db" }
+workers = { path = "../workers" }
+
+tokio = { workspace = true }
+axum = { workspace = true }
+tower = { workspace = true }
+tower-http = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+sqlx = { workspace = true }
+uuid = { workspace = true }
+chrono = { workspace = true }
+rust_decimal = { workspace = true }
+rust_decimal_macros = { workspace = true }
+jsonwebtoken = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+dotenvy = { workspace = true }
+anyhow = { workspace = true }
+bcrypt = { workspace = true }

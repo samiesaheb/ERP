@@ -1,0 +1,111 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, order_number, customer_id, country_id,\n                  status AS \"status: _\",\n                  total_pieces,\n                  artwork_status AS \"artwork_status: _\",\n                  fda_required,\n                  fda_status AS \"fda_status: _\",\n                  created_at\n           FROM sales_orders WHERE id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "order_number",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "customer_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 3,
+        "name": "country_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 4,
+        "name": "status: _",
+        "type_info": {
+          "Custom": {
+            "name": "so_status",
+            "kind": {
+              "Enum": [
+                "artwork",
+                "planning",
+                "production",
+                "packing",
+                "shipped"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "total_pieces",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 6,
+        "name": "artwork_status: _",
+        "type_info": {
+          "Custom": {
+            "name": "artwork_status",
+            "kind": {
+              "Enum": [
+                "draft",
+                "in_review",
+                "approved"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "fda_required",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 8,
+        "name": "fda_status: _",
+        "type_info": {
+          "Custom": {
+            "name": "fda_status",
+            "kind": {
+              "Enum": [
+                "pending",
+                "submitted",
+                "approved"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false
+    ]
+  },
+  "hash": "19ac954f4a9e5cbde3d420830c65c076a9a8cedb96d987fb5cf52d5f95cd92c9"
+}

@@ -1,0 +1,62 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT i.id, i.item_id,\n                  it.code AS item_code,\n                  it.description AS item_description,\n                  i.qty_on_hand, i.qty_reserved,\n                  COALESCE(i.qty_available, 0) AS \"qty_available!: Decimal\",\n                  i.updated_at\n           FROM inventory i\n           JOIN items it ON it.id = i.item_id\n           ORDER BY it.code",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "item_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "item_code",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "item_description",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "qty_on_hand",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 5,
+        "name": "qty_reserved",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 6,
+        "name": "qty_available!: Decimal",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 7,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      null,
+      false
+    ]
+  },
+  "hash": "2a98685e98172c031ef155759e8c4709c34e07df56822e1d91a50441072afec2"
+}

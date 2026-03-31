@@ -1,0 +1,78 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO items (id, code, description, item_type, uom_id, is_active)\n           VALUES ($1, $2, $3, $4, $5, TRUE)\n           RETURNING id, code, description,\n                     item_type AS \"item_type: _\",\n                     uom_id, is_active",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "code",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "description",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "item_type: _",
+        "type_info": {
+          "Custom": {
+            "name": "item_type",
+            "kind": {
+              "Enum": [
+                "fg",
+                "raw_mat",
+                "pack_mat"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "uom_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 5,
+        "name": "is_active",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Text",
+        {
+          "Custom": {
+            "name": "item_type",
+            "kind": {
+              "Enum": [
+                "fg",
+                "raw_mat",
+                "pack_mat"
+              ]
+            }
+          }
+        },
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "a13b787ee9f81bf10119e1f692d5046b7c409e637b77855af95fd0301ef2fd8b"
+}

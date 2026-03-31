@@ -1,0 +1,11 @@
+[package]
+name = "workers"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+domain = { path = "../domain" }
+db = { path = "../db" }
+tokio = { workspace = true }
+sqlx = { workspace = true }
+tracing = { workspace = true }

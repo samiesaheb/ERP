@@ -1,0 +1,80 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, batch_number, mo_id,\n                  stage AS \"stage: _\",\n                  pct_complete,\n                  status AS \"status: _\",\n                  created_at\n           FROM production_batches\n           WHERE status != 'done'\n           ORDER BY created_at DESC",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "batch_number",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "mo_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 3,
+        "name": "stage: _",
+        "type_info": {
+          "Custom": {
+            "name": "batch_stage",
+            "kind": {
+              "Enum": [
+                "bulk",
+                "formulation",
+                "filling",
+                "packing",
+                "loading"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "pct_complete",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 5,
+        "name": "status: _",
+        "type_info": {
+          "Custom": {
+            "name": "batch_status",
+            "kind": {
+              "Enum": [
+                "running",
+                "delayed",
+                "done"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "5ff08df89d1aee6f5aca5c59e4f6e10ff82e57b78e8924c81ba113beeb0fa3aa"
+}

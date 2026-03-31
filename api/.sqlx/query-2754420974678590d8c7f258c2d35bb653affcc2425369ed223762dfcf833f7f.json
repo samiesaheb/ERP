@@ -1,0 +1,28 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT DISTINCT ON (bl.component_item_id)\n                  bl.component_item_id,\n                  u.code AS uom_code\n           FROM bom_lines bl\n           JOIN uoms u ON u.id = bl.uom_id\n           WHERE bl.bom_id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "component_item_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "uom_code",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false
+    ]
+  },
+  "hash": "2754420974678590d8c7f258c2d35bb653affcc2425369ed223762dfcf833f7f"
+}

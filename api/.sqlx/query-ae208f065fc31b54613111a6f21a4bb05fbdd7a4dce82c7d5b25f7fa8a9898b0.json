@@ -1,0 +1,63 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, code, description,\n                          item_type AS \"item_type: _\",\n                          uom_id, is_active\n                   FROM items\n                   WHERE item_type::TEXT = $1\n                   ORDER BY code",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "code",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "description",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "item_type: _",
+        "type_info": {
+          "Custom": {
+            "name": "item_type",
+            "kind": {
+              "Enum": [
+                "fg",
+                "raw_mat",
+                "pack_mat"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "uom_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 5,
+        "name": "is_active",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "ae208f065fc31b54613111a6f21a4bb05fbdd7a4dce82c7d5b25f7fa8a9898b0"
+}

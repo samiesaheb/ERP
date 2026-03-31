@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO inventory (id, item_id, qty_on_hand, qty_reserved)\n           VALUES (uuid_generate_v4(), $1, GREATEST(0::numeric, $2), 0)\n           ON CONFLICT (item_id)\n           DO UPDATE SET qty_on_hand = GREATEST(0::numeric, inventory.qty_on_hand + $2),\n                         updated_at = NOW()",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Numeric"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "1dc25323651f1b927fc62b913933f0c49c61a55f8f02bd9ee63ca5d398d38458"
+}

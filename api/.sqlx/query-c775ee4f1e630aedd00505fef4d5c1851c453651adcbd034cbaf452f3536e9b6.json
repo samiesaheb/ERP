@@ -1,0 +1,34 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT item_id, qty_on_hand, qty_available FROM inventory WHERE item_id = ANY($1)",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "item_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "qty_on_hand",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 2,
+        "name": "qty_available",
+        "type_info": "Numeric"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "UuidArray"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      true
+    ]
+  },
+  "hash": "c775ee4f1e630aedd00505fef4d5c1851c453651adcbd034cbaf452f3536e9b6"
+}

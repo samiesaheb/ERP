@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO inventory_txns (id, item_id, txn_type, qty, ref_doc_type, ref_doc_id)\n                 VALUES (uuid_generate_v4(), $1, 'receipt', $2, 'grn', $3)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Numeric",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "a365c6faf68d6ebd9cdb88a34499ca07a804f8a4c3cc2a293b6f2343e4841879"
+}

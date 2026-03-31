@@ -1,0 +1,19 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO po_lines (id, po_id, item_id, qty_ordered, qty_received, unit_price, uom_id)\n             VALUES ($1, $2, $3, $4, 0, $5, $6)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Numeric",
+        "Numeric",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "9cbb10b2e82c2f053b136cb4130092726d5361bbd7e0ff3eff6d2d54bd11fb0b"
+}

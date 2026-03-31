@@ -1,0 +1,46 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, sales_order_id, doc_type, file_url, uploaded_at\n         FROM artwork_docs WHERE sales_order_id = $1 ORDER BY uploaded_at DESC",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "sales_order_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "doc_type",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "file_url",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "uploaded_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "6212bb7749c7d0e3d15fc5baeed91b2eeaf25576cf4ec38f2949f6778647a999"
+}

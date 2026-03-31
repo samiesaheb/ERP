@@ -1,0 +1,49 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO grn (id, grn_number, po_id, received_date)\n         VALUES ($1, $2, $3, $4)\n         RETURNING id, grn_number, po_id, received_date, created_at",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "grn_number",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "po_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 3,
+        "name": "received_date",
+        "type_info": "Date"
+      },
+      {
+        "ordinal": 4,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Uuid",
+        "Date"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "54f3105fd2a093bf6285314c8da5cff7c02289bb7cc267fb0e79d749a50e364b"
+}

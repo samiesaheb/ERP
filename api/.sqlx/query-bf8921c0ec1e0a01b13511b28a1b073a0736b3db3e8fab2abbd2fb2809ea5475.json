@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO production_batches (id, batch_number, mo_id, stage, pct_complete, status)\n         VALUES ($1, $2, $3, 'bulk', 0, 'running')",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "bf8921c0ec1e0a01b13511b28a1b073a0736b3db3e8fab2abbd2fb2809ea5475"
+}

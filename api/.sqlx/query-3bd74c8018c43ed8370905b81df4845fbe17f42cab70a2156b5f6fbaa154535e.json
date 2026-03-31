@@ -1,0 +1,75 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, mo_number, sales_order_id, item_id, bom_id,\n                          target_qty, status AS \"status: _\", created_at\n                   FROM manufacturing_orders\n                   ORDER BY created_at DESC",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "mo_number",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "sales_order_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 3,
+        "name": "item_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 4,
+        "name": "bom_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 5,
+        "name": "target_qty",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 6,
+        "name": "status: _",
+        "type_info": {
+          "Custom": {
+            "name": "mo_status",
+            "kind": {
+              "Enum": [
+                "planned",
+                "running",
+                "packing",
+                "done",
+                "on_hold"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "3bd74c8018c43ed8370905b81df4845fbe17f42cab70a2156b5f6fbaa154535e"
+}
