@@ -13,7 +13,8 @@ export async function clientFetch<T>(
   path: string,
   options: RequestInit = {},
 ): Promise<T> {
-  const BASE = process.env.NEXT_PUBLIC_API_URL ?? '';
+  const _raw = process.env.NEXT_PUBLIC_API_URL ?? '';
+  const BASE = _raw && !_raw.startsWith('http') ? `https://${_raw}` : _raw;
   const token = getToken();
   const res = await fetch(`${BASE}${path}`, {
     ...options,

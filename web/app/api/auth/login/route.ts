@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const API_URL = process.env.API_URL ?? '';
+  const _rawUrl = process.env.API_URL ?? '';
+  const API_URL = _rawUrl && !_rawUrl.startsWith('http') ? `https://${_rawUrl}` : _rawUrl;
 
   const upstream = await fetch(`${API_URL}/auth/login`, {
     method: 'POST',

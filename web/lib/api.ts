@@ -19,7 +19,8 @@ import type {
 // Base fetch — server-side with cookie auth
 // ---------------------------------------------------------------------------
 
-const API_URL = process.env.API_URL ?? process.env.NEXT_PUBLIC_API_URL ?? '';
+const _rawApiUrl = process.env.API_URL ?? process.env.NEXT_PUBLIC_API_URL ?? '';
+const API_URL = _rawApiUrl && !_rawApiUrl.startsWith('http') ? `https://${_rawApiUrl}` : _rawApiUrl;
 
 async function apiFetch<T>(
   path: string,
