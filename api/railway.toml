@@ -1,11 +1,8 @@
 [build]
-builder = "nixpacks"
-
-[build.env]
-SQLX_OFFLINE = "true"
+builder = "dockerfile"
+dockerfilePath = "Dockerfile"
 
 [deploy]
-startCommand = "./target/release/skyhigh-api"
 healthcheckPath = "/health"
 healthcheckTimeout = 30
 restartPolicyType = "on_failure"
