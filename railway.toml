@@ -5,8 +5,10 @@
   name = "api"
   source = "api/"
   [services.build]
-    buildCommand = "cargo build --release"
+    buildCommand = "cargo build --release --package skyhigh-api"
     startCommand = "./target/release/skyhigh-api"
+    [services.build.env]
+      SQLX_OFFLINE = "true"
   [services.deploy]
     healthcheckPath = "/health"
 
