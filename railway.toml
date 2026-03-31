@@ -1,20 +1,3 @@
-[build]
-  builder = "nixpacks"
-
-[[services]]
-  name = "api"
-  source = "api/"
-  [services.build]
-    buildCommand = "bash build.sh"
-    startCommand = "./target/release/skyhigh-api"
-    [services.build.env]
-      SQLX_OFFLINE = "true"
-  [services.deploy]
-    healthcheckPath = "/health"
-
-[[services]]
-  name = "web"
-  source = "web/"
-  [services.build]
-    buildCommand = "npm run build"
-    startCommand = "npm run start"
+# Monorepo — each service's Root Directory is configured in the Railway dashboard.
+# API service → Root Directory: api
+# Web service → Root Directory: web
