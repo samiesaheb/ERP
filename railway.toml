@@ -5,7 +5,7 @@
   name = "api"
   source = "api/"
   [services.build]
-    buildCommand = "cargo build --release --package skyhigh-api"
+    buildCommand = "bash build.sh"
     startCommand = "./target/release/skyhigh-api"
     [services.build.env]
       SQLX_OFFLINE = "true"
