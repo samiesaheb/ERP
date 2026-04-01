@@ -3,7 +3,7 @@ builder = "nixpacks"
 buildCommand = "bash build.sh"
 
 [deploy]
-startCommand = "./skyhigh-api"
+startCommand = "./target/release/skyhigh-api"
 healthcheckPath = "/health"
 healthcheckTimeout = 30
 restartPolicyType = "on_failure"
