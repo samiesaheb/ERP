@@ -7,6 +7,7 @@ import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
 import SlideOver from '@/components/ui/SlideOver';
 import { clientFetch } from '@/lib/client-api';
+import { updateShipmentStatus } from '@/lib/mutations';
 import type { SalesOrder, Shipment } from '@/lib/types';
 
 type ShipmentRow = Shipment & { so_label: string };
@@ -93,10 +94,23 @@ export default function ShipmentsClient({
         <DataTable
           columns={COLUMNS}
           data={rows}
-          actions={(_row) => [
-            { label: 'View Details',  onClick: () => {} },
-            { label: 'Update Status', onClick: () => {} },
-          ]}
+          onRowClick={(row) => router.push(`/shipments/${row.id}`)}
+          actions={(row) => {
+            const next: Record<string, string> = {
+              loading: 'dispatched', dispatched: 'in_transit', in_transit: 'delivered',
+            };
+            const nextStatus = next[row.status];
+            const statusLabel: Record<string, string> = {
+              dispatched: 'Mark Dispatched', in_transit: 'Mark In Transit', delivered: 'Mark Delivered',
+            };
+            return [
+              { label: 'View Details', onClick: () => router.push(`/shipments/${row.id}`) },
+              ...(nextStatus ? [{
+                label: statusLabel[nextStatus],
+                onClick: () => updateShipmentStatus(row.id, nextStatus).then(() => router.refresh()),
+              }] : []),
+            ];
+          }}
         />
       </div>
 

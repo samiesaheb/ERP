@@ -1,13 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import DataTable, { Column } from '@/components/ui/DataTable';
 import Badge, { poStatusVariant } from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
 import SlideOver from '@/components/ui/SlideOver';
 import { clientFetch } from '@/lib/client-api';
-import type { PurchaseOrder, Item, Uom } from '@/lib/types';
+import type { PurchaseOrder, PurchaseOrderLine, Item, Uom } from '@/lib/types';
 
 const COLUMNS = (supplierMap: Record<string, string>): Column<PurchaseOrder>[] => [
   { key: 'po_number', header: 'PO #', sortable: true },
@@ -39,14 +39,24 @@ export default function ReceivingClient({
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [poId, setPoId] = useState('');
+  const [poLines, setPoLines] = useState<PurchaseOrderLine[]>([]);
   const [lines, setLines] = useState<ReceiptLine[]>([
     { po_line_id: '', item_id: '', qty_received: '', uom_id: '', lot_number: '' },
   ]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  // Fetch PO lines whenever the selected PO changes
+  useEffect(() => {
+    if (!poId) { setPoLines([]); return; }
+    clientFetch<PurchaseOrderLine[]>(`/api/v1/purchase-orders/${poId}/lines`)
+      .then(setPoLines)
+      .catch(() => setPoLines([]));
+  }, [poId]);
+
   function openForPo(id: string) {
     setPoId(id);
+    setPoLines([]);
     setLines([{ po_line_id: '', item_id: '', qty_received: '', uom_id: '', lot_number: '' }]);
     setError('');
     setOpen(true);
@@ -65,7 +75,15 @@ export default function ReceivingClient({
     setLines(lines.map((l, i) => {
       if (i !== idx) return l;
       const updated = { ...l, [field]: value };
-      // Auto-set UOM from selected item
+      // Auto-fill item + UOM when a PO line is selected
+      if (field === 'po_line_id') {
+        const poLine = poLines.find((pl) => pl.id === value);
+        if (poLine) {
+          updated.item_id = poLine.item_id;
+          updated.uom_id  = poLine.uom_id;
+        }
+      }
+      // Also allow manual item override to reset UOM
       if (field === 'item_id') {
         const item = items.find((it) => it.id === value);
         if (item) updated.uom_id = item.uom_id;
@@ -152,10 +170,22 @@ export default function ReceivingClient({
                 </div>
 
                 <div>
-                  <label className="block text-[11px] text-neutral-500 mb-0.5">PO Line ID</label>
-                  <input required placeholder="PO Line UUID" value={line.po_line_id}
+                  <label className="block text-[11px] text-neutral-500 mb-0.5">PO Line</label>
+                  <select required value={line.po_line_id}
                     onChange={(e) => updateLine(idx, 'po_line_id', e.target.value)}
-                    className="w-full px-2 py-1.5 text-xs border-[0.5px] border-neutral-300 rounded" />
+                    className="w-full px-2 py-1.5 text-xs border-[0.5px] border-neutral-300 rounded bg-white">
+                    <option value="">{poId ? (poLines.length === 0 ? 'Loading…' : 'Select line') : 'Select a PO first'}</option>
+                    {poLines.map((pl) => {
+                      const itemLabel = items.find((it) => it.id === pl.item_id);
+                      const remaining = Number(pl.qty_ordered) - Number(pl.qty_received);
+                      return (
+                        <option key={pl.id} value={pl.id}>
+                          {itemLabel ? `${itemLabel.item_code} — ${itemLabel.description}` : pl.item_id}
+                          {' '}(ordered {Number(pl.qty_ordered).toLocaleString()}, remaining {remaining.toLocaleString()})
+                        </option>
+                      );
+                    })}
+                  </select>
                 </div>
 
                 <div className="grid grid-cols-2 gap-1.5">

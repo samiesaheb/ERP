@@ -147,6 +147,8 @@ export const getManufacturingOrders = (params?: { status?: string }) => {
 };
 export const getManufacturingOrder = (id: string) =>
   apiFetch<ManufacturingOrder>(`/api/v1/manufacturing-orders/${id}`);
+export const getMoBatches = (moId: string) =>
+  apiFetch<ProductionBatch[]>(`/api/v1/manufacturing-orders/${moId}/batches`);
 
 // ---------------------------------------------------------------------------
 // Production
@@ -163,11 +165,11 @@ export const getProductionPlans   = () =>
 // Shipments
 // ---------------------------------------------------------------------------
 
-export const getShipments         = () => apiFetch<Shipment[]>('/api/v1/shipments');
-export const getShipment          = (id: string) => apiFetch<Shipment>(`/api/v1/shipments/${id}`);
-export const getShipmentLines     = (shipmentId: string) =>
+export const getShipments          = () => apiFetch<Shipment[]>('/api/v1/shipments');
+export const getShipment           = (id: string) => apiFetch<Shipment>(`/api/v1/shipments/${id}`);
+export const getShipmentLines      = (shipmentId: string) =>
   apiFetch<ShipmentLine[]>(`/api/v1/shipments/${shipmentId}/lines`);
-export const getShippingDocuments = (shipmentId: string) =>
+export const getShippingDocuments  = (shipmentId: string) =>
   apiFetch<ShippingDocument[]>(`/api/v1/shipments/${shipmentId}/documents`);
 
 // ---------------------------------------------------------------------------

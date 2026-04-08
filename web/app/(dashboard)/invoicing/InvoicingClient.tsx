@@ -86,8 +86,11 @@ export default function InvoicingClient({
         <DataTable
           columns={COLUMNS(customerMap, soMap)}
           data={invoices}
+          onRowClick={(row) => router.push(`/invoicing/${row.id}`)}
           actions={(row) => {
-            const items: { label: string; onClick: () => void; variant?: 'danger' }[] = [];
+            const items: { label: string; onClick: () => void; variant?: 'danger' }[] = [
+              { label: 'View Details', onClick: () => router.push(`/invoicing/${row.id}`) },
+            ];
             if (row.status === 'draft') {
               items.push({ label: 'Send Invoice', onClick: () => updateInvoiceStatus(row.id, 'sent').then(() => router.refresh()) });
               items.push({ label: 'Cancel', onClick: () => updateInvoiceStatus(row.id, 'cancelled').then(() => router.refresh()), variant: 'danger' });

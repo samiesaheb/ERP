@@ -51,7 +51,7 @@ function BatchCard({ batch, moMap, onAdvance }: {
           </Badge>
           <DropdownMenu items={[
             ...(nextStage ? [{ label: 'Advance Stage', onClick: () => onAdvance(batch.id, nextStage) }] : []),
-            { label: 'View MO',       onClick: () => {} },
+            { label: 'View MO',       onClick: () => router.push(`/manufacturing-orders/${batch.manufacturing_order_id}`) },
           ]} />
         </div>
       </div>
