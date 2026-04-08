@@ -28,36 +28,54 @@ export default function Badge({ children, variant = 'gray' }: BadgeProps) {
 // Helper maps for domain status → variant
 export function soStatusVariant(status: string): BadgeVariant {
   const map: Record<string, BadgeVariant> = {
-    artwork: 'blue', planning: 'amber', production: 'purple',
-    packing: 'amber', shipped: 'green',
+    draft: 'gray', confirmed: 'blue', in_production: 'amber',
+    shipped: 'purple', invoiced: 'green', cancelled: 'red',
   };
   return map[status] ?? 'gray';
 }
 
 export function moStatusVariant(status: string): BadgeVariant {
   const map: Record<string, BadgeVariant> = {
-    planned: 'blue', running: 'amber', packing: 'purple', done: 'green', on_hold: 'red',
+    draft: 'gray', planned: 'blue', in_progress: 'amber',
+    completed: 'green', cancelled: 'red',
   };
   return map[status] ?? 'gray';
 }
 
 export function poStatusVariant(status: string): BadgeVariant {
   const map: Record<string, BadgeVariant> = {
-    ordered: 'blue', confirmed: 'amber', in_transit: 'purple', received: 'green',
+    draft: 'gray', sent: 'blue', confirmed: 'amber',
+    partially_received: 'purple', received: 'green', cancelled: 'red',
   };
   return map[status] ?? 'gray';
 }
 
 export function invoiceStatusVariant(status: string): BadgeVariant {
   const map: Record<string, BadgeVariant> = {
-    not_due: 'blue', partial: 'amber', paid: 'green', overdue: 'red',
+    draft: 'gray', sent: 'blue', partially_paid: 'amber',
+    paid: 'green', overdue: 'red', cancelled: 'red',
   };
   return map[status] ?? 'gray';
 }
 
 export function batchStatusVariant(status: string): BadgeVariant {
   const map: Record<string, BadgeVariant> = {
-    running: 'amber', delayed: 'red', done: 'green',
+    planned: 'blue', bulk_production: 'amber', filling: 'amber',
+    packing: 'purple', completed: 'green',
+  };
+  return map[status] ?? 'gray';
+}
+
+export function shipmentStatusVariant(status: string): BadgeVariant {
+  const map: Record<string, BadgeVariant> = {
+    loading: 'gray', dispatched: 'blue', in_transit: 'amber', delivered: 'green',
+  };
+  return map[status] ?? 'gray';
+}
+
+export function paymentStatusVariant(status: string): BadgeVariant {
+  const map: Record<string, BadgeVariant> = {
+    pending: 'blue', cleared: 'green', failed: 'red',
   };
   return map[status] ?? 'gray';
 }

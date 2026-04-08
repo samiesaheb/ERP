@@ -4,83 +4,68 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 // ---------------------------------------------------------------------------
-// Enums
-// ---------------------------------------------------------------------------
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, sqlx::Type)]
-#[sqlx(type_name = "bom_status", rename_all = "snake_case")]
-#[serde(rename_all = "snake_case")]
-pub enum BomStatus {
-    Draft,
-    Active,
-    UnderReview,
-}
-
-// ---------------------------------------------------------------------------
 // BOM Header
 // ---------------------------------------------------------------------------
 
 #[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct Bom {
-    pub id: Uuid,
-    pub code: String,
-    pub item_id: Uuid,
-    pub version: i32,
-    pub status: BomStatus,
-    pub created_at: DateTime<Utc>,
+    pub id:               Uuid,
+    pub finished_good_id: Uuid,
+    pub version:          i32,            // INT NOT NULL DEFAULT 1
+    pub description:      Option<String>,
+    pub is_active:        bool,           // BOOLEAN NOT NULL DEFAULT TRUE
+    pub created_at:       DateTime<Utc>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CreateBom {
-    pub code: String,
-    pub item_id: Uuid,
-    pub version: i32,
+    pub finished_good_id: Uuid,
+    pub version:          i32,
+    pub description:      Option<String>,
 }
 
 // ---------------------------------------------------------------------------
-// BOM Lines
+// BOM Line
 // ---------------------------------------------------------------------------
 
 #[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct BomLine {
-    pub id: Uuid,
-    pub bom_id: Uuid,
+    pub id:                Uuid,
+    pub bom_id:            Uuid,
     pub component_item_id: Uuid,
-    pub qty_per_batch: Decimal,
-    pub uom_id: Uuid,
-    pub line_order: i32,
+    pub qty_required:      Decimal,   // NUMERIC(18,6) NOT NULL
+    pub uom_id:            Uuid,
+    pub notes:             Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CreateBomLine {
     pub component_item_id: Uuid,
-    pub qty_per_batch: Decimal,
-    pub uom_id: Uuid,
-    pub line_order: i32,
+    pub qty_required:      Decimal,
+    pub uom_id:            Uuid,
+    pub notes:             Option<String>,
 }
 
 // ---------------------------------------------------------------------------
-// BOM Explosion Result
+// BOM Explosion (computed, not stored)
 // ---------------------------------------------------------------------------
 
-/// One row in the flat explosion output for GET /boms/:id/explode
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BomExplosionLine {
-    pub item_id: Uuid,
-    pub item_code: String,
-    pub description: String,
+    pub item_id:      Uuid,
+    pub item_code:    String,
+    pub description:  String,
     pub required_qty: Decimal,
-    pub uom: String,
-    pub on_hand: Decimal,
-    pub available: Decimal,
-    pub shortfall: Decimal,
+    pub uom:          String,
+    pub on_hand:      Decimal,
+    pub available:    Decimal,
+    pub shortfall:    Decimal,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BomExplosionResult {
-    pub bom_id: Uuid,
-    pub bom_code: String,
+    pub bom_id:     Uuid,
     pub fg_item_id: Uuid,
     pub target_qty: Decimal,
-    pub lines: Vec<BomExplosionLine>,
+    pub lines:      Vec<BomExplosionLine>,
 }

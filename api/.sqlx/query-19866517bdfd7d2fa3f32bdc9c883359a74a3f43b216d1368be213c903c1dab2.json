@@ -1,0 +1,20 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT COUNT(*) FROM sales_orders WHERE status::TEXT NOT IN ('shipped', 'invoiced', 'cancelled')",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "count",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "19866517bdfd7d2fa3f32bdc9c883359a74a3f43b216d1368be213c903c1dab2"
+}

@@ -1,0 +1,52 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, bom_id, component_item_id, qty_required, uom_id, notes\n         FROM bom_lines WHERE bom_id = $1 ORDER BY id",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "bom_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "component_item_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 3,
+        "name": "qty_required",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 4,
+        "name": "uom_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 5,
+        "name": "notes",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      true
+    ]
+  },
+  "hash": "ba00fa360581d853ad0463a72dc1d88fea36861a422d9380a1c8baed00a3ba66"
+}

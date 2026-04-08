@@ -1,0 +1,44 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, bom_id, component_item_id, qty_required, uom_id FROM bom_lines",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "bom_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "component_item_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 3,
+        "name": "qty_required",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 4,
+        "name": "uom_id",
+        "type_info": "Uuid"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "45a50022e53fb00f38960b67bd3f5e25cd8a48d480f13fbd752ad6fb36cba6cc"
+}

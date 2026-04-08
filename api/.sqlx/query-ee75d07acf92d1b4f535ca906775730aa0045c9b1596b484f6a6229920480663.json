@@ -1,0 +1,129 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE production_batches\n         SET status            = $2,\n             qty_bulk_produced = $3,\n             qty_filled        = $4,\n             qty_packed        = $5,\n             bulk_start        = $6,\n             bulk_end          = $7,\n             fill_start        = $8,\n             fill_end          = $9,\n             pack_start        = $10,\n             pack_end          = $11,\n             notes             = $12\n         WHERE id = $1\n         RETURNING id, batch_number, manufacturing_order_id, bom_id, status,\n                   qty_bulk_produced, qty_filled, qty_packed, uom_id,\n                   bulk_start, bulk_end, fill_start, fill_end, pack_start, pack_end,\n                   notes, created_at",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "batch_number",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "manufacturing_order_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 3,
+        "name": "bom_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 4,
+        "name": "status",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "qty_bulk_produced",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 6,
+        "name": "qty_filled",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 7,
+        "name": "qty_packed",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 8,
+        "name": "uom_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 9,
+        "name": "bulk_start",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 10,
+        "name": "bulk_end",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 11,
+        "name": "fill_start",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 12,
+        "name": "fill_end",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 13,
+        "name": "pack_start",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 14,
+        "name": "pack_end",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 15,
+        "name": "notes",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 16,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Numeric",
+        "Numeric",
+        "Numeric",
+        "Timestamptz",
+        "Timestamptz",
+        "Timestamptz",
+        "Timestamptz",
+        "Timestamptz",
+        "Timestamptz",
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false
+    ]
+  },
+  "hash": "ee75d07acf92d1b4f535ca906775730aa0045c9b1596b484f6a6229920480663"
+}

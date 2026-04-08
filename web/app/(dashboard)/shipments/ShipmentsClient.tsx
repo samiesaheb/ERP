@@ -1,0 +1,157 @@
+'use client';
+
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import DataTable, { Column } from '@/components/ui/DataTable';
+import Badge from '@/components/ui/Badge';
+import Button from '@/components/ui/Button';
+import SlideOver from '@/components/ui/SlideOver';
+import { clientFetch } from '@/lib/client-api';
+import type { SalesOrder, Shipment } from '@/lib/types';
+
+type ShipmentRow = Shipment & { so_label: string };
+
+function statusVariant(s: string): 'gray' | 'amber' | 'blue' | 'green' {
+  if (s === 'loading')    return 'gray';
+  if (s === 'dispatched') return 'amber';
+  if (s === 'in_transit') return 'blue';
+  if (s === 'delivered')  return 'green';
+  return 'gray';
+}
+
+const COLUMNS: Column<ShipmentRow>[] = [
+  { key: 'shipment_number', header: 'Shipment #', sortable: true },
+  { key: 'so_label',        header: 'Sales Order' },
+  { key: 'carrier',         header: 'Carrier',   render: (r) => r.carrier ?? '—' },
+  { key: 'tracking_number', header: 'Tracking',  render: (r) => r.tracking_number ?? '—' },
+  {
+    key: 'status',
+    header: 'Status',
+    sortable: true,
+    render: (r) => <Badge variant={statusVariant(r.status)}>{r.status}</Badge>,
+  },
+  {
+    key: 'created_at',
+    header: 'Created',
+    sortable: true,
+    render: (r) => new Date(r.created_at).toLocaleDateString(),
+  },
+];
+
+export default function ShipmentsClient({
+  shipments,
+  salesOrders,
+  soMap,
+  initialSalesOrderId,
+}: {
+  shipments: Shipment[];
+  salesOrders?: SalesOrder[];
+  soMap?: Record<string, string>;
+  initialSalesOrderId?: string;
+}) {
+  const router = useRouter();
+  const availableSalesOrders = salesOrders ?? [];
+  const salesOrderMap = soMap ?? Object.fromEntries(
+    availableSalesOrders.map((salesOrder) => [salesOrder.id, salesOrder.order_number]),
+  );
+  const [open, setOpen] = useState(Boolean(initialSalesOrderId));
+  const [form, setForm] = useState({
+    sales_order_id: initialSalesOrderId ?? '',
+    carrier:        '',
+    tracking_number: '',
+    notes:          '',
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError]     = useState('');
+
+  const rows: ShipmentRow[] = shipments.map((s) => ({
+    ...s,
+    so_label: salesOrderMap[s.sales_order_id] ?? s.sales_order_id,
+  }));
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+    try {
+      await clientFetch('/api/v1/shipments', { method: 'POST', body: JSON.stringify(form) });
+      setOpen(false);
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <>
+      <div className="flex justify-start mb-3">
+        <Button onClick={() => setOpen(true)}>+ New Shipment</Button>
+      </div>
+      <div className="bg-white border-[0.5px] border-neutral-200 rounded-xl overflow-hidden">
+        <DataTable
+          columns={COLUMNS}
+          data={rows}
+          actions={(_row) => [
+            { label: 'View Details',  onClick: () => {} },
+            { label: 'Update Status', onClick: () => {} },
+          ]}
+        />
+      </div>
+
+      <SlideOver open={open} onClose={() => setOpen(false)} title="New Shipment">
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-xs font-medium text-neutral-600 mb-1">Sales Order</label>
+            <select
+              required
+              className="w-full border border-neutral-200 rounded-lg px-3 py-2 text-sm"
+              value={form.sales_order_id}
+              onChange={(e) => setForm({ ...form, sales_order_id: e.target.value })}
+            >
+              <option value="">Select…</option>
+              {availableSalesOrders.map((salesOrder) => (
+                <option key={salesOrder.id} value={salesOrder.id}>
+                  {salesOrder.order_number}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-neutral-600 mb-1">Carrier</label>
+            <input
+              className="w-full border border-neutral-200 rounded-lg px-3 py-2 text-sm"
+              value={form.carrier}
+              onChange={(e) => setForm({ ...form, carrier: e.target.value })}
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-neutral-600 mb-1">Tracking Number</label>
+            <input
+              className="w-full border border-neutral-200 rounded-lg px-3 py-2 text-sm"
+              value={form.tracking_number}
+              onChange={(e) => setForm({ ...form, tracking_number: e.target.value })}
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-neutral-600 mb-1">Notes</label>
+            <textarea
+              className="w-full border border-neutral-200 rounded-lg px-3 py-2 text-sm"
+              rows={3}
+              value={form.notes}
+              onChange={(e) => setForm({ ...form, notes: e.target.value })}
+            />
+          </div>
+          {error && <p className="text-xs text-red-500">{error}</p>}
+          <div className="flex gap-2">
+            <Button type="submit" disabled={loading} className="flex-1">
+              {loading ? 'Creating…' : 'Create Shipment'}
+            </Button>
+            <Button type="button" variant="secondary" onClick={() => setOpen(false)}>Cancel</Button>
+          </div>
+        </form>
+      </SlideOver>
+    </>
+  );
+}

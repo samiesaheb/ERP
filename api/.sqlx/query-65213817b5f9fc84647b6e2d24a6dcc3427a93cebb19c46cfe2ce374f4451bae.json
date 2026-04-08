@@ -1,0 +1,105 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE invoices\n         SET status = $2, issue_date = $3, due_date = $4, tax = $5,\n             total = COALESCE(subtotal, 0) + $5, notes = $6\n         WHERE id = $1\n         RETURNING id, invoice_number, sales_order_id, customer_id, shipment_id,\n                   status, issue_date, due_date, subtotal, tax, total, currency, notes, created_at",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "invoice_number",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "sales_order_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 3,
+        "name": "customer_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 4,
+        "name": "shipment_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 5,
+        "name": "status",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "issue_date",
+        "type_info": "Date"
+      },
+      {
+        "ordinal": 7,
+        "name": "due_date",
+        "type_info": "Date"
+      },
+      {
+        "ordinal": 8,
+        "name": "subtotal",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 9,
+        "name": "tax",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 10,
+        "name": "total",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 11,
+        "name": "currency",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 12,
+        "name": "notes",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 13,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Date",
+        "Date",
+        "Numeric",
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      true,
+      true,
+      true,
+      false,
+      true,
+      false,
+      true,
+      false
+    ]
+  },
+  "hash": "65213817b5f9fc84647b6e2d24a6dcc3427a93cebb19c46cfe2ce374f4451bae"
+}

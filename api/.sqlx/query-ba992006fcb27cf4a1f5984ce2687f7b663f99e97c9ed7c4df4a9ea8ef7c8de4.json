@@ -1,0 +1,116 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, batch_number, manufacturing_order_id, bom_id, status,\n                qty_bulk_produced, qty_filled, qty_packed, uom_id,\n                bulk_start, bulk_end, fill_start, fill_end, pack_start, pack_end,\n                notes, created_at\n         FROM production_batches\n         WHERE status != 'completed'\n         ORDER BY created_at DESC",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "batch_number",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "manufacturing_order_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 3,
+        "name": "bom_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 4,
+        "name": "status",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "qty_bulk_produced",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 6,
+        "name": "qty_filled",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 7,
+        "name": "qty_packed",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 8,
+        "name": "uom_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 9,
+        "name": "bulk_start",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 10,
+        "name": "bulk_end",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 11,
+        "name": "fill_start",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 12,
+        "name": "fill_end",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 13,
+        "name": "pack_start",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 14,
+        "name": "pack_end",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 15,
+        "name": "notes",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 16,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false
+    ]
+  },
+  "hash": "ba992006fcb27cf4a1f5984ce2687f7b663f99e97c9ed7c4df4a9ea8ef7c8de4"
+}

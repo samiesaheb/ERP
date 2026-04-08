@@ -8,8 +8,8 @@ use uuid::Uuid;
 
 use crate::{error::Result, state::AppState};
 use domain::{
-    Country, CreateItem, CreateSupplier, Customer, CustomerType, Item, ItemSupplier,
-    Supplier, Uom,
+    Country, CreateCustomer, CreateItem, CreateItemSupplier, CreateItemUomConversion, CreateSupplier,
+    Customer, CustomerType, Item, ItemSupplier, ItemUomConversion, Supplier, Uom,
 };
 
 // ---------------------------------------------------------------------------
@@ -19,9 +19,12 @@ use domain::{
 pub async fn list_customer_types(
     State(state): State<AppState>,
 ) -> Result<Json<Vec<CustomerType>>> {
-    let rows = sqlx::query_as!(CustomerType, "SELECT id, name FROM customer_types ORDER BY name")
-        .fetch_all(&state.db)
-        .await?;
+    let rows = sqlx::query_as!(
+        CustomerType,
+        "SELECT id, name, created_at FROM customer_types ORDER BY name"
+    )
+    .fetch_all(&state.db)
+    .await?;
     Ok(Json(rows))
 }
 
@@ -30,9 +33,10 @@ pub async fn list_customer_types(
 // ---------------------------------------------------------------------------
 
 pub async fn list_countries(State(state): State<AppState>) -> Result<Json<Vec<Country>>> {
-    let rows = sqlx::query_as!(Country, "SELECT id, name, code FROM countries ORDER BY name")
-        .fetch_all(&state.db)
-        .await?;
+    let rows =
+        sqlx::query_as!(Country, "SELECT id, name, code, created_at FROM countries ORDER BY name")
+            .fetch_all(&state.db)
+            .await?;
     Ok(Json(rows))
 }
 
@@ -43,11 +47,35 @@ pub async fn list_countries(State(state): State<AppState>) -> Result<Json<Vec<Co
 pub async fn list_customers(State(state): State<AppState>) -> Result<Json<Vec<Customer>>> {
     let rows = sqlx::query_as!(
         Customer,
-        "SELECT id, name, customer_type_id, country_id, created_at FROM customers ORDER BY name"
+        "SELECT id, name, customer_type_id, country_id, email, phone, address, created_at
+         FROM customers ORDER BY name"
     )
     .fetch_all(&state.db)
     .await?;
     Ok(Json(rows))
+}
+
+pub async fn create_customer(
+    State(state): State<AppState>,
+    Json(body): Json<CreateCustomer>,
+) -> Result<(StatusCode, Json<Customer>)> {
+    let id = Uuid::new_v4();
+    let row = sqlx::query_as!(
+        Customer,
+        "INSERT INTO customers (id, name, customer_type_id, country_id, email, phone, address)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)
+         RETURNING id, name, customer_type_id, country_id, email, phone, address, created_at",
+        id,
+        body.name,
+        body.customer_type_id,
+        body.country_id,
+        body.email,
+        body.phone,
+        body.address,
+    )
+    .fetch_one(&state.db)
+    .await?;
+    Ok((StatusCode::CREATED, Json(row)))
 }
 
 // ---------------------------------------------------------------------------
@@ -55,10 +83,9 @@ pub async fn list_customers(State(state): State<AppState>) -> Result<Json<Vec<Cu
 // ---------------------------------------------------------------------------
 
 pub async fn list_uoms(State(state): State<AppState>) -> Result<Json<Vec<Uom>>> {
-    let rows =
-        sqlx::query_as!(Uom, "SELECT id, name, code FROM uoms ORDER BY name")
-            .fetch_all(&state.db)
-            .await?;
+    let rows = sqlx::query_as!(Uom, "SELECT id, code, description FROM uoms ORDER BY code")
+        .fetch_all(&state.db)
+        .await?;
     Ok(Json(rows))
 }
 
@@ -69,26 +96,22 @@ pub async fn list_uoms(State(state): State<AppState>) -> Result<Json<Vec<Uom>>> 
 #[derive(Deserialize)]
 pub struct ItemQuery {
     pub item_type: Option<String>,
-    pub search: Option<String>,
+    pub search:    Option<String>,
 }
 
 pub async fn list_items(
     State(state): State<AppState>,
     Query(q): Query<ItemQuery>,
 ) -> Result<Json<Vec<Item>>> {
-    // Build query dynamically depending on filters
     let rows = match (q.item_type.as_deref(), q.search.as_deref()) {
         (Some(it), Some(s)) => {
             let pattern = format!("%{s}%");
             sqlx::query_as!(
                 Item,
-                r#"SELECT id, code, description,
-                          item_type AS "item_type: _",
-                          uom_id, is_active
-                   FROM items
-                   WHERE item_type::TEXT = $1
-                     AND (code ILIKE $2 OR description ILIKE $2)
-                   ORDER BY code"#,
+                "SELECT id, item_code, description, item_type, uom_id, fda_required, is_active, created_at
+                 FROM items
+                 WHERE item_type = $1 AND (item_code ILIKE $2 OR description ILIKE $2)
+                 ORDER BY item_code",
                 it,
                 pattern
             )
@@ -98,12 +121,8 @@ pub async fn list_items(
         (Some(it), None) => {
             sqlx::query_as!(
                 Item,
-                r#"SELECT id, code, description,
-                          item_type AS "item_type: _",
-                          uom_id, is_active
-                   FROM items
-                   WHERE item_type::TEXT = $1
-                   ORDER BY code"#,
+                "SELECT id, item_code, description, item_type, uom_id, fda_required, is_active, created_at
+                 FROM items WHERE item_type = $1 ORDER BY item_code",
                 it
             )
             .fetch_all(&state.db)
@@ -113,12 +132,9 @@ pub async fn list_items(
             let pattern = format!("%{s}%");
             sqlx::query_as!(
                 Item,
-                r#"SELECT id, code, description,
-                          item_type AS "item_type: _",
-                          uom_id, is_active
-                   FROM items
-                   WHERE code ILIKE $1 OR description ILIKE $1
-                   ORDER BY code"#,
+                "SELECT id, item_code, description, item_type, uom_id, fda_required, is_active, created_at
+                 FROM items WHERE item_code ILIKE $1 OR description ILIKE $1
+                 ORDER BY item_code",
                 pattern
             )
             .fetch_all(&state.db)
@@ -127,11 +143,8 @@ pub async fn list_items(
         (None, None) => {
             sqlx::query_as!(
                 Item,
-                r#"SELECT id, code, description,
-                          item_type AS "item_type: _",
-                          uom_id, is_active
-                   FROM items
-                   ORDER BY code"#
+                "SELECT id, item_code, description, item_type, uom_id, fda_required, is_active, created_at
+                 FROM items ORDER BY item_code"
             )
             .fetch_all(&state.db)
             .await?
@@ -147,16 +160,15 @@ pub async fn create_item(
     let id = Uuid::new_v4();
     let row = sqlx::query_as!(
         Item,
-        r#"INSERT INTO items (id, code, description, item_type, uom_id, is_active)
-           VALUES ($1, $2, $3, $4, $5, TRUE)
-           RETURNING id, code, description,
-                     item_type AS "item_type: _",
-                     uom_id, is_active"#,
+        "INSERT INTO items (id, item_code, description, item_type, uom_id, fda_required, is_active)
+         VALUES ($1, $2, $3, $4, $5, $6, TRUE)
+         RETURNING id, item_code, description, item_type, uom_id, fda_required, is_active, created_at",
         id,
-        body.code,
+        body.item_code,
         body.description,
-        body.item_type as _,
+        body.item_type,
         body.uom_id,
+        body.fda_required,
     )
     .fetch_one(&state.db)
     .await?;
@@ -170,11 +182,8 @@ pub async fn create_item(
 pub async fn list_suppliers(State(state): State<AppState>) -> Result<Json<Vec<Supplier>>> {
     let rows = sqlx::query_as!(
         Supplier,
-        r#"SELECT id, name, country_id,
-                  supplier_type AS "supplier_type: _",
-                  category, lead_time_days, is_active
-           FROM suppliers
-           ORDER BY name"#
+        "SELECT id, name, supplier_type, country_id, email, phone, address, payment_terms, created_at
+         FROM suppliers ORDER BY name"
     )
     .fetch_all(&state.db)
     .await?;
@@ -188,17 +197,17 @@ pub async fn create_supplier(
     let id = Uuid::new_v4();
     let row = sqlx::query_as!(
         Supplier,
-        r#"INSERT INTO suppliers (id, name, country_id, supplier_type, category, lead_time_days, is_active)
-           VALUES ($1, $2, $3, $4, $5, $6, TRUE)
-           RETURNING id, name, country_id,
-                     supplier_type AS "supplier_type: _",
-                     category, lead_time_days, is_active"#,
+        "INSERT INTO suppliers (id, name, supplier_type, country_id, email, phone, address, payment_terms)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+         RETURNING id, name, supplier_type, country_id, email, phone, address, payment_terms, created_at",
         id,
         body.name,
+        body.supplier_type,
         body.country_id,
-        body.supplier_type as _,
-        body.category,
-        body.lead_time_days,
+        body.email,
+        body.phone,
+        body.address,
+        body.payment_terms,
     )
     .fetch_one(&state.db)
     .await?;
@@ -215,10 +224,76 @@ pub async fn list_item_suppliers(
 ) -> Result<Json<Vec<ItemSupplier>>> {
     let rows = sqlx::query_as!(
         ItemSupplier,
-        "SELECT id, item_id, supplier_id, is_preferred FROM item_suppliers WHERE item_id = $1",
+        "SELECT id, item_id, supplier_id, supplier_item_code, lead_time_days, unit_cost, preferred
+         FROM item_supplier WHERE item_id = $1",
         item_id
     )
     .fetch_all(&state.db)
     .await?;
     Ok(Json(rows))
+}
+
+pub async fn create_item_supplier(
+    State(state): State<AppState>,
+    Path(item_id): Path<Uuid>,
+    Json(body): Json<CreateItemSupplier>,
+) -> Result<(StatusCode, Json<ItemSupplier>)> {
+    let id = Uuid::new_v4();
+    let row = sqlx::query_as!(
+        ItemSupplier,
+        "INSERT INTO item_supplier (id, item_id, supplier_id, supplier_item_code, lead_time_days, unit_cost, preferred)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)
+         RETURNING id, item_id, supplier_id, supplier_item_code, lead_time_days, unit_cost, preferred",
+        id,
+        item_id,
+        body.supplier_id,
+        body.supplier_item_code,
+        body.lead_time_days,
+        body.unit_cost,
+        body.preferred,
+    )
+    .fetch_one(&state.db)
+    .await?;
+    Ok((StatusCode::CREATED, Json(row)))
+}
+
+// ---------------------------------------------------------------------------
+// Item-UOM Conversions
+// ---------------------------------------------------------------------------
+
+pub async fn list_item_uom_conversions(
+    State(state): State<AppState>,
+    Path(item_id): Path<Uuid>,
+) -> Result<Json<Vec<ItemUomConversion>>> {
+    let rows = sqlx::query_as!(
+        ItemUomConversion,
+        "SELECT id, item_id, from_uom_id, to_uom_id, conversion_factor
+         FROM item_uom_conversions WHERE item_id = $1",
+        item_id
+    )
+    .fetch_all(&state.db)
+    .await?;
+    Ok(Json(rows))
+}
+
+pub async fn create_item_uom_conversion(
+    State(state): State<AppState>,
+    Path(item_id): Path<Uuid>,
+    Json(body): Json<CreateItemUomConversion>,
+) -> Result<(StatusCode, Json<ItemUomConversion>)> {
+    let id = Uuid::new_v4();
+    let row = sqlx::query_as!(
+        ItemUomConversion,
+        "INSERT INTO item_uom_conversions (id, item_id, from_uom_id, to_uom_id, conversion_factor)
+         VALUES ($1, $2, $3, $4, $5)
+         RETURNING id, item_id, from_uom_id, to_uom_id, conversion_factor",
+        id,
+        item_id,
+        body.from_uom_id,
+        body.to_uom_id,
+        body.conversion_factor,
+    )
+    .fetch_one(&state.db)
+    .await?;
+    Ok((StatusCode::CREATED, Json(row)))
 }

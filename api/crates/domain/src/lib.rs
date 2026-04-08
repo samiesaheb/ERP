@@ -1,4 +1,5 @@
 pub mod auth;
+pub mod artwork;
 pub mod bom;
 pub mod dashboard;
 pub mod finance;
@@ -7,29 +8,70 @@ pub mod masters;
 pub mod procurement;
 pub mod production;
 pub mod sales;
+pub mod shipments;
 
 // ---------------------------------------------------------------------------
-// Convenience re-exports so callers can do `domain::SalesOrder` etc.
+// Convenience re-exports
 // ---------------------------------------------------------------------------
 
 pub use auth::{Claims, LoginRequest, LoginResponse};
-pub use bom::{Bom, BomExplosionLine, BomExplosionResult, BomLine, BomStatus, CreateBom, CreateBomLine};
+
+pub use artwork::{
+    Artwork, CreateArtwork, UpdateArtwork,
+    FdaDocument, CreateFdaDocument,
+    FdaRegistration, CreateFdaRegistration, UpdateFdaRegistration,
+};
+
+pub use bom::{
+    Bom, CreateBom,
+    BomLine, CreateBomLine,
+    BomExplosionLine, BomExplosionResult,
+};
+
 pub use dashboard::{DashboardData, DashboardKpis, PipelineStage};
-pub use finance::{CreateInvoice, CreatePayment, Invoice, InvoiceStatus, Payment};
-pub use inventory::{CreateInventoryTxn, Inventory, InventoryTxn, InventoryTxnType, InventoryWithAlert};
+
+pub use finance::{
+    Invoice, CreateInvoice, UpdateInvoice,
+    InvoiceLine, CreateInvoiceLine,
+    Payment, CreatePayment,
+};
+
+pub use inventory::{
+    Inventory, InventoryWithItem,
+    InventoryTransaction, CreateInventoryTransaction,
+};
+
 pub use masters::{
-    Country, CreateCustomer, CreateItem, CreateSupplier, Customer, CustomerType, Item, ItemSupplier,
-    ItemType, Supplier, SupplierType, Uom, UomConversion,
+    Country, CustomerType,
+    Customer, CreateCustomer,
+    Uom,
+    Supplier, CreateSupplier,
+    Item, CreateItem,
+    ItemUomConversion, CreateItemUomConversion,
+    ItemSupplier, CreateItemSupplier,
 };
+
 pub use procurement::{
-    CreateGrn, CreateGrnLine, CreatePoLine, CreatePurchaseOrder, Grn, GrnLine, PoLine, PoStatus,
-    PurchaseOrder, QcStatus,
+    PurchaseOrder, CreatePurchaseOrder, UpdatePurchaseOrder,
+    PurchaseOrderLine, CreatePurchaseOrderLine,
+    Receipt, CreateReceipt,
+    ReceiptLine, CreateReceiptLine,
 };
+
 pub use production::{
-    BatchStage, BatchStatus, CreateItemManagementTxn, CreateManufacturingOrder, ItemManagementTxn,
-    ItemMgmtTxnType, ManufacturingOrder, MoStatus, ProductionBatch, UpdateProductionBatch,
+    ManufacturingOrder, CreateManufacturingOrder, UpdateManufacturingOrder,
+    ProductionBatch, UpdateProductionBatch,
+    BatchComponentIssue, CreateBatchComponentIssue,
+    ProductionPlan, CreateProductionPlan,
 };
+
 pub use sales::{
-    ArtworkDoc, ArtworkStatus, CreateArtworkDoc, CreateSalesOrder, FdaStatus, SalesOrder,
-    SalesOrderStatus, UpdateSalesOrder,
+    SalesOrder, CreateSalesOrder, UpdateSalesOrder,
+    SalesOrderLine, CreateSalesOrderLine,
+};
+
+pub use shipments::{
+    Shipment, CreateShipment, UpdateShipment,
+    ShipmentLine, CreateShipmentLine,
+    ShippingDocument, CreateShippingDocument,
 };

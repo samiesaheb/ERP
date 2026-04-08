@@ -1,0 +1,58 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, item_id, supplier_id, supplier_item_code, lead_time_days, unit_cost, preferred\n         FROM item_supplier WHERE item_id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "item_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "supplier_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 3,
+        "name": "supplier_item_code",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "lead_time_days",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 5,
+        "name": "unit_cost",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 6,
+        "name": "preferred",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      false
+    ]
+  },
+  "hash": "6a7f529bb1a05092b65e3b1731e7ce3b5d5cb5deb292a5e4e7a15cd98d9dadac"
+}

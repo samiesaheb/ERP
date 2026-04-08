@@ -7,3 +7,32 @@
 * {
   box-sizing: border-box;
 }
+
+/* Thin scrollbar */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #d4d4d4; border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: #a3a3a3; }
+
+/* ── Spring hover — matches HTML prototype cubic-bezier ───────────── */
+.spring-card {
+  transition:
+    transform 0.17s cubic-bezier(0.34, 1.56, 0.64, 1),
+    border-color 0.13s ease,
+    background-color 0.13s ease,
+    box-shadow 0.13s ease;
+}
+.spring-card:hover {
+  transform: scale(1.025);
+}
+.spring-card-sm:hover {
+  transform: scale(1.02);
+}
+
+/* ── Module card states ───────────────────────────────────────────── */
+.mod-active {
+  border-color: #93c5fd !important; /* blue-300 */
+  background-color: #eff6ff !important; /* blue-50 */
+}
+.mod-crit  { border-color: #fca5a5 !important; } /* red-300 */
+.mod-warn  { border-color: #fcd34d !important; } /* amber-300 */

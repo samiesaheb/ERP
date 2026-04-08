@@ -1,0 +1,95 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, order_number, customer_id, country_id, status, artwork_status,\n                        fda_required, fda_status, total_pieces, order_date, required_date, notes, created_at\n                 FROM sales_orders\n                 WHERE status = $1 AND customer_id = $2\n                 ORDER BY created_at DESC",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "order_number",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "customer_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 3,
+        "name": "country_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 4,
+        "name": "status",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "artwork_status",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "fda_required",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 7,
+        "name": "fda_status",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 8,
+        "name": "total_pieces",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 9,
+        "name": "order_date",
+        "type_info": "Date"
+      },
+      {
+        "ordinal": 10,
+        "name": "required_date",
+        "type_info": "Date"
+      },
+      {
+        "ordinal": 11,
+        "name": "notes",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 12,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false
+    ]
+  },
+  "hash": "88e03796e249a8a66664c0ba4924c45558a13b1474062c915aed5e0579f608d7"
+}

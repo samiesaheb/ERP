@@ -1,0 +1,18 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO inventory_transactions\n                 (id, item_id, transaction_type, qty, uom_id, lot_number, reference_type, reference_id)\n             VALUES (gen_random_uuid(), $1, 'receipt', $2, $3, $4, 'receipt', $5)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Numeric",
+        "Uuid",
+        "Text",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "ba321ae71654a1acce106fade57e4265bdb8295bb7e0d458848b4ce36f6d67fa"
+}

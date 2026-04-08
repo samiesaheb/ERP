@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import DataTable, { Column } from '@/components/ui/DataTable';
 import Badge, { poStatusVariant } from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
@@ -14,18 +14,17 @@ const COLUMNS = (supplierMap: Record<string, string>): Column<PurchaseOrder>[] =
   { key: 'supplier_id', header: 'Supplier', render: (r) => supplierMap[r.supplier_id] ?? '—' },
   { key: 'status', header: 'Status',
     render: (r) => <Badge variant={poStatusVariant(r.status)}>{r.status}</Badge>, sortable: true },
-  { key: 'supplier_type', header: 'Type',
-    render: (r) => <Badge variant={r.supplier_type === 'international' ? 'blue' : 'green'}>{r.supplier_type}</Badge> },
-  { key: 'total_amount', header: 'Amount',
-    render: (r) => `$${Number(r.total_amount).toLocaleString()}`, sortable: true, className: 'tabular-nums' },
-  { key: 'expected_date', header: 'Expected', render: (r) => r.expected_date, sortable: true },
+  { key: 'order_date', header: 'Order Date', render: (r) => r.order_date ?? '—', sortable: true },
+  { key: 'expected_date', header: 'Expected', render: (r) => r.expected_date ?? '—', sortable: true },
+  { key: 'created_at', header: 'Created', sortable: true,
+    render: (r) => new Date(r.created_at).toLocaleDateString() },
 ];
 
 interface NewPoLine {
-  item_id: string;
+  item_id:    string;
   qty_ordered: string;
-  unit_price: string;
-  uom_id: string;
+  unit_cost:  string;
+  uom_id:     string;
 }
 
 export default function PurchaseOrdersClient({
@@ -38,17 +37,26 @@ export default function PurchaseOrdersClient({
   suppliers: Supplier[];
 }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [open, setOpen] = useState(false);
   const [supplierId, setSupplierId] = useState('');
+
+  useEffect(() => {
+    if (searchParams.get('new') === '1') {
+      setOpen(true);
+      router.replace('/purchase-orders', { scroll: false });
+    }
+  }, [searchParams, router]);
+
   const [expectedDate, setExpectedDate] = useState('');
   const [lines, setLines] = useState<NewPoLine[]>([
-    { item_id: '', qty_ordered: '', unit_price: '', uom_id: '' },
+    { item_id: '', qty_ordered: '', unit_cost: '', uom_id: '' },
   ]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   function addLine() {
-    setLines([...lines, { item_id: '', qty_ordered: '', unit_price: '', uom_id: '' }]);
+    setLines([...lines, { item_id: '', qty_ordered: '', unit_cost: '', uom_id: '' }]);
   }
 
   function updateLine(idx: number, field: keyof NewPoLine, value: string) {
@@ -62,7 +70,14 @@ export default function PurchaseOrdersClient({
     try {
       await clientFetch('/api/v1/purchase-orders', {
         method: 'POST',
-        body: JSON.stringify({ supplier_id: supplierId, expected_date: expectedDate, lines }),
+        body: JSON.stringify({
+          supplier_id:   supplierId,
+          expected_date: expectedDate || null,
+          lines: lines.map((l) => ({
+            ...l,
+            unit_cost: l.unit_cost || null,
+          })),
+        }),
       });
       setOpen(false);
       router.refresh();
@@ -75,12 +90,21 @@ export default function PurchaseOrdersClient({
 
   return (
     <>
-      <div className="flex justify-end mb-3">
+      <div className="flex justify-start mb-3">
         <Button onClick={() => setOpen(true)}>+ New PO</Button>
       </div>
-      <div className="bg-white border-[0.5px] border-neutral-200 rounded-lg overflow-hidden">
-        <DataTable columns={COLUMNS(supplierMap)} data={orders}
-          onRowClick={(row) => router.push(`/purchase-orders/${row.id}`)} />
+      <div className="bg-white border-[0.5px] border-neutral-200 rounded-xl overflow-hidden">
+        <DataTable
+          columns={COLUMNS(supplierMap)}
+          data={orders}
+          onRowClick={(row) => router.push(`/purchase-orders/${row.id}`)}
+          actions={(row) => [
+            { label: 'View PO',    onClick: () => router.push(`/purchase-orders/${row.id}`) },
+            { label: 'Receive',    onClick: () => router.push('/receiving') },
+            { label: 'Edit',       onClick: () => {} },
+            { label: 'Cancel PO',  onClick: () => {}, variant: 'danger' },
+          ]}
+        />
       </div>
 
       <SlideOver open={open} onClose={() => setOpen(false)} title="New Purchase Order">
@@ -95,7 +119,7 @@ export default function PurchaseOrdersClient({
           </div>
           <div>
             <label className="block text-xs font-medium text-neutral-600 mb-1">Expected Date</label>
-            <input required type="date" value={expectedDate} onChange={(e) => setExpectedDate(e.target.value)}
+            <input type="date" value={expectedDate} onChange={(e) => setExpectedDate(e.target.value)}
               className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded" />
           </div>
 
@@ -112,8 +136,8 @@ export default function PurchaseOrdersClient({
                 <input required placeholder="Qty" type="number" value={line.qty_ordered}
                   onChange={(e) => updateLine(idx, 'qty_ordered', e.target.value)}
                   className="px-2 py-1.5 text-xs border-[0.5px] border-neutral-300 rounded" />
-                <input required placeholder="Unit Price" type="number" value={line.unit_price}
-                  onChange={(e) => updateLine(idx, 'unit_price', e.target.value)}
+                <input placeholder="Unit Cost" type="number" value={line.unit_cost}
+                  onChange={(e) => updateLine(idx, 'unit_cost', e.target.value)}
                   className="px-2 py-1.5 text-xs border-[0.5px] border-neutral-300 rounded" />
                 <input required placeholder="UOM UUID" value={line.uom_id}
                   onChange={(e) => updateLine(idx, 'uom_id', e.target.value)}

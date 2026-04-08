@@ -7,38 +7,53 @@ import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
 import SlideOver from '@/components/ui/SlideOver';
 import { clientFetch } from '@/lib/client-api';
-import type { Item, Uom, ItemType } from '@/lib/types';
+import type { Item, Uom } from '@/lib/types';
 
-const ITEM_TYPE_LABELS: Record<ItemType, string> = {
-  fg: 'Finished Good',
-  raw_mat: 'Raw Material',
-  pack_mat: 'Packaging',
+const ITEM_TYPE_LABELS: Record<string, string> = {
+  FG:      'Finished Good',
+  RawMat:  'Raw Material',
+  PackMat: 'Packaging',
 };
 
-const ITEM_TYPE_VARIANTS: Record<ItemType, 'green' | 'blue' | 'amber'> = {
-  fg: 'green',
-  raw_mat: 'blue',
-  pack_mat: 'amber',
+const ITEM_TYPE_VARIANTS: Record<string, 'green' | 'blue' | 'amber'> = {
+  FG:      'green',
+  RawMat:  'blue',
+  PackMat: 'amber',
 };
 
 const COLUMNS = (uomMap: Record<string, string>): Column<Item>[] => [
-  { key: 'code', header: 'Code', sortable: true },
+  { key: 'item_code', header: 'Code', sortable: true },
   { key: 'description', header: 'Description', sortable: true },
   {
     key: 'item_type',
     header: 'Type',
     render: (r) => (
-      <Badge variant={ITEM_TYPE_VARIANTS[r.item_type]}>{ITEM_TYPE_LABELS[r.item_type]}</Badge>
+      <Badge variant={ITEM_TYPE_VARIANTS[r.item_type] ?? 'gray'}>
+        {ITEM_TYPE_LABELS[r.item_type] ?? r.item_type}
+      </Badge>
     ),
     sortable: true,
   },
   { key: 'uom_id', header: 'UOM', render: (r) => uomMap[r.uom_id] ?? '—' },
+  {
+    key: 'fda_required',
+    header: 'FDA',
+    render: (r) => (
+      <Badge variant={r.fda_required ? 'amber' : 'gray'}>{r.fda_required ? 'Required' : '—'}</Badge>
+    ),
+  },
   {
     key: 'is_active',
     header: 'Active',
     render: (r) => (
       <Badge variant={r.is_active ? 'green' : 'gray'}>{r.is_active ? 'Active' : 'Inactive'}</Badge>
     ),
+  },
+  {
+    key: 'created_at',
+    header: 'Created',
+    sortable: true,
+    render: (r) => new Date(r.created_at).toLocaleDateString(),
   },
 ];
 
@@ -53,7 +68,13 @@ export default function ItemsClient({
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ code: '', description: '', item_type: 'fg' as ItemType, uom_id: '' });
+  const [form, setForm] = useState({
+    item_code:    '',
+    description:  '',
+    item_type:    'FG',
+    uom_id:       '',
+    fda_required: false,
+  });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -74,18 +95,27 @@ export default function ItemsClient({
 
   return (
     <>
-      <div className="flex justify-end mb-3">
+      <div className="flex justify-start mb-3">
         <Button onClick={() => setOpen(true)}>+ New Item</Button>
       </div>
-      <div className="bg-white border-[0.5px] border-neutral-200 rounded-lg overflow-hidden">
-        <DataTable columns={COLUMNS(uomMap)} data={items} />
+      <div className="bg-white border-[0.5px] border-neutral-200 rounded-xl overflow-hidden">
+        <DataTable
+          columns={COLUMNS(uomMap)}
+          data={items}
+          actions={(row) => [
+            { label: 'Edit',      onClick: () => {} },
+            { label: 'View BOM',  onClick: () => router.push('/bom') },
+            { label: 'Deactivate', onClick: () => {}, variant: 'danger' },
+          ]}
+        />
       </div>
 
       <SlideOver open={open} onClose={() => setOpen(false)} title="New Item">
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-medium text-neutral-600 mb-1">Code</label>
-            <input required value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })}
+            <label className="block text-xs font-medium text-neutral-600 mb-1">Item Code</label>
+            <input required value={form.item_code} onChange={(e) => setForm({ ...form, item_code: e.target.value })}
+              placeholder="e.g. FG-001"
               className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded" />
           </div>
           <div>
@@ -95,11 +125,11 @@ export default function ItemsClient({
           </div>
           <div>
             <label className="block text-xs font-medium text-neutral-600 mb-1">Item Type</label>
-            <select value={form.item_type} onChange={(e) => setForm({ ...form, item_type: e.target.value as ItemType })}
+            <select value={form.item_type} onChange={(e) => setForm({ ...form, item_type: e.target.value })}
               className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded bg-white">
-              <option value="fg">Finished Good</option>
-              <option value="raw_mat">Raw Material</option>
-              <option value="pack_mat">Packaging Material</option>
+              <option value="FG">Finished Good</option>
+              <option value="RawMat">Raw Material</option>
+              <option value="PackMat">Packaging Material</option>
             </select>
           </div>
           <div>
@@ -107,8 +137,13 @@ export default function ItemsClient({
             <select value={form.uom_id} onChange={(e) => setForm({ ...form, uom_id: e.target.value })}
               required className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded bg-white">
               <option value="">Select UOM</option>
-              {uoms.map((u) => <option key={u.id} value={u.id}>{u.name} ({u.code})</option>)}
+              {uoms.map((u) => <option key={u.id} value={u.id}>{u.code}{u.description ? ` — ${u.description}` : ''}</option>)}
             </select>
+          </div>
+          <div className="flex items-center gap-2">
+            <input type="checkbox" id="fda_req" checked={form.fda_required}
+              onChange={(e) => setForm({ ...form, fda_required: e.target.checked })} />
+            <label htmlFor="fda_req" className="text-sm text-neutral-700">FDA registration required</label>
           </div>
           {error && <p className="text-xs text-red-600 bg-red-50 border-[0.5px] border-red-200 rounded px-3 py-2">{error}</p>}
           <div className="flex gap-2 pt-2">

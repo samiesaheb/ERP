@@ -1,0 +1,20 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT COUNT(*) FROM manufacturing_orders WHERE status::TEXT IN ('planned', 'in_progress')",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "count",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "27dae731ce167300eb7e2fd58fa22aba15adf37831d5e29fa314dc1d5a89e2a0"
+}

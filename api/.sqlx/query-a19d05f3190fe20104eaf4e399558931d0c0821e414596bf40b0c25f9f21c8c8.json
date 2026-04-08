@@ -1,0 +1,100 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE sales_orders\n         SET status = $2, artwork_status = $3, fda_status = $4,\n             total_pieces = $5, required_date = $6, notes = $7\n         WHERE id = $1\n         RETURNING id, order_number, customer_id, country_id, status, artwork_status,\n                   fda_required, fda_status, total_pieces, order_date, required_date, notes, created_at",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "order_number",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "customer_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 3,
+        "name": "country_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 4,
+        "name": "status",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "artwork_status",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "fda_required",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 7,
+        "name": "fda_status",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 8,
+        "name": "total_pieces",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 9,
+        "name": "order_date",
+        "type_info": "Date"
+      },
+      {
+        "ordinal": 10,
+        "name": "required_date",
+        "type_info": "Date"
+      },
+      {
+        "ordinal": 11,
+        "name": "notes",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 12,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Text",
+        "Text",
+        "Numeric",
+        "Date",
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false
+    ]
+  },
+  "hash": "a19d05f3190fe20104eaf4e399558931d0c0821e414596bf40b0c25f9f21c8c8"
+}

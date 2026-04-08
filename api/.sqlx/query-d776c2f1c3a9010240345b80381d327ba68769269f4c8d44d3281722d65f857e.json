@@ -1,0 +1,74 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT i.id, i.item_id,\n                  it.item_code,\n                  it.description,\n                  i.location,\n                  i.lot_number,\n                  i.qty_available,\n                  i.qty_reserved,\n                  i.uom_id,\n                  i.last_updated\n           FROM inventory i\n           JOIN items it ON it.id = i.item_id\n           ORDER BY it.item_code",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "item_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "item_code",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "description",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "location",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "lot_number",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "qty_available",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 7,
+        "name": "qty_reserved",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 8,
+        "name": "uom_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 9,
+        "name": "last_updated",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "d776c2f1c3a9010240345b80381d327ba68769269f4c8d44d3281722d65f857e"
+}

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import DropdownMenu, { MenuItem } from './DropdownMenu';
 
 export interface Column<T> {
   key: keyof T | string;
@@ -14,6 +15,8 @@ interface DataTableProps<T extends { id: string }> {
   columns: Column<T>[];
   data: T[];
   onRowClick?: (row: T) => void;
+  /** Return an array of menu items for each row to render a three-dot actions column. */
+  actions?: (row: T) => MenuItem[];
 }
 
 type SortDir = 'asc' | 'desc';
@@ -26,6 +29,7 @@ export default function DataTable<T extends { id: string }>({
   columns,
   data,
   onRowClick,
+  actions,
 }: DataTableProps<T>) {
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>('asc');
@@ -53,6 +57,8 @@ export default function DataTable<T extends { id: string }>({
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b-[0.5px] border-neutral-200 bg-neutral-50">
+            {/* Actions column header — blank, fixed width */}
+            {actions && <th className="w-10 px-2 py-2.5" />}
             {columns.map((col) => (
               <th
                 key={String(col.key)}
@@ -74,7 +80,7 @@ export default function DataTable<T extends { id: string }>({
           {sorted.length === 0 && (
             <tr>
               <td
-                colSpan={columns.length}
+                colSpan={columns.length + (actions ? 1 : 0)}
                 className="px-4 py-8 text-center text-sm text-neutral-400"
               >
                 No records found
@@ -85,9 +91,16 @@ export default function DataTable<T extends { id: string }>({
             <tr
               key={row.id}
               onClick={() => onRowClick?.(row)}
-              className={`border-b-[0.5px] border-neutral-100 hover:bg-neutral-50 transition-colors
+              className={`border-b-[0.5px] border-neutral-100 hover:bg-neutral-50 transition-colors group
                           ${onRowClick ? 'cursor-pointer' : ''}`}
             >
+              {actions && (
+                <td className="px-2 py-3">
+                  <div className="opacity-0 group-hover:opacity-100 transition-opacity flex justify-start">
+                    <DropdownMenu items={actions(row)} align="left" />
+                  </div>
+                </td>
+              )}
               {columns.map((col) => (
                 <td
                   key={String(col.key)}

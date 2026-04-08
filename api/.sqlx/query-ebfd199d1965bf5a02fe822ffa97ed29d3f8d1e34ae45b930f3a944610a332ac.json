@@ -1,0 +1,57 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO shipment_lines (id, shipment_id, item_id, batch_id, qty_shipped, uom_id)\n         VALUES ($1, $2, $3, $4, $5, $6)\n         RETURNING id, shipment_id, item_id, batch_id, qty_shipped, uom_id",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "shipment_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "item_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 3,
+        "name": "batch_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 4,
+        "name": "qty_shipped",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 5,
+        "name": "uom_id",
+        "type_info": "Uuid"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Numeric",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "ebfd199d1965bf5a02fe822ffa97ed29d3f8d1e34ae45b930f3a944610a332ac"
+}

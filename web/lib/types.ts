@@ -7,12 +7,14 @@
 export interface CustomerType {
   id: string;
   name: string;
+  created_at: string;
 }
 
 export interface Country {
   id: string;
   name: string;
   code: string;
+  created_at: string;
 }
 
 export interface Customer {
@@ -20,77 +22,122 @@ export interface Customer {
   name: string;
   customer_type_id: string;
   country_id: string;
+  email: string | null;
+  phone: string | null;
+  address: string | null;
   created_at: string;
 }
 
 export interface Uom {
   id: string;
-  name: string;
   code: string;
+  description: string | null;
 }
-
-export interface UomConversion {
-  id: string;
-  from_uom_id: string;
-  to_uom_id: string;
-  item_id: string | null;
-  factor: string;
-}
-
-export type ItemType = 'fg' | 'raw_mat' | 'pack_mat';
 
 export interface Item {
   id: string;
-  code: string;
+  item_code: string;
   description: string;
-  item_type: ItemType;
+  item_type: string;   // 'FG' | 'RawMat' | 'PackMat'
   uom_id: string;
+  fda_required: boolean;
   is_active: boolean;
+  created_at: string;
 }
-
-export type SupplierType = 'international' | 'local';
 
 export interface Supplier {
   id: string;
   name: string;
+  supplier_type: string;   // 'local' | 'international'
   country_id: string;
-  supplier_type: SupplierType;
-  category: string;
-  lead_time_days: number;
-  is_active: boolean;
+  email: string | null;
+  phone: string | null;
+  address: string | null;
+  payment_terms: string | null;
+  created_at: string;
 }
 
 export interface ItemSupplier {
   id: string;
   item_id: string;
   supplier_id: string;
-  is_preferred: boolean;
+  supplier_item_code: string | null;
+  lead_time_days: number | null;
+  unit_cost: string | null;
+  preferred: boolean;
+}
+
+export interface ItemUomConversion {
+  id: string;
+  item_id: string;
+  from_uom_id: string;
+  to_uom_id: string;
+  conversion_factor: string;
 }
 
 // ---------------------------------------------------------------------------
 // Sales
 // ---------------------------------------------------------------------------
 
-export type SalesOrderStatus = 'artwork' | 'planning' | 'production' | 'packing' | 'shipped';
-export type ArtworkStatus = 'draft' | 'in_review' | 'approved';
-export type FdaStatus = 'pending' | 'submitted' | 'approved';
-
 export interface SalesOrder {
   id: string;
   order_number: string;
   customer_id: string;
   country_id: string;
-  status: SalesOrderStatus;
-  total_pieces: string;
-  artwork_status: ArtworkStatus;
+  status: string;          // draft / confirmed / in_production / shipped / invoiced / cancelled
+  artwork_status: string | null;
   fda_required: boolean;
-  fda_status: FdaStatus | null;
+  fda_status: string | null;
+  total_pieces: string | null;
+  order_date: string | null;
+  required_date: string | null;
+  notes: string | null;
   created_at: string;
 }
 
-export interface ArtworkDoc {
+export interface SalesOrderLine {
   id: string;
   sales_order_id: string;
+  item_id: string;
+  qty_ordered: string;
+  uom_id: string;
+  unit_price: string | null;
+  notes: string | null;
+}
+
+// ---------------------------------------------------------------------------
+// Artwork & FDA
+// ---------------------------------------------------------------------------
+
+export interface Artwork {
+  id: string;
+  sales_order_id: string;
+  item_id: string;
+  version: number;
+  status: string;   // draft / in_review / approved / rejected
+  file_url: string | null;
+  submitted_at: string | null;
+  approved_at: string | null;
+  notes: string | null;
+  created_at: string;
+}
+
+export interface FdaRegistration {
+  id: string;
+  sales_order_id: string;
+  item_id: string;
+  registration_number: string | null;
+  status: string;   // pending / submitted / approved / rejected
+  submitted_at: string | null;
+  approved_at: string | null;
+  expiry_date: string | null;
+  notes: string | null;
+  created_at: string;
+}
+
+export interface FdaDocument {
+  id: string;
+  fda_registration_id: string;
   doc_type: string;
   file_url: string;
   uploaded_at: string;
@@ -100,14 +147,12 @@ export interface ArtworkDoc {
 // BOM
 // ---------------------------------------------------------------------------
 
-export type BomStatus = 'draft' | 'active' | 'under_review';
-
 export interface Bom {
   id: string;
-  code: string;
-  item_id: string;
+  finished_good_id: string;
+  description: string | null;
   version: number;
-  status: BomStatus;
+  is_active: boolean;
   created_at: string;
 }
 
@@ -115,9 +160,9 @@ export interface BomLine {
   id: string;
   bom_id: string;
   component_item_id: string;
-  qty_per_batch: string;
+  qty_required: string;
   uom_id: string;
-  line_order: number;
+  notes: string | null;
 }
 
 export interface BomExplosionLine {
@@ -133,7 +178,6 @@ export interface BomExplosionLine {
 
 export interface BomExplosionResult {
   bom_id: string;
-  bom_code: string;
   fg_item_id: string;
   target_qty: string;
   lines: BomExplosionLine[];
@@ -143,77 +187,78 @@ export interface BomExplosionResult {
 // Procurement
 // ---------------------------------------------------------------------------
 
-export type PoStatus = 'ordered' | 'confirmed' | 'in_transit' | 'received';
-export type QcStatus = 'pending' | 'passed' | 'failed' | 'hold';
-
 export interface PurchaseOrder {
   id: string;
   po_number: string;
   supplier_id: string;
-  status: PoStatus;
-  expected_date: string;
-  total_amount: string;
-  supplier_type: SupplierType;
+  manufacturing_order_id: string | null;
+  status: string;   // draft / sent / confirmed / partially_received / received / cancelled
+  order_date: string | null;
+  expected_date: string | null;
+  notes: string | null;
   created_at: string;
 }
 
-export interface PoLine {
+export interface PurchaseOrderLine {
   id: string;
-  po_id: string;
+  purchase_order_id: string;
   item_id: string;
   qty_ordered: string;
   qty_received: string;
-  unit_price: string;
   uom_id: string;
+  unit_cost: string | null;
 }
 
-export interface Grn {
+export interface Receipt {
   id: string;
-  grn_number: string;
-  po_id: string;
-  received_date: string;
-  created_at: string;
+  receipt_number: string;
+  purchase_order_id: string;
+  received_by: string | null;
+  received_at: string;
+  notes: string | null;
 }
 
-export interface GrnLine {
+export interface ReceiptLine {
   id: string;
-  grn_id: string;
+  receipt_id: string;
   po_line_id: string;
   item_id: string;
   qty_received: string;
-  batch_number: string;
-  qc_status: QcStatus;
-  into_stock: boolean;
+  uom_id: string;
+  lot_number: string | null;
+  expiry_date: string | null;
+  qc_status: string;   // pending / passed / failed
 }
 
 // ---------------------------------------------------------------------------
 // Inventory
 // ---------------------------------------------------------------------------
 
-export type InventoryTxnType = 'receipt' | 'issue' | 'return' | 'conversion' | 'loss' | 'adjustment';
-
-export interface Inventory {
+export interface InventoryWithItem {
   id: string;
   item_id: string;
-  qty_on_hand: string;
-  qty_reserved: string;
-  qty_available: string;
-  updated_at: string;
-}
-
-export interface InventoryWithAlert extends Inventory {
   item_code: string;
-  item_description: string;
+  description: string;
+  location: string | null;
+  lot_number: string | null;
+  qty_available: string;
+  qty_reserved: string;
+  uom_id: string;
+  last_updated: string;
   low_stock: boolean;
 }
 
-export interface InventoryTxn {
+export interface InventoryTransaction {
   id: string;
   item_id: string;
-  txn_type: InventoryTxnType;
+  transaction_type: string;   // receipt / issue / return / conversion / loss / adjustment
+  reference_type: string | null;
+  reference_id: string | null;
   qty: string;
-  ref_doc_type: string | null;
-  ref_doc_id: string | null;
+  uom_id: string | null;
+  lot_number: string | null;
+  notes: string | null;
+  created_by: string | null;
   created_at: string;
 }
 
@@ -221,65 +266,150 @@ export interface InventoryTxn {
 // Production
 // ---------------------------------------------------------------------------
 
-export type MoStatus = 'planned' | 'running' | 'packing' | 'done' | 'on_hold';
-export type BatchStage = 'bulk' | 'formulation' | 'filling' | 'packing' | 'loading';
-export type BatchStatus = 'running' | 'delayed' | 'done';
-export type ItemMgmtTxnType = 'issue' | 'return' | 'conversion' | 'loss' | 'receipt';
-
 export interface ManufacturingOrder {
   id: string;
   mo_number: string;
-  sales_order_id: string;
+  sales_order_id: string | null;
   item_id: string;
   bom_id: string;
-  target_qty: string;
-  status: MoStatus;
+  status: string;   // draft / planned / in_progress / completed / cancelled
+  qty_planned: string;
+  qty_produced: string;
+  uom_id: string;
+  planned_start: string | null;
+  planned_end: string | null;
+  actual_start: string | null;
+  actual_end: string | null;
+  notes: string | null;
   created_at: string;
 }
 
 export interface ProductionBatch {
   id: string;
   batch_number: string;
-  mo_id: string;
-  stage: BatchStage;
-  pct_complete: string;
-  status: BatchStatus;
+  manufacturing_order_id: string;
+  bom_id: string;
+  status: string;   // planned / bulk_production / filling / packing / completed
+  qty_bulk_produced: string | null;
+  qty_filled: string | null;
+  qty_packed: string | null;
+  uom_id: string;
+  bulk_start: string | null;
+  bulk_end: string | null;
+  fill_start: string | null;
+  fill_end: string | null;
+  pack_start: string | null;
+  pack_end: string | null;
+  notes: string | null;
   created_at: string;
 }
 
-export interface ItemManagementTxn {
+export interface BatchComponentIssue {
   id: string;
   batch_id: string;
-  txn_type: ItemMgmtTxnType;
   item_id: string;
-  qty: string;
+  qty_issued: string;
+  qty_returned: string;
+  qty_loss: string;
+  uom_id: string;
+  lot_number: string | null;
+  issued_at: string;
+}
+
+export interface ProductionPlan {
+  id: string;
+  plan_date: string;
+  manufacturing_order_id: string;
+  purchase_order_id: string | null;
+  planned_qty: string | null;
+  notes: string | null;
+  created_by: string | null;
+  created_at: string;
+}
+
+// ---------------------------------------------------------------------------
+// Shipments
+// ---------------------------------------------------------------------------
+
+export interface Shipment {
+  id: string;
+  shipment_number: string;
+  sales_order_id: string;
+  status: string;   // loading / dispatched / in_transit / delivered
+  carrier: string | null;
+  tracking_number: string | null;
+  loaded_at: string | null;
+  dispatched_at: string | null;
+  delivered_at: string | null;
   notes: string | null;
   created_at: string;
+}
+
+export interface ShipmentLine {
+  id: string;
+  shipment_id: string;
+  item_id: string;
+  batch_id: string | null;
+  qty_shipped: string;
+  uom_id: string;
+}
+
+export interface ShippingDocument {
+  id: string;
+  shipment_id: string;
+  doc_type: string;
+  file_url: string;
+  issued_at: string | null;
 }
 
 // ---------------------------------------------------------------------------
 // Finance
 // ---------------------------------------------------------------------------
 
-export type InvoiceStatus = 'not_due' | 'partial' | 'paid' | 'overdue';
-
 export interface Invoice {
   id: string;
   invoice_number: string;
   sales_order_id: string;
   customer_id: string;
-  amount: string;
-  due_date: string;
-  status: InvoiceStatus;
+  shipment_id: string | null;
+  status: string;   // draft / sent / partially_paid / paid / overdue / cancelled
+  issue_date: string | null;
+  due_date: string | null;
+  subtotal: string | null;
+  tax: string;
+  total: string | null;
+  currency: string;
+  notes: string | null;
   created_at: string;
+}
+
+export interface InvoiceLine {
+  id: string;
+  invoice_id: string;
+  item_id: string | null;
+  description: string | null;
+  qty: string;
+  uom_id: string;
+  unit_price: string;
+  line_total: string;
 }
 
 export interface Payment {
   id: string;
-  invoice_id: string;
-  amount_paid: string;
-  paid_at: string;
-  reference: string;
+  payment_number: string;
+  payment_type: string;   // customer / supplier
+  customer_id: string | null;
+  supplier_id: string | null;
+  invoice_id: string | null;
+  purchase_order_id: string | null;
+  amount: string;
+  currency: string;
+  payment_date: string | null;
+  method: string | null;
+  reference: string | null;
+  status: string;   // pending / cleared / failed
+  notes: string | null;
+  created_at: string;
 }
 
 // ---------------------------------------------------------------------------

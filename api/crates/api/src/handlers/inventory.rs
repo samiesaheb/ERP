@@ -3,38 +3,44 @@ use rust_decimal::Decimal;
 use uuid::Uuid;
 
 use crate::{error::Result, state::AppState};
-use domain::{CreateInventoryTxn, InventoryTxn, InventoryWithAlert};
+use domain::{CreateInventoryTransaction, InventoryTransaction, InventoryWithItem};
 
-/// Low-stock threshold (absolute qty)
 const LOW_STOCK_THRESHOLD: Decimal = rust_decimal_macros::dec!(20);
 
-pub async fn list_inventory(State(state): State<AppState>) -> Result<Json<Vec<InventoryWithAlert>>> {
+pub async fn list_inventory(
+    State(state): State<AppState>,
+) -> Result<Json<Vec<InventoryWithItem>>> {
     let rows = sqlx::query!(
         r#"SELECT i.id, i.item_id,
-                  it.code AS item_code,
-                  it.description AS item_description,
-                  i.qty_on_hand, i.qty_reserved,
-                  COALESCE(i.qty_available, 0) AS "qty_available!: Decimal",
-                  i.updated_at
+                  it.item_code,
+                  it.description,
+                  i.location,
+                  i.lot_number,
+                  i.qty_available,
+                  i.qty_reserved,
+                  i.uom_id,
+                  i.last_updated
            FROM inventory i
            JOIN items it ON it.id = i.item_id
-           ORDER BY it.code"#
+           ORDER BY it.item_code"#
     )
     .fetch_all(&state.db)
     .await?;
 
     let result = rows
         .into_iter()
-        .map(|r| InventoryWithAlert {
-            id: r.id,
-            item_id: r.item_id,
-            item_code: r.item_code,
-            item_description: r.item_description,
-            qty_on_hand: r.qty_on_hand,
-            qty_reserved: r.qty_reserved,
+        .map(|r| InventoryWithItem {
+            id:            r.id,
+            item_id:       r.item_id,
+            item_code:     r.item_code,
+            description:   r.description,
+            location:      r.location,
+            lot_number:    r.lot_number,
             qty_available: r.qty_available,
-            low_stock: r.qty_available < LOW_STOCK_THRESHOLD,
-            updated_at: r.updated_at,
+            qty_reserved:  r.qty_reserved,
+            uom_id:        r.uom_id,
+            last_updated:  r.last_updated,
+            low_stock:     r.qty_available < LOW_STOCK_THRESHOLD,
         })
         .collect();
 
@@ -43,25 +49,25 @@ pub async fn list_inventory(State(state): State<AppState>) -> Result<Json<Vec<In
 
 pub async fn transact_inventory(
     State(state): State<AppState>,
-    Json(body): Json<CreateInventoryTxn>,
-) -> Result<(StatusCode, Json<InventoryTxn>)> {
-    // Determine delta: receipts/returns add, issues/losses/adjustments may subtract
-    use domain::InventoryTxnType::*;
-    let delta: Decimal = match body.txn_type {
-        Receipt | Return => body.qty,
-        Issue | Loss | Conversion => -body.qty,
-        Adjustment => body.qty, // signed qty passed directly
+    Json(body): Json<CreateInventoryTransaction>,
+) -> Result<(StatusCode, Json<InventoryTransaction>)> {
+    let delta: Decimal = match body.transaction_type.as_str() {
+        "receipt" | "return" => body.qty,
+        "issue" | "loss" | "conversion" => -body.qty,
+        _ => body.qty, // adjustment: signed qty
     };
 
     // Upsert inventory balance
+    let uom_id = body.uom_id.unwrap_or_else(Uuid::new_v4);
     sqlx::query!(
-        r#"INSERT INTO inventory (id, item_id, qty_on_hand, qty_reserved)
-           VALUES (uuid_generate_v4(), $1, GREATEST(0::numeric, $2), 0)
+        r#"INSERT INTO inventory (id, item_id, qty_available, qty_reserved, uom_id)
+           VALUES (gen_random_uuid(), $1, GREATEST(0::numeric, $2), 0, $3)
            ON CONFLICT (item_id)
-           DO UPDATE SET qty_on_hand = GREATEST(0::numeric, inventory.qty_on_hand + $2),
-                         updated_at = NOW()"#,
+           DO UPDATE SET qty_available = GREATEST(0::numeric, inventory.qty_available + $2),
+                         last_updated = NOW()"#,
         body.item_id,
         delta,
+        uom_id,
     )
     .execute(&state.db)
     .await?;
@@ -69,21 +75,38 @@ pub async fn transact_inventory(
     // Record transaction
     let id = Uuid::new_v4();
     let row = sqlx::query_as!(
-        InventoryTxn,
-        r#"INSERT INTO inventory_txns (id, item_id, txn_type, qty, ref_doc_type, ref_doc_id)
-           VALUES ($1, $2, $3, $4, $5, $6)
-           RETURNING id, item_id,
-                     txn_type AS "txn_type: _",
-                     qty, ref_doc_type, ref_doc_id, created_at"#,
+        InventoryTransaction,
+        "INSERT INTO inventory_transactions
+             (id, item_id, transaction_type, qty, uom_id, lot_number, notes, reference_type, reference_id)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+         RETURNING id, item_id, transaction_type, reference_type, reference_id,
+                   qty, uom_id, lot_number, notes, created_by, created_at",
         id,
         body.item_id,
-        body.txn_type as _,
+        body.transaction_type,
         body.qty,
-        body.ref_doc_type,
-        body.ref_doc_id,
+        body.uom_id,
+        body.lot_number,
+        body.notes,
+        body.reference_type,
+        body.reference_id,
     )
     .fetch_one(&state.db)
     .await?;
 
     Ok((StatusCode::CREATED, Json(row)))
+}
+
+pub async fn list_inventory_transactions(
+    State(state): State<AppState>,
+) -> Result<Json<Vec<InventoryTransaction>>> {
+    let rows = sqlx::query_as!(
+        InventoryTransaction,
+        "SELECT id, item_id, transaction_type, reference_type, reference_id,
+                qty, uom_id, lot_number, notes, created_by, created_at
+         FROM inventory_transactions ORDER BY created_at DESC LIMIT 200"
+    )
+    .fetch_all(&state.db)
+    .await?;
+    Ok(Json(rows))
 }

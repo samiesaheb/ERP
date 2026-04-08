@@ -1,0 +1,22 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT COUNT(*) FROM purchase_order_lines\n         WHERE purchase_order_id = $1 AND qty_received < qty_ordered",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "count",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "25db865fcd448dd47b0e2f60793a14f32ac3ea43d52e0dc2f30cb40462dcd16b"
+}

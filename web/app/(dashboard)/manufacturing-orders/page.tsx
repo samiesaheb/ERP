@@ -1,20 +1,22 @@
-import { getManufacturingOrders, getSalesOrders, getItems } from '@/lib/api';
+import { getManufacturingOrders, getSalesOrders, getItems, getUoms, getBoms } from '@/lib/api';
 import Topbar from '@/components/layout/Topbar';
 import MoClient from './MoClient';
 
 export default async function ManufacturingOrdersPage() {
-  const [mos, sos, items] = await Promise.all([
+  const [mos, sos, items, uoms, boms] = await Promise.all([
     getManufacturingOrders(),
     getSalesOrders(),
     getItems(),
+    getUoms(),
+    getBoms(),
   ]);
-  const soMap = Object.fromEntries(sos.map((s) => [s.id, s.order_number]));
-  const itemMap = Object.fromEntries(items.map((i) => [i.id, `${i.code} — ${i.description}`]));
+  const soMap   = Object.fromEntries(sos.map((s) => [s.id, s.order_number]));
+  const itemMap = Object.fromEntries(items.map((i) => [i.id, `${i.item_code} — ${i.description}`]));
   return (
     <div>
       <Topbar title="Manufacturing Orders" />
       <div className="px-6 py-5">
-        <MoClient mos={mos} soMap={soMap} itemMap={itemMap} salesOrders={sos} items={items} />
+        <MoClient mos={mos} soMap={soMap} itemMap={itemMap} salesOrders={sos} items={items} uoms={uoms} boms={boms} />
       </div>
     </div>
   );

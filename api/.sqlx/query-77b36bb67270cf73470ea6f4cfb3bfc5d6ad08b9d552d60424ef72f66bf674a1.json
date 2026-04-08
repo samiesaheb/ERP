@@ -1,0 +1,63 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO purchase_order_lines\n             (id, purchase_order_id, item_id, qty_ordered, qty_received, uom_id, unit_cost)\n         VALUES ($1, $2, $3, $4, 0, $5, $6)\n         RETURNING id, purchase_order_id, item_id, qty_ordered, qty_received, uom_id, unit_cost",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "purchase_order_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "item_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 3,
+        "name": "qty_ordered",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 4,
+        "name": "qty_received",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 5,
+        "name": "uom_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 6,
+        "name": "unit_cost",
+        "type_info": "Numeric"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Numeric",
+        "Uuid",
+        "Numeric"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true
+    ]
+  },
+  "hash": "77b36bb67270cf73470ea6f4cfb3bfc5d6ad08b9d552d60424ef72f66bf674a1"
+}

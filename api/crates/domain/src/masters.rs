@@ -4,44 +4,52 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 // ---------------------------------------------------------------------------
-// Customer Type Master
+// Customer Type
 // ---------------------------------------------------------------------------
 
 #[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct CustomerType {
-    pub id: Uuid,
-    pub name: String,
+    pub id:         Uuid,
+    pub name:       String,
+    pub created_at: DateTime<Utc>,
 }
 
 // ---------------------------------------------------------------------------
-// Country Master
+// Country
 // ---------------------------------------------------------------------------
 
 #[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct Country {
-    pub id: Uuid,
-    pub name: String,
-    pub code: String,
+    pub id:         Uuid,
+    pub name:       String,
+    pub code:       String,    // CHAR(3), e.g. "THA"
+    pub created_at: DateTime<Utc>,
 }
 
 // ---------------------------------------------------------------------------
-// Customer Master
+// Customer
 // ---------------------------------------------------------------------------
 
 #[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct Customer {
-    pub id: Uuid,
-    pub name: String,
+    pub id:               Uuid,
+    pub name:             String,
     pub customer_type_id: Uuid,
-    pub country_id: Uuid,
-    pub created_at: DateTime<Utc>,
+    pub country_id:       Uuid,
+    pub email:            Option<String>,
+    pub phone:            Option<String>,
+    pub address:          Option<String>,
+    pub created_at:       DateTime<Utc>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CreateCustomer {
-    pub name: String,
+    pub name:             String,
     pub customer_type_id: Uuid,
-    pub country_id: Uuid,
+    pub country_id:       Uuid,
+    pub email:            Option<String>,
+    pub phone:            Option<String>,
+    pub address:          Option<String>,
 }
 
 // ---------------------------------------------------------------------------
@@ -50,91 +58,106 @@ pub struct CreateCustomer {
 
 #[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct Uom {
-    pub id: Uuid,
-    pub name: String,
-    pub code: String,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
-pub struct UomConversion {
-    pub id: Uuid,
-    pub from_uom_id: Uuid,
-    pub to_uom_id: Uuid,
-    pub item_id: Option<Uuid>,
-    pub factor: Decimal,
+    pub id:          Uuid,
+    pub code:        String,           // VARCHAR(20), e.g. "KG"
+    pub description: Option<String>,
 }
 
 // ---------------------------------------------------------------------------
-// Item Master
+// Supplier
 // ---------------------------------------------------------------------------
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, sqlx::Type)]
-#[sqlx(type_name = "item_type", rename_all = "snake_case")]
-#[serde(rename_all = "snake_case")]
-pub enum ItemType {
-    Fg,
-    RawMat,
-    PackMat,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
-pub struct Item {
-    pub id: Uuid,
-    pub code: String,
-    pub description: String,
-    pub item_type: ItemType,
-    pub uom_id: Uuid,
-    pub is_active: bool,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct CreateItem {
-    pub code: String,
-    pub description: String,
-    pub item_type: ItemType,
-    pub uom_id: Uuid,
-}
-
-// ---------------------------------------------------------------------------
-// Supplier Master
-// ---------------------------------------------------------------------------
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, sqlx::Type)]
-#[sqlx(type_name = "supplier_type", rename_all = "snake_case")]
-#[serde(rename_all = "snake_case")]
-pub enum SupplierType {
-    International,
-    Local,
-}
 
 #[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct Supplier {
-    pub id: Uuid,
-    pub name: String,
-    pub country_id: Uuid,
-    pub supplier_type: SupplierType,
-    pub category: String,
-    pub lead_time_days: i32,
-    pub is_active: bool,
+    pub id:            Uuid,
+    pub name:          String,
+    pub supplier_type: String,        // local / international
+    pub country_id:    Uuid,
+    pub email:         Option<String>,
+    pub phone:         Option<String>,
+    pub address:       Option<String>,
+    pub payment_terms: Option<String>,
+    pub created_at:    DateTime<Utc>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CreateSupplier {
-    pub name: String,
-    pub country_id: Uuid,
-    pub supplier_type: SupplierType,
-    pub category: String,
-    pub lead_time_days: i32,
+    pub name:          String,
+    pub supplier_type: String,
+    pub country_id:    Uuid,
+    pub email:         Option<String>,
+    pub phone:         Option<String>,
+    pub address:       Option<String>,
+    pub payment_terms: Option<String>,
 }
 
 // ---------------------------------------------------------------------------
-// Item-Supplier Master
+// Item
+// ---------------------------------------------------------------------------
+
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
+pub struct Item {
+    pub id:           Uuid,
+    pub item_code:    String,
+    pub description:  String,
+    pub item_type:    String,   // FG / RawMat / PackMat
+    pub uom_id:       Uuid,
+    pub fda_required: bool,
+    pub is_active:    bool,
+    pub created_at:   DateTime<Utc>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CreateItem {
+    pub item_code:    String,
+    pub description:  String,
+    pub item_type:    String,
+    pub uom_id:       Uuid,
+    #[serde(default)]
+    pub fda_required: bool,
+}
+
+// ---------------------------------------------------------------------------
+// Item-UOM Conversion
+// ---------------------------------------------------------------------------
+
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
+pub struct ItemUomConversion {
+    pub id:                Uuid,
+    pub item_id:           Uuid,
+    pub from_uom_id:       Uuid,
+    pub to_uom_id:         Uuid,
+    pub conversion_factor: Decimal,   // NUMERIC(18,6)
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CreateItemUomConversion {
+    pub from_uom_id:       Uuid,
+    pub to_uom_id:         Uuid,
+    pub conversion_factor: Decimal,
+}
+
+// ---------------------------------------------------------------------------
+// Item-Supplier
 // ---------------------------------------------------------------------------
 
 #[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct ItemSupplier {
-    pub id: Uuid,
-    pub item_id: Uuid,
-    pub supplier_id: Uuid,
-    pub is_preferred: bool,
+    pub id:                 Uuid,
+    pub item_id:            Uuid,
+    pub supplier_id:        Uuid,
+    pub supplier_item_code: Option<String>,
+    pub lead_time_days:     Option<i32>,
+    pub unit_cost:          Option<Decimal>,   // NUMERIC(18,4)
+    pub preferred:          bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CreateItemSupplier {
+    pub supplier_id:        Uuid,
+    pub supplier_item_code: Option<String>,
+    pub lead_time_days:     Option<i32>,
+    pub unit_cost:          Option<Decimal>,
+    #[serde(default)]
+    pub preferred:          bool,
 }

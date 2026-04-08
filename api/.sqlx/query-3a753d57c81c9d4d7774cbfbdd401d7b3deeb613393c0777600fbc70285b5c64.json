@@ -1,0 +1,62 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, plan_date, manufacturing_order_id, purchase_order_id,\n                planned_qty, notes, created_by, created_at\n         FROM production_plans ORDER BY plan_date DESC",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "plan_date",
+        "type_info": "Date"
+      },
+      {
+        "ordinal": 2,
+        "name": "manufacturing_order_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 3,
+        "name": "purchase_order_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 4,
+        "name": "planned_qty",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 5,
+        "name": "notes",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "created_by",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 7,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      false
+    ]
+  },
+  "hash": "3a753d57c81c9d4d7774cbfbdd401d7b3deeb613393c0777600fbc70285b5c64"
+}

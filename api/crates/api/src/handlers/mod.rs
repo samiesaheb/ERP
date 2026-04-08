@@ -1,3 +1,4 @@
+pub mod artwork;
 pub mod auth;
 pub mod bom;
 pub mod dashboard;
@@ -7,3 +8,4 @@ pub mod masters;
 pub mod procurement;
 pub mod production;
 pub mod sales;
+pub mod shipments;

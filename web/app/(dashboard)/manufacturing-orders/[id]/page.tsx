@@ -3,6 +3,7 @@ import Topbar from '@/components/layout/Topbar';
 import Badge, { moStatusVariant } from '@/components/ui/Badge';
 import { Card, CardBody } from '@/components/ui/Card';
 import Link from 'next/link';
+import StatusPanel from './StatusPanel';
 
 export default async function MoDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -12,7 +13,7 @@ export default async function MoDetailPage({ params }: { params: Promise<{ id: s
     getItems(),
   ]);
   const soMap = Object.fromEntries(sos.map((s) => [s.id, s.order_number]));
-  const itemMap = Object.fromEntries(items.map((i) => [i.id, `${i.code} — ${i.description}`]));
+  const itemMap = Object.fromEntries(items.map((i) => [i.id, `${i.item_code} — ${i.description}`]));
 
   return (
     <div>
@@ -23,9 +24,10 @@ export default async function MoDetailPage({ params }: { params: Promise<{ id: s
       <div className="px-6 py-5 grid grid-cols-3 gap-4">
         <Card>
           <CardBody className="text-sm space-y-2">
-            <div className="flex justify-between"><span className="text-neutral-500">Sales Order</span><span className="font-medium">{soMap[mo.sales_order_id]}</span></div>
+            <div className="flex justify-between"><span className="text-neutral-500">Sales Order</span><span className="font-medium">{mo.sales_order_id ? soMap[mo.sales_order_id] : '—'}</span></div>
             <div className="flex justify-between"><span className="text-neutral-500">Finished Good</span><span>{itemMap[mo.item_id]}</span></div>
-            <div className="flex justify-between"><span className="text-neutral-500">Target Qty</span><span className="tabular-nums font-medium">{Number(mo.target_qty).toLocaleString()}</span></div>
+            <div className="flex justify-between"><span className="text-neutral-500">Planned Qty</span><span className="tabular-nums font-medium">{Number(mo.qty_planned).toLocaleString()}</span></div>
+            <div className="flex justify-between"><span className="text-neutral-500">Produced</span><span className="tabular-nums">{Number(mo.qty_produced).toLocaleString()}</span></div>
           </CardBody>
         </Card>
         <Card>
@@ -35,6 +37,7 @@ export default async function MoDetailPage({ params }: { params: Promise<{ id: s
               <Badge variant={moStatusVariant(mo.status)}>{mo.status}</Badge>
             </div>
             <div className="flex justify-between"><span className="text-neutral-500">Created</span><span>{new Date(mo.created_at).toLocaleDateString()}</span></div>
+            <StatusPanel moId={mo.id} status={mo.status} />
           </CardBody>
         </Card>
       </div>

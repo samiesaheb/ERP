@@ -10,7 +10,7 @@ export default async function SuppliersPage() {
     <div>
       <Topbar title="Suppliers" />
       <div className="px-6 py-5">
-        <SuppliersClient suppliers={suppliers} countryMap={countryMap} />
+        <SuppliersClient suppliers={suppliers} countries={countries} countryMap={countryMap} />
       </div>
     </div>
   );

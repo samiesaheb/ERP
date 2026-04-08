@@ -6,19 +6,7 @@
     "parameters": {
       "Left": [
         "Uuid",
-        {
-          "Custom": {
-            "name": "invoice_status",
-            "kind": {
-              "Enum": [
-                "not_due",
-                "partial",
-                "paid",
-                "overdue"
-              ]
-            }
-          }
-        }
+        "Text"
       ]
     },
     "nullable": []

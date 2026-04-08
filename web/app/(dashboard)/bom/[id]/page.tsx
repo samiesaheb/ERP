@@ -14,13 +14,13 @@ export default async function BomDetailPage({ params }: { params: Promise<{ id: 
     getUoms(),
   ]);
   const itemMap = Object.fromEntries(items.map((i) => [i.id, i]));
-  const uomMap = Object.fromEntries(uoms.map((u) => [u.id, u.code]));
-  const fgItem = itemMap[bom.item_id];
+  const uomMap  = Object.fromEntries(uoms.map((u) => [u.id, u.code]));
+  const fgItem  = itemMap[bom.finished_good_id];
 
   return (
     <div>
       <Topbar
-        title={bom.code}
+        title={bom.description ?? `BOM v${bom.version}`}
         action={
           <Link href="/bom" className="text-xs text-neutral-500 hover:text-neutral-700">
             ← Back to BOMs
@@ -34,7 +34,7 @@ export default async function BomDetailPage({ params }: { params: Promise<{ id: 
             <div>
               <p className="text-xs text-neutral-500">Finished Good</p>
               <p className="font-medium mt-0.5">
-                {fgItem ? `${fgItem.code} — ${fgItem.description}` : bom.item_id}
+                {fgItem ? `${fgItem.item_code} — ${fgItem.description}` : bom.finished_good_id}
               </p>
             </div>
             <div>
@@ -44,8 +44,8 @@ export default async function BomDetailPage({ params }: { params: Promise<{ id: 
             <div>
               <p className="text-xs text-neutral-500">Status</p>
               <div className="mt-0.5">
-                <Badge variant={bom.status === 'active' ? 'green' : 'amber'}>
-                  {bom.status}
+                <Badge variant={bom.is_active ? 'green' : 'amber'}>
+                  {bom.is_active ? 'active' : 'inactive'}
                 </Badge>
               </div>
             </div>
@@ -63,10 +63,10 @@ export default async function BomDetailPage({ params }: { params: Promise<{ id: 
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b-[0.5px] border-neutral-200 bg-neutral-50">
-                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wide">#</th>
                   <th className="px-4 py-2.5 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wide">Component</th>
-                  <th className="px-4 py-2.5 text-right text-xs font-semibold text-neutral-500 uppercase tracking-wide">Qty / Batch</th>
+                  <th className="px-4 py-2.5 text-right text-xs font-semibold text-neutral-500 uppercase tracking-wide">Qty Required</th>
                   <th className="px-4 py-2.5 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wide">UOM</th>
+                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wide">Notes</th>
                 </tr>
               </thead>
               <tbody>
@@ -74,11 +74,10 @@ export default async function BomDetailPage({ params }: { params: Promise<{ id: 
                   const comp = itemMap[line.component_item_id];
                   return (
                     <tr key={line.id} className="border-b-[0.5px] border-neutral-100">
-                      <td className="px-4 py-3 text-neutral-400">{line.line_order}</td>
                       <td className="px-4 py-3">
                         {comp ? (
                           <div>
-                            <p className="font-medium">{comp.code}</p>
+                            <p className="font-medium">{comp.item_code}</p>
                             <p className="text-xs text-neutral-500">{comp.description}</p>
                           </div>
                         ) : (
@@ -86,9 +85,10 @@ export default async function BomDetailPage({ params }: { params: Promise<{ id: 
                         )}
                       </td>
                       <td className="px-4 py-3 text-right tabular-nums font-medium">
-                        {Number(line.qty_per_batch).toLocaleString()}
+                        {Number(line.qty_required).toLocaleString()}
                       </td>
                       <td className="px-4 py-3 text-neutral-500">{uomMap[line.uom_id] ?? '—'}</td>
+                      <td className="px-4 py-3 text-neutral-400 text-xs">{line.notes ?? '—'}</td>
                     </tr>
                   );
                 })}
