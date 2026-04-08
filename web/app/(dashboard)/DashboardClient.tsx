@@ -104,7 +104,7 @@ function LowStockCard({ items }: { items: InventoryWithItem[] }) {
       <div className="px-5 py-4 border-b-[0.5px] border-neutral-100 flex items-center gap-2">
         <DropdownMenu align="left" items={[
           { label: 'View All Inventory', onClick: () => router.push('/inventory') },
-          { label: 'Export',             onClick: () => {} },
+          { label: 'Export',             onClick: () => router.push('/inventory') },
         ]} />
         <p className="text-[10px] font-bold uppercase tracking-widest text-neutral-400">Low Stock</p>
         {alerts.length > 0 && (

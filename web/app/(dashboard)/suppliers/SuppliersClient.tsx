@@ -98,9 +98,9 @@ export default function SuppliersClient({
           columns={COLUMNS(countryMap)}
           data={suppliers}
           actions={() => [
-            { label: 'Edit',       onClick: () => {} },
-            { label: 'View Items', onClick: () => {} },
-            { label: 'Create PO',  onClick: () => {} },
+            { label: 'Edit',       onClick: () => setOpen(true) },
+            { label: 'View Items', onClick: () => router.push('/items') },
+            { label: 'Create PO',  onClick: () => router.push('/purchase-orders?new=1') },
           ]}
         />
       </div>

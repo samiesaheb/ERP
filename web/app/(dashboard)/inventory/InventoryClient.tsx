@@ -105,10 +105,9 @@ export default function InventoryClient({
           columns={COLUMNS}
           data={inventory}
           actions={(row) => [
-            { label: 'Adjust Stock',      onClick: () => setOpen(true) },
-            { label: 'View Transactions', onClick: () => {} },
-            { label: 'Create PO',         onClick: () => {} },
-            ...(row.low_stock ? [{ label: 'Mark Reviewed', onClick: () => {} }] : []),
+            { label: 'Adjust Stock',      onClick: () => { setForm((f) => ({ ...f, item_id: row.id })); setOpen(true); } },
+            { label: 'Create PO',         onClick: () => router.push('/purchase-orders?new=1') },
+            ...(row.low_stock ? [{ label: 'View Items', onClick: () => router.push('/items') }] : []),
           ]}
         />
       </div>

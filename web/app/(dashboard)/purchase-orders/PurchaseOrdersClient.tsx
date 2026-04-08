@@ -7,6 +7,7 @@ import Badge, { poStatusVariant } from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
 import SlideOver from '@/components/ui/SlideOver';
 import { clientFetch } from '@/lib/client-api';
+import { updatePurchaseOrderStatus } from '@/lib/mutations';
 import type { PurchaseOrder, Supplier } from '@/lib/types';
 
 const COLUMNS = (supplierMap: Record<string, string>): Column<PurchaseOrder>[] => [
@@ -101,8 +102,8 @@ export default function PurchaseOrdersClient({
           actions={(row) => [
             { label: 'View PO',    onClick: () => router.push(`/purchase-orders/${row.id}`) },
             { label: 'Receive',    onClick: () => router.push('/receiving') },
-            { label: 'Edit',       onClick: () => {} },
-            { label: 'Cancel PO',  onClick: () => {}, variant: 'danger' },
+            { label: 'Edit',       onClick: () => router.push(`/purchase-orders/${row.id}`) },
+            { label: 'Cancel PO',  onClick: () => updatePurchaseOrderStatus(row.id, 'cancelled').then(() => router.refresh()), variant: 'danger' },
           ]}
         />
       </div>

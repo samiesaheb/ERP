@@ -7,6 +7,7 @@ import Badge, { moStatusVariant } from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
 import SlideOver from '@/components/ui/SlideOver';
 import { clientFetch } from '@/lib/client-api';
+import { updateManufacturingOrderStatus } from '@/lib/mutations';
 import type { ManufacturingOrder, SalesOrder, Item, Uom, Bom } from '@/lib/types';
 
 const COLUMNS = (
@@ -100,8 +101,8 @@ export default function MoClient({
           actions={(row) => [
             { label: 'View MO',          onClick: () => router.push(`/manufacturing-orders/${row.id}`) },
             { label: 'Production Floor', onClick: () => router.push('/production') },
-            { label: 'Edit',             onClick: () => {} },
-            { label: 'Cancel',           onClick: () => {}, variant: 'danger' },
+            { label: 'Edit',             onClick: () => router.push(`/manufacturing-orders/${row.id}`) },
+            { label: 'Cancel',           onClick: () => updateManufacturingOrderStatus(row.id, 'cancelled').then(() => router.refresh()), variant: 'danger' },
           ]}
         />
       </div>
