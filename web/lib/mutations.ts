@@ -56,6 +56,28 @@ export function updateShipmentStatus(id: string, status: string) {
 }
 
 // ---------------------------------------------------------------------------
+// Artworks
+// ---------------------------------------------------------------------------
+
+export function updateArtworkStatus(id: string, status: string) {
+  return clientFetch(`/api/v1/artworks/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify({ status }),
+  });
+}
+
+// ---------------------------------------------------------------------------
+// FDA Registrations
+// ---------------------------------------------------------------------------
+
+export function updateFdaStatus(id: string, status: string) {
+  return clientFetch(`/api/v1/fda-registrations/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify({ status }),
+  });
+}
+
+// ---------------------------------------------------------------------------
 // Invoices
 // ---------------------------------------------------------------------------
 

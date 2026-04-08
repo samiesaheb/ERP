@@ -26,6 +26,8 @@ interface DataTableProps<T extends { id: string }> {
   onRowClick?: (row: T) => void;
   /** Return an array of menu items for each row to render a three-dot actions column. */
   actions?: (row: T) => MenuItem[];
+  /** Show the search / filter bar (default true). */
+  searchable?: boolean;
 }
 
 type SortDir = 'asc' | 'desc';
@@ -39,6 +41,7 @@ export default function DataTable<T extends { id: string }>({
   data,
   onRowClick,
   actions,
+  searchable = true,
 }: DataTableProps<T>) {
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>('asc');
@@ -68,17 +71,19 @@ export default function DataTable<T extends { id: string }>({
 
   return (
     <div>
-      <div className="px-4 py-2.5 border-b-[0.5px] border-neutral-200">
-        <input
-          type="search"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search…"
-          className="w-full max-w-xs px-3 py-1.5 text-sm border-[0.5px] border-neutral-300
-                     rounded bg-white placeholder-neutral-400 outline-none
-                     focus:border-neutral-400 focus:ring-0"
-        />
-      </div>
+      {searchable && (
+        <div className="px-4 py-2.5 border-b-[0.5px] border-neutral-200">
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search…"
+            className="w-full max-w-xs px-3 py-1.5 text-sm border border-neutral-300
+                       rounded bg-white placeholder-neutral-400 outline-none appearance-none
+                       focus:border-neutral-500"
+          />
+        </div>
+      )}
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
         <thead>
