@@ -78,6 +78,17 @@ export function updateFdaStatus(id: string, status: string) {
 }
 
 // ---------------------------------------------------------------------------
+// Items
+// ---------------------------------------------------------------------------
+
+export function updateItem(id: string, patch: { is_active?: boolean; fda_required?: boolean; description?: string }) {
+  return clientFetch(`/api/v1/items/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(patch),
+  });
+}
+
+// ---------------------------------------------------------------------------
 // Invoices
 // ---------------------------------------------------------------------------
 

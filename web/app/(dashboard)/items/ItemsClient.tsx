@@ -7,6 +7,7 @@ import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
 import SlideOver from '@/components/ui/SlideOver';
 import { clientFetch } from '@/lib/client-api';
+import { updateItem } from '@/lib/mutations';
 import type { Item, Uom } from '@/lib/types';
 
 const ITEM_TYPE_LABELS: Record<string, string> = {
@@ -103,9 +104,13 @@ export default function ItemsClient({
           columns={COLUMNS(uomMap)}
           data={items}
           actions={(row) => [
-            { label: 'Edit',      onClick: () => {} },
-            { label: 'View BOM',  onClick: () => router.push('/bom') },
-            { label: 'Deactivate', onClick: () => {}, variant: 'danger' },
+            { label: 'Edit',        onClick: () => setOpen(true) },
+            { label: 'View BOM',    onClick: () => router.push('/bom') },
+            {
+              label: row.is_active ? 'Deactivate' : 'Reactivate',
+              onClick: () => updateItem(row.id, { is_active: !row.is_active }).then(() => router.refresh()),
+              variant: row.is_active ? 'danger' : undefined,
+            },
           ]}
         />
       </div>

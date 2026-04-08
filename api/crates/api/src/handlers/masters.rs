@@ -8,7 +8,7 @@ use uuid::Uuid;
 
 use crate::{error::Result, state::AppState};
 use domain::{
-    Country, CreateCustomer, CreateItem, CreateItemSupplier, CreateItemUomConversion, CreateSupplier,
+    Country, CreateCustomer, CreateItem, UpdateItem, CreateItemSupplier, CreateItemUomConversion, CreateSupplier,
     Customer, CustomerType, Item, ItemSupplier, ItemUomConversion, Supplier, Uom,
 };
 
@@ -173,6 +173,29 @@ pub async fn create_item(
     .fetch_one(&state.db)
     .await?;
     Ok((StatusCode::CREATED, Json(row)))
+}
+
+pub async fn update_item(
+    State(state): State<AppState>,
+    Path(item_id): Path<Uuid>,
+    Json(body): Json<UpdateItem>,
+) -> Result<Json<Item>> {
+    let row = sqlx::query_as!(
+        Item,
+        r#"UPDATE items SET
+             description  = COALESCE($2, description),
+             fda_required = COALESCE($3, fda_required),
+             is_active     = COALESCE($4, is_active)
+           WHERE id = $1
+           RETURNING id, item_code, description, item_type, uom_id, fda_required, is_active, created_at"#,
+        item_id,
+        body.description,
+        body.fda_required,
+        body.is_active,
+    )
+    .fetch_one(&state.db)
+    .await?;
+    Ok(Json(row))
 }
 
 // ---------------------------------------------------------------------------

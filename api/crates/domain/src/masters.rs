@@ -117,6 +117,13 @@ pub struct CreateItem {
     pub fda_required: bool,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct UpdateItem {
+    pub description:  Option<String>,
+    pub fda_required: Option<bool>,
+    pub is_active:    Option<bool>,
+}
+
 // ---------------------------------------------------------------------------
 // Item-UOM Conversion
 // ---------------------------------------------------------------------------

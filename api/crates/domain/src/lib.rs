@@ -46,7 +46,7 @@ pub use masters::{
     Customer, CreateCustomer,
     Uom,
     Supplier, CreateSupplier,
-    Item, CreateItem,
+    Item, CreateItem, UpdateItem,
     ItemUomConversion, CreateItemUomConversion,
     ItemSupplier, CreateItemSupplier,
 };

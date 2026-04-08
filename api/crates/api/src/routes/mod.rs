@@ -25,6 +25,7 @@ pub fn build_router(state: AppState) -> Router {
         .route("/api/v1/customers",        get(masters::list_customers).post(masters::create_customer))
         .route("/api/v1/uoms",             get(masters::list_uoms))
         .route("/api/v1/items",            get(masters::list_items).post(masters::create_item))
+        .route("/api/v1/items/:id",        put(masters::update_item))
         .route("/api/v1/items/:item_id/suppliers",
             get(masters::list_item_suppliers).post(masters::create_item_supplier))
         .route("/api/v1/items/:item_id/uom-conversions",
