@@ -14,6 +14,7 @@ import Badge, { shipmentStatusVariant, soStatusVariant } from '@/components/ui/B
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import Link from 'next/link';
 import StatusPanel from './StatusPanel';
+import AddSoLineButton from './AddSoLineButton';
 
 function formatDate(value: string | null | undefined) {
   return value ? new Date(value).toLocaleDateString() : '—';
@@ -186,10 +187,13 @@ export default async function SalesOrderDetailPage({
         </div>
 
         <Card>
-          <CardHeader>
+          <CardHeader className="flex items-center justify-between">
             <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wide">
               Sales Order Lines
             </p>
+            {!['shipped', 'invoiced', 'cancelled'].includes(so.status) && (
+              <AddSoLineButton soId={id} items={items} uoms={uoms} />
+            )}
           </CardHeader>
           <div className="overflow-x-auto">
             {soLines.length === 0 ? (

@@ -12,14 +12,14 @@ function fmt(val: string | number) {
 }
 
 /* ── Pipeline ─────────────────────────────────────────────────────── */
-function PipelineCard({ data }: { data: DashboardData }) {
+function PipelineCard({ data, router }: { data: DashboardData; router: ReturnType<typeof useRouter> }) {
   const max = Math.max(...data.pipeline.map((s) => s.count), 1);
   return (
     <div className="bg-white rounded-xl h-full flex flex-col">
       <div className="px-5 py-4 border-b-[0.5px] border-neutral-100 flex items-center gap-2">
         <DropdownMenu align="left" items={[
-          { label: 'View All MOs', onClick: () => {} },
-          { label: 'Refresh',      onClick: () => {} },
+          { label: 'View All MOs', onClick: () => router.push('/manufacturing-orders') },
+          { label: 'Refresh',      onClick: () => router.refresh() },
         ]} />
         <p className="text-[10px] font-bold uppercase tracking-widest text-neutral-400">Production Pipeline</p>
       </div>
@@ -55,7 +55,7 @@ function RecentSoCard({ orders }: { orders: SalesOrder[] }) {
       <div className="px-5 py-4 border-b-[0.5px] border-neutral-100 flex items-center gap-2">
         <DropdownMenu align="left" items={[
           { label: 'View All',   onClick: () => router.push('/sales-orders') },
-          { label: 'Export CSV', onClick: () => {} },
+          { label: 'Export CSV', onClick: () => router.push('/sales-orders') },
         ]} />
         <p className="text-[10px] font-bold uppercase tracking-widest text-neutral-400">Recent Sales Orders</p>
       </div>
@@ -77,8 +77,8 @@ function RecentSoCard({ orders }: { orders: SalesOrder[] }) {
                   <div className="opacity-0 group-hover:opacity-100 transition-opacity flex justify-start">
                     <DropdownMenu align="left" items={[
                       { label: 'View Order',   onClick: () => router.push(`/sales-orders/${so.id}`) },
-                      { label: 'Edit',         onClick: () => {} },
-                      { label: 'Cancel Order', onClick: () => {}, variant: 'danger' },
+                      { label: 'Edit',         onClick: () => router.push(`/sales-orders/${so.id}`) },
+                      { label: 'Cancel Order', onClick: () => router.push(`/sales-orders/${so.id}`), variant: 'danger' },
                     ]} />
                   </div>
                 </td>
@@ -259,7 +259,7 @@ export default function DashboardClient({
               { label: 'Refresh',  onClick: () => router.refresh?.(),                   variant: 'dark' },
             ]}
           >
-            <PipelineCard data={dashboard} />
+            <PipelineCard data={dashboard} router={router} />
           </SwipeCard>
         </div>
 

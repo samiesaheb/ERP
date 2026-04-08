@@ -4,6 +4,7 @@ import Badge, { poStatusVariant } from '@/components/ui/Badge';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import Link from 'next/link';
 import StatusPanel from './StatusPanel';
+import AddPoLineButton from './AddPoLineButton';
 
 export default async function PurchaseOrderDetailPage({
   params,
@@ -53,28 +54,37 @@ export default async function PurchaseOrderDetailPage({
         </div>
 
         <Card>
-          <CardHeader><p className="text-xs font-semibold text-neutral-500 uppercase tracking-wide">PO Lines</p></CardHeader>
+          <CardHeader className="flex items-center justify-between">
+            <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wide">PO Lines</p>
+            {!['received', 'cancelled'].includes(po.status) && (
+              <AddPoLineButton poId={po.id} items={items} uoms={uoms} />
+            )}
+          </CardHeader>
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b-[0.5px] border-neutral-200 bg-neutral-50">
-                  {['Item', 'Ordered', 'Received', 'Unit Price', 'UOM'].map((h) => (
-                    <th key={h} className="px-4 py-2.5 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wide">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {lines.map((line) => (
-                  <tr key={line.id} className="border-b-[0.5px] border-neutral-100">
-                    <td className="px-4 py-3">{itemMap[line.item_id] ?? line.item_id}</td>
-                    <td className="px-4 py-3 tabular-nums">{Number(line.qty_ordered).toLocaleString()}</td>
-                    <td className="px-4 py-3 tabular-nums">{Number(line.qty_received).toLocaleString()}</td>
-                    <td className="px-4 py-3 tabular-nums">{line.unit_cost ? `$${Number(line.unit_cost).toLocaleString()}` : '—'}</td>
-                    <td className="px-4 py-3 text-neutral-500">{uomMap[line.uom_id] ?? '—'}</td>
+            {lines.length === 0 ? (
+              <div className="px-4 py-6 text-sm text-neutral-400">No lines yet — add lines to this purchase order.</div>
+            ) : (
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b-[0.5px] border-neutral-200 bg-neutral-50">
+                    {['Item', 'Ordered', 'Received', 'Unit Cost', 'UOM'].map((h) => (
+                      <th key={h} className="px-4 py-2.5 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wide">{h}</th>
+                    ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {lines.map((line) => (
+                    <tr key={line.id} className="border-b-[0.5px] border-neutral-100 last:border-0">
+                      <td className="px-4 py-3">{itemMap[line.item_id] ?? line.item_id}</td>
+                      <td className="px-4 py-3 tabular-nums">{Number(line.qty_ordered).toLocaleString()}</td>
+                      <td className="px-4 py-3 tabular-nums">{Number(line.qty_received).toLocaleString()}</td>
+                      <td className="px-4 py-3 tabular-nums">{line.unit_cost ? `$${Number(line.unit_cost).toLocaleString()}` : '—'}</td>
+                      <td className="px-4 py-3 text-neutral-500">{uomMap[line.uom_id] ?? '—'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
         </Card>
       </div>
