@@ -99,6 +99,31 @@ pub async fn create_bom_line(
     Ok((StatusCode::CREATED, Json(row)))
 }
 
+pub async fn delete_bom(
+    State(state): State<AppState>,
+    Path(id): Path<Uuid>,
+) -> Result<StatusCode> {
+    let in_use: bool = sqlx::query_scalar!(
+        "SELECT EXISTS(SELECT 1 FROM manufacturing_orders WHERE bom_id = $1 LIMIT 1) OR
+                EXISTS(SELECT 1 FROM production_batches WHERE bom_id = $1 LIMIT 1)",
+        id
+    )
+    .fetch_one(&state.db)
+    .await?
+    .unwrap_or(false);
+
+    if in_use {
+        return Err(AppError::BadRequest(
+            "Cannot delete BOM: it is referenced by one or more manufacturing orders or batches".into(),
+        ));
+    }
+
+    sqlx::query!("DELETE FROM boms WHERE id = $1", id)
+        .execute(&state.db)
+        .await?;
+    Ok(StatusCode::NO_CONTENT)
+}
+
 // ---------------------------------------------------------------------------
 // BOM explosion
 // ---------------------------------------------------------------------------

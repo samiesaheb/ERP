@@ -1,6 +1,6 @@
 use axum::{
     middleware,
-    routing::{get, post, put},
+    routing::{delete, get, post, put},
     Router,
 };
 
@@ -54,7 +54,7 @@ pub fn build_router(state: AppState) -> Router {
 
         // BOM
         .route("/api/v1/boms",             get(bom::list_boms).post(bom::create_bom))
-        .route("/api/v1/boms/:id",         get(bom::get_bom))
+        .route("/api/v1/boms/:id",         get(bom::get_bom).delete(bom::delete_bom))
         .route("/api/v1/boms/:id/lines",   get(bom::get_bom_lines).post(bom::create_bom_line))
         .route("/api/v1/boms/:id/explode", get(bom::explode_bom))
 

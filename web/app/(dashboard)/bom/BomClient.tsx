@@ -8,6 +8,7 @@ import Button from '@/components/ui/Button';
 import DataTable, { Column } from '@/components/ui/DataTable';
 import SlideOver from '@/components/ui/SlideOver';
 import { clientFetch } from '@/lib/client-api';
+import { deleteBom } from '@/lib/mutations';
 import type { Bom, Item } from '@/lib/types';
 
 const COLUMNS = (itemMap: Record<string, string>): Column<Bom>[] => [
@@ -88,9 +89,8 @@ export default function BomClient({
           columns={COLUMNS(itemMap)}
           data={boms}
           actions={(row) => [
-            { label: 'View',      onClick: () => router.push(`/bom/${row.id}`) },
-            { label: 'Duplicate', onClick: () => {} },
-            { label: 'Delete',    onClick: () => {}, variant: 'danger' },
+            { label: 'View',   onClick: () => router.push(`/bom/${row.id}`) },
+            { label: 'Delete', onClick: () => deleteBom(row.id).then(() => router.refresh()), variant: 'danger' },
           ]}
         />
       </div>
