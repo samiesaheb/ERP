@@ -3,6 +3,15 @@
 import { useState } from 'react';
 import DropdownMenu, { MenuItem } from './DropdownMenu';
 
+function rowMatchesQuery<T>(row: T, query: string, columns: Column<T>[]): boolean {
+  const q = query.toLowerCase();
+  return columns.some((col) => {
+    const raw = getNestedValue(row, String(col.key));
+    const text = String(raw ?? '').toLowerCase();
+    return text.includes(q);
+  });
+}
+
 export interface Column<T> {
   key: keyof T | string;
   header: string;
@@ -33,6 +42,7 @@ export default function DataTable<T extends { id: string }>({
 }: DataTableProps<T>) {
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>('asc');
+  const [query, setQuery] = useState('');
 
   function handleSort(key: string) {
     if (sortKey === key) {
@@ -43,16 +53,32 @@ export default function DataTable<T extends { id: string }>({
     }
   }
 
+  const filtered = query
+    ? data.filter((row) => rowMatchesQuery(row, query, columns))
+    : data;
+
   const sorted = sortKey
-    ? [...data].sort((a, b) => {
+    ? [...filtered].sort((a, b) => {
         const av = getNestedValue(a, sortKey) ?? '';
         const bv = getNestedValue(b, sortKey) ?? '';
         const cmp = String(av).localeCompare(String(bv), undefined, { numeric: true });
         return sortDir === 'asc' ? cmp : -cmp;
       })
-    : data;
+    : filtered;
 
   return (
+    <div>
+      <div className="px-4 py-2.5 border-b-[0.5px] border-neutral-200">
+        <input
+          type="search"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search…"
+          className="w-full max-w-xs px-3 py-1.5 text-sm border-[0.5px] border-neutral-300
+                     rounded bg-white placeholder-neutral-400 outline-none
+                     focus:border-neutral-400 focus:ring-0"
+        />
+      </div>
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
         <thead>
@@ -115,6 +141,7 @@ export default function DataTable<T extends { id: string }>({
           ))}
         </tbody>
       </table>
+    </div>
     </div>
   );
 }
