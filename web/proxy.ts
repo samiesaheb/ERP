@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { canAccess, getRoleFromToken } from './lib/rbac';
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Skip auth pages and API routes
