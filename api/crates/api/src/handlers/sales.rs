@@ -8,9 +8,10 @@ use uuid::Uuid;
 
 use crate::{
     error::{AppError, Result},
+    middleware::rbac::{require_role, SALES_ROLES},
     state::AppState,
 };
-use domain::{CreateSalesOrder, CreateSalesOrderLine, SalesOrder, SalesOrderLine, UpdateSalesOrder};
+use domain::{Claims, CreateSalesOrder, CreateSalesOrderLine, SalesOrder, SalesOrderLine, UpdateSalesOrder};
 
 #[derive(Deserialize)]
 pub struct SoQuery {
@@ -91,8 +92,10 @@ pub async fn get_sales_order(
 
 pub async fn create_sales_order(
     State(state): State<AppState>,
+    axum::Extension(claims): axum::Extension<Claims>,
     Json(body): Json<CreateSalesOrder>,
 ) -> Result<(StatusCode, Json<SalesOrder>)> {
+    require_role(&claims, SALES_ROLES)?;
     let id = Uuid::new_v4();
     let count = sqlx::query_scalar!("SELECT COUNT(*) FROM sales_orders")
         .fetch_one(&state.db)
@@ -149,9 +152,11 @@ fn validate_so_transition(from: &str, to: &str) -> Result<()> {
 
 pub async fn update_sales_order(
     State(state): State<AppState>,
+    axum::Extension(claims): axum::Extension<Claims>,
     Path(id): Path<Uuid>,
     Json(body): Json<UpdateSalesOrder>,
 ) -> Result<Json<SalesOrder>> {
+    require_role(&claims, SALES_ROLES)?;
     let existing = sqlx::query_as!(
         SalesOrder,
         "SELECT id, order_number, customer_id, country_id, status, artwork_status,

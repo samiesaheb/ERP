@@ -4,6 +4,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::{
     error::{AppError, Result},
+    middleware::rbac::{require_role, ADMIN},
     state::AppState,
 };
 use domain::{Claims, CreateUser, LoginRequest, LoginResponse, UpdateUser, User};
@@ -82,7 +83,11 @@ pub async fn get_me(
 // GET /api/v1/users
 // ---------------------------------------------------------------------------
 
-pub async fn list_users(State(state): State<AppState>) -> Result<Json<Vec<User>>> {
+pub async fn list_users(
+    State(state): State<AppState>,
+    axum::Extension(claims): axum::Extension<Claims>,
+) -> Result<Json<Vec<User>>> {
+    require_role(&claims, ADMIN)?;
     let rows = sqlx::query_as!(
         User,
         "SELECT id, email, full_name, role, is_active, created_at
@@ -99,8 +104,10 @@ pub async fn list_users(State(state): State<AppState>) -> Result<Json<Vec<User>>
 
 pub async fn create_user(
     State(state): State<AppState>,
+    axum::Extension(claims): axum::Extension<Claims>,
     Json(body): Json<CreateUser>,
 ) -> Result<(StatusCode, Json<User>)> {
+    require_role(&claims, ADMIN)?;
     let hash = bcrypt::hash(&body.password, bcrypt::DEFAULT_COST)
         .map_err(|e| AppError::Internal(e.to_string()))?;
 
@@ -127,9 +134,11 @@ pub async fn create_user(
 
 pub async fn update_user(
     State(state): State<AppState>,
+    axum::Extension(claims): axum::Extension<Claims>,
     Path(user_id): Path<Uuid>,
     Json(body): Json<UpdateUser>,
 ) -> Result<Json<User>> {
+    require_role(&claims, ADMIN)?;
     // Hash new password if provided
     let new_hash: Option<String> = if let Some(ref pw) = body.password {
         Some(bcrypt::hash(pw, bcrypt::DEFAULT_COST)

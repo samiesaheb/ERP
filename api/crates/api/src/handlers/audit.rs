@@ -1,7 +1,7 @@
 use axum::{extract::{Query, State}, Json};
 
-use crate::{error::Result, state::AppState};
-use domain::{AuditLog, AuditLogQuery};
+use crate::{error::Result, middleware::rbac::{require_role, ADMIN}, state::AppState};
+use domain::{AuditLog, AuditLogQuery, Claims};
 
 // ---------------------------------------------------------------------------
 // GET /api/v1/audit-logs
@@ -9,8 +9,10 @@ use domain::{AuditLog, AuditLogQuery};
 
 pub async fn list_audit_logs(
     State(state): State<AppState>,
+    axum::Extension(claims): axum::Extension<Claims>,
     Query(q): Query<AuditLogQuery>,
 ) -> Result<Json<Vec<AuditLog>>> {
+    require_role(&claims, ADMIN)?;
     let limit  = q.limit.unwrap_or(200).min(1000);
     let offset = q.offset.unwrap_or(0);
 

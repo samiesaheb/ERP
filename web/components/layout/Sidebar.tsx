@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { canAccess, getRoleFromCookie } from '@/lib/rbac';
 
 function Icon({ path, path2 }: { path: string; path2?: string }) {
   return (
@@ -129,6 +130,11 @@ const NAV: NavGroup[] = [
 export default function Sidebar() {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
+  const [role, setRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    setRole(getRoleFromCookie());
+  }, []);
 
   // Persist collapsed state
   useEffect(() => {
@@ -166,7 +172,9 @@ export default function Sidebar() {
 
       {/* Nav */}
       <nav className="flex-1 overflow-y-auto py-4 px-2 space-y-5">
-        {NAV.map((group) => (
+        {NAV.filter((group) =>
+          group.items.some((item) => !role || canAccess(role, item.href))
+        ).map((group) => (
           <div key={group.title}>
             {!collapsed && (
               <p className="px-2 mb-1.5 text-[9px] font-bold uppercase tracking-[0.12em] text-neutral-400">
@@ -174,7 +182,7 @@ export default function Sidebar() {
               </p>
             )}
             <div className={`space-y-0.5 ${collapsed ? 'mt-1' : ''}`}>
-              {group.items.map((item) => {
+              {group.items.filter((item) => !role || canAccess(role, item.href)).map((item) => {
                 const active =
                   item.href === '/' ? pathname === '/' : pathname.startsWith(item.href);
                 return (

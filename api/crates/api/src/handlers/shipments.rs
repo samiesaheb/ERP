@@ -7,10 +7,11 @@ use uuid::Uuid;
 
 use crate::{
     error::{AppError, Result},
+    middleware::rbac::{require_role, WAREHOUSE_ROLES},
     state::AppState,
 };
 use domain::{
-    CreateShipment, CreateShipmentLine, CreateShippingDocument,
+    Claims, CreateShipment, CreateShipmentLine, CreateShippingDocument,
     Shipment, ShipmentLine, ShippingDocument, UpdateShipment,
 };
 
@@ -45,8 +46,10 @@ pub async fn get_shipment(
 
 pub async fn create_shipment(
     State(state): State<AppState>,
+    axum::Extension(claims): axum::Extension<Claims>,
     Json(body): Json<CreateShipment>,
 ) -> Result<(StatusCode, Json<Shipment>)> {
+    require_role(&claims, WAREHOUSE_ROLES)?;
     let count = sqlx::query_scalar!("SELECT COUNT(*) FROM shipments")
         .fetch_one(&state.db)
         .await?
@@ -90,9 +93,11 @@ fn validate_shipment_transition(from: &str, to: &str) -> Result<()> {
 
 pub async fn update_shipment(
     State(state): State<AppState>,
+    axum::Extension(claims): axum::Extension<Claims>,
     Path(id): Path<Uuid>,
     Json(body): Json<UpdateShipment>,
 ) -> Result<Json<Shipment>> {
+    require_role(&claims, WAREHOUSE_ROLES)?;
     let existing = sqlx::query_as!(
         Shipment,
         "SELECT id, shipment_number, sales_order_id, status, carrier,

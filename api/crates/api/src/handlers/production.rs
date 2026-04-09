@@ -8,10 +8,11 @@ use uuid::Uuid;
 
 use crate::{
     error::{AppError, Result},
+    middleware::rbac::{require_role, ADMIN_PLANNER, ADMIN_PLANNER_SUPERVISOR, PRODUCTION_ROLES},
     state::AppState,
 };
 use domain::{
-    BatchComponentIssue, CreateBatchComponentIssue, CreateManufacturingOrder,
+    Claims, BatchComponentIssue, CreateBatchComponentIssue, CreateManufacturingOrder,
     CreateProductionPlan, ManufacturingOrder, ProductionBatch, ProductionPlan,
     UpdateManufacturingOrder, UpdateProductionBatch,
 };
@@ -73,8 +74,10 @@ pub async fn get_manufacturing_order(
 
 pub async fn create_manufacturing_order(
     State(state): State<AppState>,
+    axum::Extension(claims): axum::Extension<Claims>,
     Json(body): Json<CreateManufacturingOrder>,
 ) -> Result<(StatusCode, Json<ManufacturingOrder>)> {
+    require_role(&claims, ADMIN_PLANNER)?;
     let count = sqlx::query_scalar!("SELECT COUNT(*) FROM manufacturing_orders")
         .fetch_one(&state.db)
         .await?
@@ -143,9 +146,11 @@ fn validate_batch_transition(from: &str, to: &str) -> Result<()> {
 
 pub async fn update_manufacturing_order(
     State(state): State<AppState>,
+    axum::Extension(claims): axum::Extension<Claims>,
     Path(id): Path<Uuid>,
     Json(body): Json<UpdateManufacturingOrder>,
 ) -> Result<Json<ManufacturingOrder>> {
+    require_role(&claims, ADMIN_PLANNER_SUPERVISOR)?;
     let existing = sqlx::query_as!(
         ManufacturingOrder,
         "SELECT id, mo_number, sales_order_id, item_id, bom_id, status,
@@ -239,8 +244,10 @@ pub async fn list_mo_batches(
 
 pub async fn create_production_batch(
     State(state): State<AppState>,
+    axum::Extension(claims): axum::Extension<Claims>,
     Path(mo_id): Path<Uuid>,
 ) -> Result<(StatusCode, Json<ProductionBatch>)> {
+    require_role(&claims, ADMIN_PLANNER_SUPERVISOR)?;
     let mo = sqlx::query!(
         "SELECT mo_number, bom_id, uom_id FROM manufacturing_orders WHERE id = $1",
         mo_id
@@ -281,9 +288,11 @@ pub async fn create_production_batch(
 
 pub async fn update_production_batch(
     State(state): State<AppState>,
+    axum::Extension(claims): axum::Extension<Claims>,
     Path(id): Path<Uuid>,
     Json(body): Json<UpdateProductionBatch>,
 ) -> Result<Json<ProductionBatch>> {
+    require_role(&claims, PRODUCTION_ROLES)?;
     let existing = sqlx::query_as!(
         ProductionBatch,
         "SELECT id, batch_number, manufacturing_order_id, bom_id, status,

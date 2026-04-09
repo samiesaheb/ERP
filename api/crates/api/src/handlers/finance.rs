@@ -9,10 +9,11 @@ use uuid::Uuid;
 
 use crate::{
     error::{AppError, Result},
+    middleware::rbac::{require_role, FINANCE_ROLES},
     state::AppState,
 };
 use domain::{
-    CreateInvoice, CreateInvoiceLine, CreatePayment,
+    Claims, CreateInvoice, CreateInvoiceLine, CreatePayment,
     Invoice, InvoiceLine, Payment, UpdateInvoice,
 };
 
@@ -53,8 +54,10 @@ pub async fn list_invoices(
 
 pub async fn create_invoice(
     State(state): State<AppState>,
+    axum::Extension(claims): axum::Extension<Claims>,
     Json(body): Json<CreateInvoice>,
 ) -> Result<(StatusCode, Json<Invoice>)> {
+    require_role(&claims, FINANCE_ROLES)?;
     let count = sqlx::query_scalar!("SELECT COUNT(*) FROM invoices")
         .fetch_one(&state.db)
         .await?
@@ -164,8 +167,10 @@ pub async fn list_payments(State(state): State<AppState>) -> Result<Json<Vec<Pay
 
 pub async fn create_payment(
     State(state): State<AppState>,
+    axum::Extension(claims): axum::Extension<Claims>,
     Json(body): Json<CreatePayment>,
 ) -> Result<(StatusCode, Json<Payment>)> {
+    require_role(&claims, FINANCE_ROLES)?;
     let count = sqlx::query_scalar!("SELECT COUNT(*) FROM payments")
         .fetch_one(&state.db)
         .await?
@@ -252,9 +257,11 @@ fn validate_invoice_transition(from: &str, to: &str) -> Result<()> {
 
 pub async fn update_invoice(
     State(state): State<AppState>,
+    axum::Extension(claims): axum::Extension<Claims>,
     Path(id): Path<Uuid>,
     Json(body): Json<UpdateInvoice>,
 ) -> Result<Json<Invoice>> {
+    require_role(&claims, FINANCE_ROLES)?;
     let existing = sqlx::query_as!(
         Invoice,
         "SELECT id, invoice_number, sales_order_id, customer_id, shipment_id,

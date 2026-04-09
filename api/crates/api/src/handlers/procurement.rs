@@ -8,10 +8,11 @@ use uuid::Uuid;
 
 use crate::{
     error::{AppError, Result},
+    middleware::rbac::{require_role, PURCHASING_ROLES, WAREHOUSE_ROLES},
     state::AppState,
 };
 use domain::{
-    CreatePurchaseOrder, CreatePurchaseOrderLine, CreateReceipt, PurchaseOrder, PurchaseOrderLine,
+    Claims, CreatePurchaseOrder, CreatePurchaseOrderLine, CreateReceipt, PurchaseOrder, PurchaseOrderLine,
     Receipt, ReceiptLine, UpdatePurchaseOrder,
 };
 
@@ -69,8 +70,10 @@ pub async fn get_purchase_order(
 
 pub async fn create_purchase_order(
     State(state): State<AppState>,
+    axum::Extension(claims): axum::Extension<Claims>,
     Json(body): Json<CreatePurchaseOrder>,
 ) -> Result<(StatusCode, Json<PurchaseOrder>)> {
+    require_role(&claims, PURCHASING_ROLES)?;
     let count = sqlx::query_scalar!("SELECT COUNT(*) FROM purchase_orders")
         .fetch_one(&state.db)
         .await?
@@ -135,9 +138,11 @@ fn validate_po_transition(from: &str, to: &str) -> Result<()> {
 
 pub async fn update_purchase_order(
     State(state): State<AppState>,
+    axum::Extension(claims): axum::Extension<Claims>,
     Path(id): Path<Uuid>,
     Json(body): Json<UpdatePurchaseOrder>,
 ) -> Result<Json<PurchaseOrder>> {
+    require_role(&claims, PURCHASING_ROLES)?;
     let existing = sqlx::query_as!(
         PurchaseOrder,
         "SELECT id, po_number, supplier_id, manufacturing_order_id, status,
@@ -237,8 +242,10 @@ pub async fn list_receipts(
 
 pub async fn create_receipt(
     State(state): State<AppState>,
+    axum::Extension(claims): axum::Extension<Claims>,
     Json(body): Json<CreateReceipt>,
 ) -> Result<(StatusCode, Json<Receipt>)> {
+    require_role(&claims, WAREHOUSE_ROLES)?;
     let count = sqlx::query_scalar!("SELECT COUNT(*) FROM receipts")
         .fetch_one(&state.db)
         .await?
