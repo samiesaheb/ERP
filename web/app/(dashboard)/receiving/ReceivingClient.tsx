@@ -97,11 +97,6 @@ export default function ReceivingClient({
           updated.uom_id  = poLine.uom_id;
         }
       }
-      // Also allow manual item override to reset UOM
-      if (field === 'item_id') {
-        const item = items.find((it) => it.id === value);
-        if (item) updated.uom_id = item.uom_id;
-      }
       return updated;
     }));
   }
@@ -193,18 +188,6 @@ export default function ReceivingClient({
                 </div>
 
                 <div>
-                  <label className="block text-[11px] text-neutral-500 mb-0.5">Item</label>
-                  <select required value={line.item_id}
-                    onChange={(e) => updateLine(idx, 'item_id', e.target.value)}
-                    className="w-full px-2 py-1.5 text-xs border-[0.5px] border-neutral-300 rounded bg-white">
-                    <option value="">Select item</option>
-                    {items.map((i) => (
-                      <option key={i.id} value={i.id}>{i.item_code} — {i.description}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
                   <label className="block text-[11px] text-neutral-500 mb-0.5">PO Line</label>
                   <select required value={line.po_line_id}
                     onChange={(e) => updateLine(idx, 'po_line_id', e.target.value)}
@@ -221,6 +204,12 @@ export default function ReceivingClient({
                       );
                     })}
                   </select>
+                  {/* Show auto-filled item as confirmation */}
+                  {line.item_id && (
+                    <p className="text-[10px] text-neutral-400 mt-0.5">
+                      Item: {items.find((i) => i.id === line.item_id)?.item_code ?? line.item_id}
+                    </p>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-2 gap-1.5">

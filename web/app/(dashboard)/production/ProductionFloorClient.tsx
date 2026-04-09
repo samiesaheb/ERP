@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useRef, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Badge from '@/components/ui/Badge';
 import DropdownMenu from '@/components/ui/DropdownMenu';
 import type { ProductionBatch } from '@/lib/types';
@@ -27,17 +27,34 @@ const NEXT_STAGE: Record<string, string> = {
   packing:         'completed',
 };
 
-function BatchCard({ batch, moMap, onAdvance }: {
+function BatchCard({ batch, moMap, highlighted, onAdvance }: {
   batch: ProductionBatch;
   moMap: Record<string, string>;
+  highlighted: boolean;
   onAdvance: (batchId: string, nextStatus: string) => Promise<void>;
 }) {
-  const stages = ['planned', 'bulk_production', 'filling', 'packing', 'completed'];
+  const router = useRouter();   // ← fix: useRouter inside the card
+  const ref    = useRef<HTMLDivElement>(null);
+  const stages    = ['planned', 'bulk_production', 'filling', 'packing', 'completed'];
   const currentIdx = STATUS_ORDER[batch.status] ?? 0;
-  const nextStage = NEXT_STAGE[batch.status];
+  const nextStage  = NEXT_STAGE[batch.status];
+
+  // Scroll into view when highlighted via ?batch= param
+  useEffect(() => {
+    if (highlighted && ref.current) {
+      ref.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [highlighted]);
 
   return (
-    <div className="bg-white border-[0.5px] border-neutral-200 rounded-xl p-4 space-y-3">
+    <div
+      ref={ref}
+      className={`bg-white border rounded-xl p-4 space-y-3 transition-shadow ${
+        highlighted
+          ? 'border-neutral-900 shadow-md ring-1 ring-neutral-900'
+          : 'border-neutral-200 border-[0.5px]'
+      }`}
+    >
       <div className="flex items-start justify-between">
         <div>
           <p className="text-xs font-mono text-neutral-500">{batch.batch_number}</p>
@@ -51,7 +68,7 @@ function BatchCard({ batch, moMap, onAdvance }: {
           </Badge>
           <DropdownMenu items={[
             ...(nextStage ? [{ label: 'Advance Stage', onClick: () => onAdvance(batch.id, nextStage) }] : []),
-            { label: 'View MO',       onClick: () => router.push(`/manufacturing-orders/${batch.manufacturing_order_id}`) },
+            { label: 'View MO', onClick: () => router.push(`/manufacturing-orders/${batch.manufacturing_order_id}`) },
           ]} />
         </div>
       </div>
@@ -89,7 +106,9 @@ export default function ProductionFloorClient({
   batches: ProductionBatch[];
   moMap: Record<string, string>;
 }) {
-  const router = useRouter();
+  const router       = useRouter();
+  const searchParams = useSearchParams();
+  const highlightId  = searchParams.get('batch');
   const [advanceError, setAdvanceError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -124,7 +143,13 @@ export default function ProductionFloorClient({
       )}
       <div className="grid grid-cols-3 gap-3">
         {batches.map((batch) => (
-          <BatchCard key={batch.id} batch={batch} moMap={moMap} onAdvance={handleAdvance} />
+          <BatchCard
+            key={batch.id}
+            batch={batch}
+            moMap={moMap}
+            highlighted={batch.id === highlightId}
+            onAdvance={handleAdvance}
+          />
         ))}
       </div>
     </div>
