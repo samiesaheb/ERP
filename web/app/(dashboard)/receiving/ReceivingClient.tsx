@@ -7,7 +7,7 @@ import Badge, { poStatusVariant } from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
 import SlideOver from '@/components/ui/SlideOver';
 import { clientFetch } from '@/lib/client-api';
-import type { PurchaseOrder, PurchaseOrderLine, Item, Uom } from '@/lib/types';
+import type { PurchaseOrder, PurchaseOrderLine, Receipt, Item, Uom } from '@/lib/types';
 
 const COLUMNS = (supplierMap: Record<string, string>): Column<PurchaseOrder>[] => [
   { key: 'po_number', header: 'PO #', sortable: true },
@@ -25,18 +25,32 @@ interface ReceiptLine {
   lot_number:   string;
 }
 
+const RECEIPT_COLUMNS = (poMap: Record<string, string>): Column<Receipt>[] => [
+  { key: 'receipt_number',    header: 'GRN #',      sortable: true },
+  { key: 'purchase_order_id', header: 'PO',          render: (r) => poMap[r.purchase_order_id] ?? '—' },
+  { key: 'received_by',       header: 'Received By', render: (r) => r.received_by ?? '—' },
+  { key: 'notes',             header: 'Notes',       render: (r) => r.notes ?? '—' },
+  { key: 'received_at',       header: 'Date',        sortable: true,
+    render: (r) => new Date(r.received_at).toLocaleDateString() },
+];
+
 export default function ReceivingClient({
   openPos,
+  receipts,
   supplierMap,
+  poMap,
   items,
   uoms,
 }: {
-  openPos: PurchaseOrder[];
+  openPos:     PurchaseOrder[];
+  receipts:    Receipt[];
   supplierMap: Record<string, string>;
-  items: Item[];
-  uoms: Uom[];
+  poMap:       Record<string, string>;
+  items:       Item[];
+  uoms:        Uom[];
 }) {
   const router = useRouter();
+  const [tab, setTab]   = useState<'open' | 'history'>('open');
   const [open, setOpen] = useState(false);
   const [poId, setPoId] = useState('');
   const [poLines, setPoLines] = useState<PurchaseOrderLine[]>([]);
@@ -118,18 +132,39 @@ export default function ReceivingClient({
 
   return (
     <>
-      <div className="flex justify-start mb-3">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex gap-1 bg-neutral-100 rounded-lg p-1">
+          {([['open', 'Open POs'], ['history', 'Receipt History']] as const).map(([t, label]) => (
+            <button key={t} onClick={() => setTab(t)}
+              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                tab === t ? 'bg-white text-neutral-900 shadow-sm' : 'text-neutral-500 hover:text-neutral-700'
+              }`}>
+              {label}
+            </button>
+          ))}
+        </div>
         <Button onClick={() => openForPo('')}>+ Record Receipt</Button>
       </div>
+
       <div className="bg-white border-[0.5px] border-neutral-200 rounded-xl overflow-hidden">
-        <DataTable
-          columns={COLUMNS(supplierMap)}
-          data={openPos}
-          actions={(row) => [
-            { label: 'Record Receipt', onClick: () => openForPo(row.id) },
-            { label: 'View PO', onClick: () => router.push(`/purchase-orders/${row.id}`) },
-          ]}
-        />
+        {tab === 'open' ? (
+          <DataTable
+            columns={COLUMNS(supplierMap)}
+            data={openPos}
+            actions={(row) => [
+              { label: 'Record Receipt', onClick: () => openForPo(row.id) },
+              { label: 'View PO',        onClick: () => router.push(`/purchase-orders/${row.id}`) },
+            ]}
+          />
+        ) : (
+          <DataTable
+            columns={RECEIPT_COLUMNS(poMap)}
+            data={receipts}
+            actions={(row) => [
+              { label: 'View PO', onClick: () => router.push(`/purchase-orders/${row.purchase_order_id}`) },
+            ]}
+          />
+        )}
       </div>
 
       <SlideOver open={open} onClose={() => setOpen(false)} title="Record Goods Receipt">

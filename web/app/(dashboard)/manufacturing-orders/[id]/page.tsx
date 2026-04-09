@@ -115,7 +115,7 @@ export default async function MoDetailPage({ params }: { params: Promise<{ id: s
         </div>
 
         {/* Batches */}
-        <MoBatchesClient moId={mo.id} batches={batches} uomMap={uomMap} />
+        <MoBatchesClient moId={mo.id} batches={batches} uomMap={uomMap} items={items} uoms={uoms} />
       </div>
     </div>
   );
