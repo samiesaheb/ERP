@@ -13,6 +13,7 @@ import type {
   SalesOrder, SalesOrderLine,
   Shipment, ShipmentLine, ShippingDocument,
   Supplier, Uom,
+  User,
 } from './types';
 
 // ---------------------------------------------------------------------------
@@ -184,3 +185,9 @@ export const getInvoice      = (id: string) => apiFetch<Invoice>(`/api/v1/invoic
 export const getInvoiceLines = (invoiceId: string) =>
   apiFetch<InvoiceLine[]>(`/api/v1/invoices/${invoiceId}/lines`);
 export const getPayments     = () => apiFetch<Payment[]>('/api/v1/payments');
+
+// ---------------------------------------------------------------------------
+// Users (admin)
+// ---------------------------------------------------------------------------
+
+export const getUsers = () => apiFetch<User[]>('/api/v1/users');

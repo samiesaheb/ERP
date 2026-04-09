@@ -3,32 +3,39 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-function getEmailFromCookie(): string | null {
+interface JwtPayload {
+  email?: string;
+  full_name?: string;
+  role?: string;
+}
+
+function getPayloadFromCookie(): JwtPayload | null {
   if (typeof document === 'undefined') return null;
   const match = document.cookie.match(/(?:^|;\s*)token=([^;]+)/);
   if (!match) return null;
   try {
-    const payload = JSON.parse(atob(match[1].split('.')[1]));
-    return payload.email ?? null;
+    return JSON.parse(atob(match[1].split('.')[1])) as JwtPayload;
   } catch {
     return null;
   }
 }
 
-function initials(email: string | null) {
-  if (!email) return '?';
-  return email[0].toUpperCase();
+function initials(name: string | null | undefined) {
+  if (!name) return '?';
+  const parts = name.trim().split(' ');
+  if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  return name[0].toUpperCase();
 }
 
 export default function ProfileButton() {
   const router = useRouter();
-  const [open, setOpen]   = useState(false);
-  const [email, setEmail] = useState<string | null>(null);
+  const [open, setOpen]       = useState(false);
+  const [payload, setPayload] = useState<JwtPayload | null>(null);
   const [loading, setLoading] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    setEmail(getEmailFromCookie());
+    setPayload(getPayloadFromCookie());
   }, []);
 
   // Close on outside click
@@ -57,7 +64,7 @@ export default function ProfileButton() {
                    focus:outline-none focus:ring-2 focus:ring-neutral-400 focus:ring-offset-1"
         aria-label="Profile menu"
       >
-        {initials(email)}
+        {initials(payload?.full_name ?? payload?.email)}
       </button>
 
       {open && (
@@ -65,8 +72,8 @@ export default function ProfileButton() {
                         rounded-xl shadow-lg shadow-neutral-200/60 py-1">
           {/* User info */}
           <div className="px-4 py-3 border-b-[0.5px] border-neutral-100">
-            <p className="text-xs font-medium text-neutral-900 truncate">{email ?? 'Signed in'}</p>
-            <p className="text-[11px] text-neutral-400 mt-0.5">SkyHigh MES</p>
+            <p className="text-xs font-medium text-neutral-900 truncate">{payload?.full_name ?? payload?.email ?? 'Signed in'}</p>
+            <p className="text-[11px] text-neutral-400 mt-0.5 capitalize">{payload?.role ?? 'SkyHigh MES'}</p>
           </div>
 
           {/* Sign out */}

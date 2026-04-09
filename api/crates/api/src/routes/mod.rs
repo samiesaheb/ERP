@@ -16,6 +16,11 @@ pub fn build_router(state: AppState) -> Router {
         .route("/auth/login", post(auth::login));
 
     let protected = Router::new()
+        // Users
+        .route("/api/v1/users/me", get(auth::get_me))
+        .route("/api/v1/users",    get(auth::list_users).post(auth::create_user))
+        .route("/api/v1/users/:id", put(auth::update_user))
+
         // Dashboard
         .route("/api/v1/dashboard/kpis", get(dashboard::get_dashboard))
 

@@ -14,7 +14,7 @@ pub mod shipments;
 // Convenience re-exports
 // ---------------------------------------------------------------------------
 
-pub use auth::{Claims, LoginRequest, LoginResponse};
+pub use auth::{Claims, LoginRequest, LoginResponse, User, CreateUser, UpdateUser};
 
 pub use artwork::{
     Artwork, CreateArtwork, UpdateArtwork,
