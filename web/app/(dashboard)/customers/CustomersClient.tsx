@@ -102,6 +102,11 @@ export default function CustomersClient({
           columns={COLUMNS(typeMap, countryMap)}
           data={customers}
           searchable
+          actions={(row) => [
+            { label: 'View Sales Orders', onClick: () => router.push('/sales-orders') },
+            { label: 'Create Invoice',    onClick: () => router.push('/invoicing?new=1') },
+            { label: 'New Shipment',      onClick: () => router.push('/shipments') },
+          ]}
         />
       </div>
 

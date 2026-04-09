@@ -130,6 +130,15 @@ export default function PaymentsClient({
           columns={COLUMNS(customerMap, supplierMap)}
           data={payments}
           searchable
+          actions={(row) => [
+            ...(row.invoice_id
+              ? [{ label: 'View Invoice', onClick: () => router.push(`/invoicing/${row.invoice_id}`) }]
+              : []),
+            ...(row.purchase_order_id
+              ? [{ label: 'View PO', onClick: () => router.push(`/purchase-orders/${row.purchase_order_id}`) }]
+              : []),
+            { label: 'View All Invoices', onClick: () => router.push('/invoicing') },
+          ]}
         />
       </div>
 
