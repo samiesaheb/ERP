@@ -45,9 +45,9 @@ pub use inventory::{
 
 pub use masters::{
     Country, CustomerType,
-    Customer, CreateCustomer,
+    Customer, CreateCustomer, UpdateCustomer,
     Uom,
-    Supplier, CreateSupplier,
+    Supplier, CreateSupplier, UpdateSupplier,
     Item, CreateItem, UpdateItem,
     ItemUomConversion, CreateItemUomConversion,
     ItemSupplier, CreateItemSupplier,

@@ -52,6 +52,16 @@ pub struct CreateCustomer {
     pub address:          Option<String>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct UpdateCustomer {
+    pub name:             Option<String>,
+    pub customer_type_id: Option<Uuid>,
+    pub country_id:       Option<Uuid>,
+    pub email:            Option<String>,
+    pub phone:            Option<String>,
+    pub address:          Option<String>,
+}
+
 // ---------------------------------------------------------------------------
 // UOM
 // ---------------------------------------------------------------------------
@@ -85,6 +95,17 @@ pub struct CreateSupplier {
     pub name:          String,
     pub supplier_type: String,
     pub country_id:    Uuid,
+    pub email:         Option<String>,
+    pub phone:         Option<String>,
+    pub address:       Option<String>,
+    pub payment_terms: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct UpdateSupplier {
+    pub name:          Option<String>,
+    pub supplier_type: Option<String>,
+    pub country_id:    Option<Uuid>,
     pub email:         Option<String>,
     pub phone:         Option<String>,
     pub address:       Option<String>,

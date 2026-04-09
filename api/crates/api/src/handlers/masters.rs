@@ -8,7 +8,7 @@ use uuid::Uuid;
 
 use crate::{error::Result, state::AppState};
 use domain::{
-    Country, CreateCustomer, CreateItem, UpdateItem, CreateItemSupplier, CreateItemUomConversion, CreateSupplier,
+    Country, CreateCustomer, UpdateCustomer, CreateItem, UpdateItem, CreateItemSupplier, CreateItemUomConversion, CreateSupplier, UpdateSupplier,
     Customer, CustomerType, Item, ItemSupplier, ItemUomConversion, Supplier, Uom,
 };
 
@@ -76,6 +76,35 @@ pub async fn create_customer(
     .fetch_one(&state.db)
     .await?;
     Ok((StatusCode::CREATED, Json(row)))
+}
+
+pub async fn update_customer(
+    State(state): State<AppState>,
+    Path(customer_id): Path<Uuid>,
+    Json(body): Json<UpdateCustomer>,
+) -> Result<Json<Customer>> {
+    let row = sqlx::query_as!(
+        Customer,
+        r#"UPDATE customers SET
+             name             = COALESCE($2, name),
+             customer_type_id = COALESCE($3, customer_type_id),
+             country_id       = COALESCE($4, country_id),
+             email            = COALESCE($5, email),
+             phone            = COALESCE($6, phone),
+             address          = COALESCE($7, address)
+           WHERE id = $1
+           RETURNING id, name, customer_type_id, country_id, email, phone, address, created_at"#,
+        customer_id,
+        body.name,
+        body.customer_type_id,
+        body.country_id,
+        body.email,
+        body.phone,
+        body.address,
+    )
+    .fetch_one(&state.db)
+    .await?;
+    Ok(Json(row))
 }
 
 // ---------------------------------------------------------------------------
@@ -235,6 +264,37 @@ pub async fn create_supplier(
     .fetch_one(&state.db)
     .await?;
     Ok((StatusCode::CREATED, Json(row)))
+}
+
+pub async fn update_supplier(
+    State(state): State<AppState>,
+    Path(supplier_id): Path<Uuid>,
+    Json(body): Json<UpdateSupplier>,
+) -> Result<Json<Supplier>> {
+    let row = sqlx::query_as!(
+        Supplier,
+        r#"UPDATE suppliers SET
+             name          = COALESCE($2, name),
+             supplier_type = COALESCE($3, supplier_type),
+             country_id    = COALESCE($4, country_id),
+             email         = COALESCE($5, email),
+             phone         = COALESCE($6, phone),
+             address       = COALESCE($7, address),
+             payment_terms = COALESCE($8, payment_terms)
+           WHERE id = $1
+           RETURNING id, name, supplier_type, country_id, email, phone, address, payment_terms, created_at"#,
+        supplier_id,
+        body.name,
+        body.supplier_type,
+        body.country_id,
+        body.email,
+        body.phone,
+        body.address,
+        body.payment_terms,
+    )
+    .fetch_one(&state.db)
+    .await?;
+    Ok(Json(row))
 }
 
 // ---------------------------------------------------------------------------

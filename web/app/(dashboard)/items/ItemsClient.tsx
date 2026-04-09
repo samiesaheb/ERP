@@ -58,6 +58,22 @@ const COLUMNS = (uomMap: Record<string, string>): Column<Item>[] => [
   },
 ];
 
+interface Form {
+  item_code:    string;
+  description:  string;
+  item_type:    string;
+  uom_id:       string;
+  fda_required: boolean;
+}
+
+const EMPTY: Form = {
+  item_code:    '',
+  description:  '',
+  item_type:    'FG',
+  uom_id:       '',
+  fda_required: false,
+};
+
 export default function ItemsClient({
   items,
   uomMap,
@@ -69,22 +85,48 @@ export default function ItemsClient({
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({
-    item_code:    '',
-    description:  '',
-    item_type:    'FG',
-    uom_id:       '',
-    fda_required: false,
-  });
+  const [editingItem, setEditingItem] = useState<Item | null>(null);
+  const [form, setForm] = useState<Form>(EMPTY);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  function openCreate() {
+    setEditingItem(null);
+    setForm(EMPTY);
+    setError('');
+    setOpen(true);
+  }
+
+  function openEdit(item: Item) {
+    setEditingItem(item);
+    setForm({
+      item_code:    item.item_code,
+      description:  item.description,
+      item_type:    item.item_type,
+      uom_id:       item.uom_id,
+      fda_required: item.fda_required,
+    });
+    setError('');
+    setOpen(true);
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError('');
     setLoading(true);
     try {
-      await clientFetch('/api/v1/items', { method: 'POST', body: JSON.stringify(form) });
+      if (editingItem) {
+        await clientFetch(`/api/v1/items/${editingItem.id}`, {
+          method: 'PUT',
+          body: JSON.stringify({
+            description:  form.description,
+            fda_required: form.fda_required,
+            is_active:    undefined,
+          }),
+        });
+      } else {
+        await clientFetch('/api/v1/items', { method: 'POST', body: JSON.stringify(form) });
+      }
       setOpen(false);
       router.refresh();
     } catch (err) {
@@ -97,14 +139,14 @@ export default function ItemsClient({
   return (
     <>
       <div className="flex justify-start mb-3">
-        <Button onClick={() => setOpen(true)}>+ New Item</Button>
+        <Button onClick={openCreate}>+ New Item</Button>
       </div>
       <div className="bg-white border-[0.5px] border-neutral-200 rounded-xl overflow-hidden">
         <DataTable
           columns={COLUMNS(uomMap)}
           data={items}
           actions={(row) => [
-            { label: 'Edit',        onClick: () => setOpen(true) },
+            { label: 'Edit',        onClick: () => openEdit(row) },
             { label: 'View BOM',    onClick: () => router.push('/bom') },
             {
               label: row.is_active ? 'Deactivate' : 'Reactivate',
@@ -115,13 +157,15 @@ export default function ItemsClient({
         />
       </div>
 
-      <SlideOver open={open} onClose={() => setOpen(false)} title="New Item">
+      <SlideOver open={open} onClose={() => setOpen(false)} title={editingItem ? 'Edit Item' : 'New Item'}>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-xs font-medium text-neutral-600 mb-1">Item Code</label>
-            <input required value={form.item_code} onChange={(e) => setForm({ ...form, item_code: e.target.value })}
+            <input required value={form.item_code}
+              onChange={(e) => setForm({ ...form, item_code: e.target.value })}
+              disabled={!!editingItem}
               placeholder="e.g. FG-001"
-              className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded" />
+              className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded disabled:bg-neutral-50 disabled:text-neutral-400" />
           </div>
           <div>
             <label className="block text-xs font-medium text-neutral-600 mb-1">Description</label>
@@ -131,7 +175,8 @@ export default function ItemsClient({
           <div>
             <label className="block text-xs font-medium text-neutral-600 mb-1">Item Type</label>
             <select value={form.item_type} onChange={(e) => setForm({ ...form, item_type: e.target.value })}
-              className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded bg-white">
+              disabled={!!editingItem}
+              className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded bg-white disabled:bg-neutral-50 disabled:text-neutral-400">
               <option value="FG">Finished Good</option>
               <option value="RawMat">Raw Material</option>
               <option value="PackMat">Packaging Material</option>
@@ -140,7 +185,8 @@ export default function ItemsClient({
           <div>
             <label className="block text-xs font-medium text-neutral-600 mb-1">UOM</label>
             <select value={form.uom_id} onChange={(e) => setForm({ ...form, uom_id: e.target.value })}
-              required className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded bg-white">
+              required disabled={!!editingItem}
+              className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded bg-white disabled:bg-neutral-50 disabled:text-neutral-400">
               <option value="">Select UOM</option>
               {uoms.map((u) => <option key={u.id} value={u.id}>{u.code}{u.description ? ` — ${u.description}` : ''}</option>)}
             </select>
@@ -152,7 +198,9 @@ export default function ItemsClient({
           </div>
           {error && <p className="text-xs text-red-600 bg-red-50 border-[0.5px] border-red-200 rounded px-3 py-2">{error}</p>}
           <div className="flex gap-2 pt-2">
-            <Button type="submit" disabled={loading} className="flex-1">{loading ? 'Creating…' : 'Create Item'}</Button>
+            <Button type="submit" disabled={loading} className="flex-1">
+              {loading ? (editingItem ? 'Saving…' : 'Creating…') : (editingItem ? 'Save Changes' : 'Create Item')}
+            </Button>
             <Button type="button" variant="secondary" onClick={() => setOpen(false)}>Cancel</Button>
           </div>
         </form>

@@ -28,6 +28,7 @@ pub fn build_router(state: AppState) -> Router {
         .route("/api/v1/customer-types",  get(masters::list_customer_types))
         .route("/api/v1/countries",        get(masters::list_countries))
         .route("/api/v1/customers",        get(masters::list_customers).post(masters::create_customer))
+        .route("/api/v1/customers/:id",    put(masters::update_customer))
         .route("/api/v1/uoms",             get(masters::list_uoms))
         .route("/api/v1/items",            get(masters::list_items).post(masters::create_item))
         .route("/api/v1/items/:id",        put(masters::update_item))
@@ -36,6 +37,7 @@ pub fn build_router(state: AppState) -> Router {
         .route("/api/v1/items/:item_id/uom-conversions",
             get(masters::list_item_uom_conversions).post(masters::create_item_uom_conversion))
         .route("/api/v1/suppliers",        get(masters::list_suppliers).post(masters::create_supplier))
+        .route("/api/v1/suppliers/:id",    put(masters::update_supplier))
 
         // Sales Orders
         .route("/api/v1/sales-orders",

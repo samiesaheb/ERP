@@ -56,13 +56,35 @@ export default function CustomersClient({
   customers, customerTypes, countries, typeMap, countryMap,
 }: Props) {
   const router  = useRouter();
-  const [open,    setOpen]    = useState(false);
-  const [form,    setForm]    = useState<Form>(EMPTY);
-  const [loading, setLoading] = useState(false);
-  const [error,   setError]   = useState('');
+  const [open,           setOpen]           = useState(false);
+  const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
+  const [form,           setForm]           = useState<Form>(EMPTY);
+  const [loading,        setLoading]        = useState(false);
+  const [error,          setError]          = useState('');
 
   function set(field: keyof Form, value: string) {
     setForm((f) => ({ ...f, [field]: value }));
+  }
+
+  function openCreate() {
+    setEditingCustomer(null);
+    setForm(EMPTY);
+    setError('');
+    setOpen(true);
+  }
+
+  function openEdit(customer: Customer) {
+    setEditingCustomer(customer);
+    setForm({
+      name:             customer.name,
+      customer_type_id: customer.customer_type_id,
+      country_id:       customer.country_id,
+      email:            customer.email ?? '',
+      phone:            customer.phone ?? '',
+      address:          customer.address ?? '',
+    });
+    setError('');
+    setOpen(true);
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -70,17 +92,25 @@ export default function CustomersClient({
     setError('');
     setLoading(true);
     try {
-      await clientFetch('/api/v1/customers', {
-        method: 'POST',
-        body: JSON.stringify({
-          name:             form.name,
-          customer_type_id: form.customer_type_id,
-          country_id:       form.country_id,
-          email:            form.email   || null,
-          phone:            form.phone   || null,
-          address:          form.address || null,
-        }),
-      });
+      const payload = {
+        name:             form.name,
+        customer_type_id: form.customer_type_id,
+        country_id:       form.country_id,
+        email:            form.email   || null,
+        phone:            form.phone   || null,
+        address:          form.address || null,
+      };
+      if (editingCustomer) {
+        await clientFetch(`/api/v1/customers/${editingCustomer.id}`, {
+          method: 'PUT',
+          body: JSON.stringify(payload),
+        });
+      } else {
+        await clientFetch('/api/v1/customers', {
+          method: 'POST',
+          body: JSON.stringify(payload),
+        });
+      }
       setOpen(false);
       setForm(EMPTY);
       router.refresh();
@@ -94,7 +124,7 @@ export default function CustomersClient({
   return (
     <>
       <div className="flex justify-start mb-3">
-        <Button onClick={() => setOpen(true)}>+ New Customer</Button>
+        <Button onClick={openCreate}>+ New Customer</Button>
       </div>
 
       <div className="bg-white border-[0.5px] border-neutral-200 rounded-xl overflow-hidden">
@@ -103,6 +133,7 @@ export default function CustomersClient({
           data={customers}
           searchable
           actions={(row) => [
+            { label: 'Edit',              onClick: () => openEdit(row) },
             { label: 'View Sales Orders', onClick: () => router.push('/sales-orders') },
             { label: 'Create Invoice',    onClick: () => router.push('/invoicing?new=1') },
             { label: 'New Shipment',      onClick: () => router.push('/shipments') },
@@ -110,7 +141,7 @@ export default function CustomersClient({
         />
       </div>
 
-      <SlideOver open={open} onClose={() => setOpen(false)} title="New Customer">
+      <SlideOver open={open} onClose={() => setOpen(false)} title={editingCustomer ? 'Edit Customer' : 'New Customer'}>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-xs font-medium text-neutral-600 mb-1">Name</label>
@@ -191,7 +222,9 @@ export default function CustomersClient({
 
           <div className="flex gap-2 pt-2">
             <Button type="submit" disabled={loading} className="flex-1">
-              {loading ? 'Creating…' : 'Create Customer'}
+              {loading
+                ? (editingCustomer ? 'Saving…' : 'Creating…')
+                : (editingCustomer ? 'Save Changes' : 'Create Customer')}
             </Button>
             <Button type="button" variant="secondary" onClick={() => setOpen(false)}>
               Cancel
