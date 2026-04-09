@@ -1,3 +1,4 @@
+pub mod audit;
 pub mod artwork;
 pub mod auth;
 pub mod bom;

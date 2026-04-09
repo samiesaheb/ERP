@@ -14,6 +14,7 @@ import type {
   Shipment, ShipmentLine, ShippingDocument,
   Supplier, Uom,
   User,
+  AuditLog,
 } from './types';
 
 // ---------------------------------------------------------------------------
@@ -191,3 +192,14 @@ export const getPayments     = () => apiFetch<Payment[]>('/api/v1/payments');
 // ---------------------------------------------------------------------------
 
 export const getUsers = () => apiFetch<User[]>('/api/v1/users');
+
+// ---------------------------------------------------------------------------
+// Audit Trail
+// ---------------------------------------------------------------------------
+
+export const getAuditLogs = (params?: { table_name?: string; action?: string; record_id?: string; limit?: number }) => {
+  const q = new URLSearchParams(
+    Object.fromEntries(Object.entries(params ?? {}).filter(([, v]) => v !== undefined).map(([k, v]) => [k, String(v)]))
+  ).toString();
+  return apiFetch<AuditLog[]>(`/api/v1/audit-logs${q ? `?${q}` : ''}`);
+};

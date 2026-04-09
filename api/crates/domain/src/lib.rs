@@ -1,3 +1,4 @@
+pub mod audit;
 pub mod auth;
 pub mod artwork;
 pub mod bom;
@@ -14,6 +15,7 @@ pub mod shipments;
 // Convenience re-exports
 // ---------------------------------------------------------------------------
 
+pub use audit::{AuditLog, AuditLogQuery};
 pub use auth::{Claims, LoginRequest, LoginResponse, User, CreateUser, UpdateUser};
 
 pub use artwork::{

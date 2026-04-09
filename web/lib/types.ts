@@ -454,3 +454,19 @@ export interface User {
   is_active: boolean;
   created_at: string;
 }
+
+// ---------------------------------------------------------------------------
+// Audit
+// ---------------------------------------------------------------------------
+
+export interface AuditLog {
+  id: string;
+  table_name: string;
+  record_id: string | null;
+  action: string;                        // INSERT | UPDATE | DELETE
+  old_data: Record<string, unknown> | null;
+  new_data: Record<string, unknown> | null;
+  changed_by: string | null;
+  changed_by_name: string | null;
+  changed_at: string;
+}

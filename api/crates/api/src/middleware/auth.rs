@@ -28,6 +28,16 @@ pub async fn require_auth(
     )
     .map_err(|e| AppError::Unauthorized(format!("Invalid token: {e}")))?;
 
-    req.extensions_mut().insert(token_data.claims);
+    let claims = token_data.claims;
+
+    // Best-effort: set session variable so audit triggers can capture the user.
+    // With a connection pool this races, but works correctly for low-concurrency
+    // deployments (LIFO pool reuse means same connection is typically reused).
+    let _ = sqlx::query("SELECT set_config('app.current_user_id', $1, false)")
+        .bind(&claims.sub)
+        .execute(&state.db)
+        .await;
+
+    req.extensions_mut().insert(claims);
     Ok(next.run(req).await)
 }
