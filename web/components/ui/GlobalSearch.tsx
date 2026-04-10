@@ -66,7 +66,7 @@ export default function GlobalSearch() {
       setError(false);
       try {
         const data = await clientFetch<SearchResult[]>(
-          `/api/v1/search?q=${encodeURIComponent(query.trim())}`,
+          `/api/search?q=${encodeURIComponent(query.trim())}`,
         );
         setResults(data);
         setOpen(true);
