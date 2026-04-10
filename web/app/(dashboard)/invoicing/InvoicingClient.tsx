@@ -8,7 +8,7 @@ import Button from '@/components/ui/Button';
 import SlideOver from '@/components/ui/SlideOver';
 import { clientFetch } from '@/lib/client-api';
 import { updateInvoiceStatus } from '@/lib/mutations';
-import type { Invoice, Customer, SalesOrder } from '@/lib/types';
+import type { Invoice, Customer, SalesOrder, Shipment } from '@/lib/types';
 
 const COLUMNS = (
   customerMap: Record<string, string>,
@@ -28,13 +28,14 @@ const COLUMNS = (
 ];
 
 export default function InvoicingClient({
-  invoices, customerMap, soMap, customers, salesOrders,
+  invoices, customerMap, soMap, customers, salesOrders, shipments,
 }: {
-  invoices: Invoice[];
+  invoices:    Invoice[];
   customerMap: Record<string, string>;
-  soMap: Record<string, string>;
-  customers: Customer[];
+  soMap:       Record<string, string>;
+  customers:   Customer[];
   salesOrders: SalesOrder[];
+  shipments:   Shipment[];
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -42,8 +43,11 @@ export default function InvoicingClient({
   const [form, setForm] = useState({
     sales_order_id: '',
     customer_id:    '',
+    shipment_id:    '',
+    issue_date:     '',
     due_date:       '',
     currency:       'USD',
+    tax:            '',
     notes:          '',
   });
 
@@ -64,8 +68,11 @@ export default function InvoicingClient({
     try {
       const payload = {
         ...form,
-        due_date: form.due_date || null,
-        notes:    form.notes    || null,
+        shipment_id: form.shipment_id || null,
+        issue_date:  form.issue_date  || null,
+        due_date:    form.due_date    || null,
+        tax:         form.tax         || null,
+        notes:       form.notes       || null,
       };
       await clientFetch('/api/v1/invoices', { method: 'POST', body: JSON.stringify(payload) });
       setOpen(false);
@@ -126,6 +133,14 @@ export default function InvoicingClient({
             </select>
           </div>
           <div>
+            <label className="block text-xs font-medium text-neutral-600 mb-1">Shipment (optional)</label>
+            <select value={form.shipment_id} onChange={(e) => setForm({ ...form, shipment_id: e.target.value })}
+              className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded bg-white">
+              <option value="">No linked shipment</option>
+              {shipments.map((s) => <option key={s.id} value={s.id}>{s.shipment_number}</option>)}
+            </select>
+          </div>
+          <div>
             <label className="block text-xs font-medium text-neutral-600 mb-1">Currency</label>
             <select value={form.currency} onChange={(e) => setForm({ ...form, currency: e.target.value })}
               className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded bg-white">
@@ -135,10 +150,25 @@ export default function InvoicingClient({
               <option value="THB">THB</option>
             </select>
           </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-neutral-600 mb-1">Issue Date</label>
+              <input type="date" value={form.issue_date}
+                onChange={(e) => setForm({ ...form, issue_date: e.target.value })}
+                className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-neutral-600 mb-1">Due Date</label>
+              <input type="date" value={form.due_date}
+                onChange={(e) => setForm({ ...form, due_date: e.target.value })}
+                className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded" />
+            </div>
+          </div>
           <div>
-            <label className="block text-xs font-medium text-neutral-600 mb-1">Due Date</label>
-            <input type="date" value={form.due_date}
-              onChange={(e) => setForm({ ...form, due_date: e.target.value })}
+            <label className="block text-xs font-medium text-neutral-600 mb-1">Tax</label>
+            <input type="number" min="0" step="any" value={form.tax}
+              onChange={(e) => setForm({ ...form, tax: e.target.value })}
+              placeholder="0.00"
               className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded" />
           </div>
           <div>

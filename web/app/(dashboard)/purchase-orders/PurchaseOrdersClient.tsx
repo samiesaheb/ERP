@@ -8,7 +8,7 @@ import Button from '@/components/ui/Button';
 import SlideOver from '@/components/ui/SlideOver';
 import { clientFetch } from '@/lib/client-api';
 import { updatePurchaseOrderStatus } from '@/lib/mutations';
-import type { PurchaseOrder, Supplier } from '@/lib/types';
+import type { PurchaseOrder, Supplier, Item, Uom, ManufacturingOrder } from '@/lib/types';
 
 const COLUMNS = (supplierMap: Record<string, string>): Column<PurchaseOrder>[] => [
   { key: 'po_number', header: 'PO #', sortable: true },
@@ -28,19 +28,33 @@ interface NewPoLine {
   uom_id:     string;
 }
 
+const EMPTY_FORM = {
+  supplier_id:             '',
+  manufacturing_order_id:  '',
+  order_date:              '',
+  expected_date:           '',
+  notes:                   '',
+};
+
 export default function PurchaseOrdersClient({
   orders,
   supplierMap,
   suppliers,
+  items,
+  uoms,
+  manufacturingOrders,
 }: {
-  orders: PurchaseOrder[];
-  supplierMap: Record<string, string>;
-  suppliers: Supplier[];
+  orders:               PurchaseOrder[];
+  supplierMap:          Record<string, string>;
+  suppliers:            Supplier[];
+  items:                Item[];
+  uoms:                 Uom[];
+  manufacturingOrders:  ManufacturingOrder[];
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [open, setOpen] = useState(false);
-  const [supplierId, setSupplierId] = useState('');
+  const [form, setForm] = useState(EMPTY_FORM);
 
   useEffect(() => {
     if (searchParams.get('new') === '1') {
@@ -49,7 +63,6 @@ export default function PurchaseOrdersClient({
     }
   }, [searchParams, router]);
 
-  const [expectedDate, setExpectedDate] = useState('');
   const [lines, setLines] = useState<NewPoLine[]>([
     { item_id: '', qty_ordered: '', unit_cost: '', uom_id: '' },
   ]);
@@ -60,8 +73,20 @@ export default function PurchaseOrdersClient({
     setLines([...lines, { item_id: '', qty_ordered: '', unit_cost: '', uom_id: '' }]);
   }
 
+  function removeLine(idx: number) {
+    if (lines.length > 1) setLines(lines.filter((_, i) => i !== idx));
+  }
+
   function updateLine(idx: number, field: keyof NewPoLine, value: string) {
-    setLines(lines.map((l, i) => (i === idx ? { ...l, [field]: value } : l)));
+    setLines(lines.map((l, i) => {
+      if (i !== idx) return l;
+      const updated = { ...l, [field]: value };
+      if (field === 'item_id') {
+        const item = items.find((it) => it.id === value);
+        if (item) updated.uom_id = item.uom_id;
+      }
+      return updated;
+    }));
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -72,8 +97,11 @@ export default function PurchaseOrdersClient({
       await clientFetch('/api/v1/purchase-orders', {
         method: 'POST',
         body: JSON.stringify({
-          supplier_id:   supplierId,
-          expected_date: expectedDate || null,
+          supplier_id:            form.supplier_id,
+          manufacturing_order_id: form.manufacturing_order_id || null,
+          order_date:             form.order_date             || null,
+          expected_date:          form.expected_date          || null,
+          notes:                  form.notes                  || null,
           lines: lines.map((l) => ({
             ...l,
             unit_cost: l.unit_cost || null,
@@ -81,6 +109,8 @@ export default function PurchaseOrdersClient({
         }),
       });
       setOpen(false);
+      setForm(EMPTY_FORM);
+      setLines([{ item_id: '', qty_ordered: '', unit_cost: '', uom_id: '' }]);
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed');
@@ -112,16 +142,37 @@ export default function PurchaseOrdersClient({
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-xs font-medium text-neutral-600 mb-1">Supplier</label>
-            <select required value={supplierId} onChange={(e) => setSupplierId(e.target.value)}
+            <select required value={form.supplier_id} onChange={(e) => setForm({ ...form, supplier_id: e.target.value })}
               className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded bg-white">
               <option value="">Select supplier</option>
               {suppliers.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
             </select>
           </div>
           <div>
-            <label className="block text-xs font-medium text-neutral-600 mb-1">Expected Date</label>
-            <input type="date" value={expectedDate} onChange={(e) => setExpectedDate(e.target.value)}
-              className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded" />
+            <label className="block text-xs font-medium text-neutral-600 mb-1">Linked MO (optional)</label>
+            <select value={form.manufacturing_order_id} onChange={(e) => setForm({ ...form, manufacturing_order_id: e.target.value })}
+              className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded bg-white">
+              <option value="">None</option>
+              {manufacturingOrders.map((m) => <option key={m.id} value={m.id}>{m.mo_number}</option>)}
+            </select>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-neutral-600 mb-1">Order Date</label>
+              <input type="date" value={form.order_date} onChange={(e) => setForm({ ...form, order_date: e.target.value })}
+                className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-neutral-600 mb-1">Expected Date</label>
+              <input type="date" value={form.expected_date} onChange={(e) => setForm({ ...form, expected_date: e.target.value })}
+                className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded" />
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-neutral-600 mb-1">Notes</label>
+            <textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })}
+              rows={2} placeholder="Optional notes"
+              className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded resize-none" />
           </div>
 
           <div>
@@ -131,18 +182,30 @@ export default function PurchaseOrdersClient({
             </div>
             {lines.map((line, idx) => (
               <div key={idx} className="grid grid-cols-2 gap-2 mb-2 p-2 border-[0.5px] border-neutral-200 rounded">
-                <input required placeholder="Item UUID" value={line.item_id}
+                <div className="col-span-2 flex items-center justify-between">
+                  <span className="text-[11px] text-neutral-400">Line {idx + 1}</span>
+                  {lines.length > 1 && (
+                    <button type="button" onClick={() => removeLine(idx)} className="text-[11px] text-red-500 hover:underline">Remove</button>
+                  )}
+                </div>
+                <select required value={line.item_id}
                   onChange={(e) => updateLine(idx, 'item_id', e.target.value)}
-                  className="px-2 py-1.5 text-xs border-[0.5px] border-neutral-300 rounded col-span-2" />
-                <input required placeholder="Qty" type="number" value={line.qty_ordered}
+                  className="px-2 py-1.5 text-xs border-[0.5px] border-neutral-300 rounded col-span-2 bg-white">
+                  <option value="">Select item…</option>
+                  {items.map((i) => <option key={i.id} value={i.id}>{i.item_code} — {i.description}</option>)}
+                </select>
+                <input required placeholder="Qty" type="number" min="0.0001" step="any" value={line.qty_ordered}
                   onChange={(e) => updateLine(idx, 'qty_ordered', e.target.value)}
                   className="px-2 py-1.5 text-xs border-[0.5px] border-neutral-300 rounded" />
-                <input placeholder="Unit Cost" type="number" value={line.unit_cost}
+                <input placeholder="Unit Cost" type="number" min="0" step="any" value={line.unit_cost}
                   onChange={(e) => updateLine(idx, 'unit_cost', e.target.value)}
                   className="px-2 py-1.5 text-xs border-[0.5px] border-neutral-300 rounded" />
-                <input required placeholder="UOM UUID" value={line.uom_id}
+                <select required value={line.uom_id}
                   onChange={(e) => updateLine(idx, 'uom_id', e.target.value)}
-                  className="px-2 py-1.5 text-xs border-[0.5px] border-neutral-300 rounded col-span-2" />
+                  className="px-2 py-1.5 text-xs border-[0.5px] border-neutral-300 rounded col-span-2 bg-white">
+                  <option value="">Select UOM…</option>
+                  {uoms.map((u) => <option key={u.id} value={u.id}>{u.code}</option>)}
+                </select>
               </div>
             ))}
           </div>

@@ -106,7 +106,7 @@ export default function ArtworkClient({ artworks, fdaRegistrations, salesOrders,
 
   // Artwork form
   const [artOpen,    setArtOpen]    = useState(false);
-  const [artForm,    setArtForm]    = useState({ sales_order_id: '', item_id: '', notes: '' });
+  const [artForm,    setArtForm]    = useState({ sales_order_id: '', item_id: '', version: '1', file_url: '', notes: '' });
   const [artSaving,  setArtSaving]  = useState(false);
   const [artError,   setArtError]   = useState('');
 
@@ -147,11 +147,13 @@ export default function ArtworkClient({ artworks, fdaRegistrations, salesOrders,
         body: JSON.stringify({
           sales_order_id: artForm.sales_order_id,
           item_id:        artForm.item_id,
-          notes:          artForm.notes || null,
+          version:        Number(artForm.version) || 1,
+          file_url:       artForm.file_url || null,
+          notes:          artForm.notes    || null,
         }),
       });
       setArtOpen(false);
-      setArtForm({ sales_order_id: '', item_id: '', notes: '' });
+      setArtForm({ sales_order_id: '', item_id: '', version: '1', file_url: '', notes: '' });
       router.refresh();
     } catch (err) {
       setArtError(err instanceof Error ? err.message : 'Failed');
@@ -269,10 +271,29 @@ export default function ArtworkClient({ artworks, fdaRegistrations, salesOrders,
                 </select>
               </div>
               <div>
+                <label className="block text-xs font-medium text-neutral-600 mb-1">Version</label>
+                <input
+                  type="number" min="1" step="1"
+                  className="w-full border-[0.5px] border-neutral-300 rounded px-3 py-2 text-sm"
+                  value={artForm.version}
+                  onChange={(e) => setArtForm({ ...artForm, version: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-neutral-600 mb-1">File URL (optional)</label>
+                <input
+                  type="url"
+                  className="w-full border-[0.5px] border-neutral-300 rounded px-3 py-2 text-sm"
+                  placeholder="https://…"
+                  value={artForm.file_url}
+                  onChange={(e) => setArtForm({ ...artForm, file_url: e.target.value })}
+                />
+              </div>
+              <div>
                 <label className="block text-xs font-medium text-neutral-600 mb-1">Notes</label>
                 <textarea
                   className="w-full border-[0.5px] border-neutral-300 rounded px-3 py-2 text-sm resize-none"
-                  rows={3}
+                  rows={2}
                   value={artForm.notes}
                   onChange={(e) => setArtForm({ ...artForm, notes: e.target.value })}
                 />

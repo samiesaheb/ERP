@@ -47,6 +47,9 @@ export default function MoClient({
     bom_id:         '',
     qty_planned:    '',
     uom_id:         '',
+    planned_start:  '',
+    planned_end:    '',
+    notes:          '',
   });
 
   useEffect(() => {
@@ -72,6 +75,9 @@ export default function MoClient({
       const payload = {
         ...form,
         sales_order_id: form.sales_order_id || null,
+        planned_start:  form.planned_start  || null,
+        planned_end:    form.planned_end    || null,
+        notes:          form.notes          || null,
       };
       await clientFetch('/api/v1/manufacturing-orders', { method: 'POST', body: JSON.stringify(payload) });
       setOpen(false);
@@ -152,6 +158,27 @@ export default function MoClient({
               <option value="">Select UOM</option>
               {uoms.map((u) => <option key={u.id} value={u.id}>{u.code}</option>)}
             </select>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-neutral-600 mb-1">Planned Start</label>
+              <input type="date" value={form.planned_start}
+                onChange={(e) => setForm({ ...form, planned_start: e.target.value })}
+                className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-neutral-600 mb-1">Planned End</label>
+              <input type="date" value={form.planned_end}
+                onChange={(e) => setForm({ ...form, planned_end: e.target.value })}
+                className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded" />
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-neutral-600 mb-1">Notes</label>
+            <textarea value={form.notes}
+              onChange={(e) => setForm({ ...form, notes: e.target.value })}
+              rows={2} placeholder="Optional notes"
+              className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded resize-none" />
           </div>
           {error && <p className="text-xs text-red-600 bg-red-50 border-[0.5px] border-red-200 rounded px-3 py-2">{error}</p>}
           <div className="flex gap-2 pt-2">
