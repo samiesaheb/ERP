@@ -1,0 +1,22 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT EXISTS(SELECT 1 FROM manufacturing_orders WHERE bom_id = $1 LIMIT 1) OR\n                EXISTS(SELECT 1 FROM production_batches WHERE bom_id = $1 LIMIT 1)",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "?column?",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "3ad89e7bdf245ea7020abfc60782aa2515b636c4bff0de12519a6e356f4e0fb0"
+}

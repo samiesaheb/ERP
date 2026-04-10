@@ -1,0 +1,70 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE customers SET\n             name             = COALESCE($2, name),\n             customer_type_id = COALESCE($3, customer_type_id),\n             country_id       = COALESCE($4, country_id),\n             email            = COALESCE($5, email),\n             phone            = COALESCE($6, phone),\n             address          = COALESCE($7, address)\n           WHERE id = $1\n           RETURNING id, name, customer_type_id, country_id, email, phone, address, created_at",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "customer_type_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 3,
+        "name": "country_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 4,
+        "name": "email",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "phone",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "address",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 7,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Text",
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      false
+    ]
+  },
+  "hash": "41313d834652c235ef14dcced7f0be1b29748daa5b683e8359f9fea15672cfe1"
+}

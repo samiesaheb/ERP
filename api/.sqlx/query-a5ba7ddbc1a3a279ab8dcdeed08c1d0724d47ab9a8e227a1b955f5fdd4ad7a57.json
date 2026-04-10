@@ -1,0 +1,74 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT\n            al.id,\n            al.table_name,\n            al.record_id,\n            al.action,\n            al.old_data,\n            al.new_data,\n            al.changed_by,\n            u.full_name AS changed_by_name,\n            al.changed_at\n        FROM audit_logs al\n        LEFT JOIN users u ON u.id = al.changed_by\n        WHERE ($1::TEXT IS NULL OR al.table_name = $1)\n          AND ($2::TEXT IS NULL OR al.record_id  = $2)\n          AND ($3::TEXT IS NULL OR al.action     = $3)\n        ORDER BY al.changed_at DESC\n        LIMIT  $4\n        OFFSET $5\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "table_name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "record_id",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "action",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "old_data",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 5,
+        "name": "new_data",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 6,
+        "name": "changed_by",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 7,
+        "name": "changed_by_name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 8,
+        "name": "changed_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text",
+        "Text",
+        "Int8",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      true,
+      false,
+      true,
+      true,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "a5ba7ddbc1a3a279ab8dcdeed08c1d0724d47ab9a8e227a1b955f5fdd4ad7a57"
+}
