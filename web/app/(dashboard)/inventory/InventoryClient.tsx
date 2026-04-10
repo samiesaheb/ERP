@@ -7,7 +7,7 @@ import Button from '@/components/ui/Button';
 import DataTable, { Column } from '@/components/ui/DataTable';
 import SlideOver from '@/components/ui/SlideOver';
 import { clientFetch } from '@/lib/client-api';
-import type { InventoryWithItem, InventoryTransaction, Item } from '@/lib/types';
+import type { InventoryWithItem, InventoryTransaction, Item, Uom } from '@/lib/types';
 
 const TXN_TYPES = [
   { value: 'receipt',    label: 'Receipt — stock in' },
@@ -61,29 +61,43 @@ const STOCK_COLUMNS: Column<InventoryWithItem>[] = [
   },
 ];
 
+const EMPTY_FORM = {
+  item_id:          '',
+  transaction_type: 'receipt',
+  qty:              '',
+  uom_id:           '',
+  lot_number:       '',
+  location:         '',
+  notes:            '',
+};
+
 export default function InventoryClient({
   inventory,
   transactions,
   items,
   itemMap,
   uomMap,
+  uoms,
 }: {
   inventory:    InventoryWithItem[];
   transactions: InventoryTransaction[];
   items:        Item[];
   itemMap:      Record<string, string>;
   uomMap:       Record<string, string>;
+  uoms:         Uom[];
 }) {
   const router = useRouter();
   const [tab, setTab]   = useState<'stock' | 'history'>('stock');
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({
-    item_id:          '',
-    transaction_type: 'receipt',
-    qty:              '',
-  });
+  const [form, setForm] = useState(EMPTY_FORM);
   const [loading, setLoading] = useState(false);
   const [error,   setError]   = useState('');
+
+  function openTransaction(itemId = '') {
+    setForm({ ...EMPTY_FORM, item_id: itemId });
+    setError('');
+    setOpen(true);
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -96,10 +110,14 @@ export default function InventoryClient({
           item_id:          form.item_id,
           transaction_type: form.transaction_type,
           qty:              form.qty,
+          uom_id:           form.uom_id           || null,
+          lot_number:       form.lot_number        || null,
+          location:         form.location          || null,
+          notes:            form.notes             || null,
         }),
       });
       setOpen(false);
-      setForm({ item_id: '', transaction_type: 'receipt', qty: '' });
+      setForm(EMPTY_FORM);
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed');
@@ -160,7 +178,7 @@ export default function InventoryClient({
             </button>
           ))}
         </div>
-        <Button onClick={() => setOpen(true)}>+ Stock Transaction</Button>
+        <Button onClick={() => openTransaction()}>+ Stock Transaction</Button>
       </div>
 
       <div className="bg-white border-[0.5px] border-neutral-200 rounded-xl overflow-hidden">
@@ -169,7 +187,7 @@ export default function InventoryClient({
             columns={STOCK_COLUMNS}
             data={inventory}
             actions={(row) => [
-              { label: 'Adjust Stock', onClick: () => { setForm((f) => ({ ...f, item_id: row.id })); setOpen(true); } },
+              { label: 'Adjust Stock', onClick: () => openTransaction(row.id) },
               { label: 'Create PO',    onClick: () => router.push('/purchase-orders?new=1') },
             ]}
           />
@@ -186,7 +204,7 @@ export default function InventoryClient({
           <div>
             <label className="block text-xs font-medium text-neutral-600 mb-1">Item</label>
             <select required value={form.item_id}
-              onChange={(e) => setForm({ ...form, item_id: e.target.value })}
+              onChange={(e) => setForm({ ...form, item_id: e.target.value, uom_id: items.find((i) => i.id === e.target.value)?.uom_id ?? '' })}
               className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded bg-white">
               <option value="">Select item…</option>
               {items.map((i) => (
@@ -194,6 +212,7 @@ export default function InventoryClient({
               ))}
             </select>
           </div>
+
           <div>
             <label className="block text-xs font-medium text-neutral-600 mb-1">Transaction Type</label>
             <select value={form.transaction_type}
@@ -204,13 +223,52 @@ export default function InventoryClient({
               ))}
             </select>
           </div>
-          <div>
-            <label className="block text-xs font-medium text-neutral-600 mb-1">Quantity</label>
-            <input required type="number" min="0.0001" step="any" value={form.qty}
-              onChange={(e) => setForm({ ...form, qty: e.target.value })}
-              placeholder="0.00"
-              className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded" />
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-neutral-600 mb-1">Quantity</label>
+              <input required type="number" min="0.0001" step="any" value={form.qty}
+                onChange={(e) => setForm({ ...form, qty: e.target.value })}
+                placeholder="0.00"
+                className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-neutral-600 mb-1">UOM</label>
+              <select value={form.uom_id}
+                onChange={(e) => setForm({ ...form, uom_id: e.target.value })}
+                className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded bg-white">
+                <option value="">Select…</option>
+                {uoms.map((u) => <option key={u.id} value={u.id}>{u.code}</option>)}
+              </select>
+            </div>
           </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-neutral-600 mb-1">Lot Number</label>
+              <input value={form.lot_number}
+                onChange={(e) => setForm({ ...form, lot_number: e.target.value })}
+                placeholder="e.g. LOT-2025-001"
+                className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-neutral-600 mb-1">Location</label>
+              <input value={form.location}
+                onChange={(e) => setForm({ ...form, location: e.target.value })}
+                placeholder="e.g. Warehouse A / Bin 3"
+                className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded" />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-neutral-600 mb-1">Notes</label>
+            <textarea value={form.notes}
+              onChange={(e) => setForm({ ...form, notes: e.target.value })}
+              rows={2}
+              placeholder="Optional notes"
+              className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded resize-none" />
+          </div>
+
           {error && (
             <p className="text-xs text-red-600 bg-red-50 border-[0.5px] border-red-200 rounded px-3 py-2">{error}</p>
           )}

@@ -60,14 +60,18 @@ pub async fn transact_inventory(
     // Upsert inventory balance
     let uom_id = body.uom_id.unwrap_or_else(Uuid::new_v4);
     sqlx::query!(
-        r#"INSERT INTO inventory (id, item_id, qty_available, qty_reserved, uom_id)
-           VALUES (gen_random_uuid(), $1, GREATEST(0::numeric, $2), 0, $3)
+        r#"INSERT INTO inventory (id, item_id, qty_available, qty_reserved, uom_id, lot_number, location)
+           VALUES (gen_random_uuid(), $1, GREATEST(0::numeric, $2), 0, $3, $4, $5)
            ON CONFLICT (item_id)
            DO UPDATE SET qty_available = GREATEST(0::numeric, inventory.qty_available + $2),
-                         last_updated = NOW()"#,
+                         lot_number    = COALESCE($4, inventory.lot_number),
+                         location      = COALESCE($5, inventory.location),
+                         last_updated  = NOW()"#,
         body.item_id,
         delta,
         uom_id,
+        body.lot_number,
+        body.location,
     )
     .execute(&state.db)
     .await?;

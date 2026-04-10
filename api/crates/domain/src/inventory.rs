@@ -61,6 +61,7 @@ pub struct CreateInventoryTransaction {
     pub qty:              Decimal,
     pub uom_id:           Option<Uuid>,
     pub lot_number:       Option<String>,
+    pub location:         Option<String>,
     pub notes:            Option<String>,
     pub reference_type:   Option<String>,
     pub reference_id:     Option<Uuid>,

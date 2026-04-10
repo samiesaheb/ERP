@@ -19,6 +19,7 @@ export default async function InventoryPage() {
           inventory={inventory}
           transactions={transactions}
           items={items}
+          uoms={uoms}
           itemMap={itemMap}
           uomMap={uomMap}
         />
