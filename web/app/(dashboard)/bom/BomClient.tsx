@@ -80,7 +80,7 @@ export default function BomClient({
 
   return (
     <>
-      <div className="flex justify-end mb-3">
+      <div className="flex justify-start mb-3">
         <Button onClick={() => setOpen(true)}>+ New BOM</Button>
       </div>
 

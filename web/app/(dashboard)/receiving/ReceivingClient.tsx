@@ -173,6 +173,7 @@ export default function ReceivingClient({
   return (
     <>
       <div className="flex items-center justify-between mb-3">
+        <Button onClick={() => openForPo('')}>+ Record Receipt</Button>
         <div className="flex gap-1 bg-neutral-100 rounded-lg p-1">
           {([['open', 'Open POs'], ['history', 'Receipt History']] as const).map(([t, label]) => (
             <button key={t} onClick={() => setTab(t)}
@@ -183,7 +184,6 @@ export default function ReceivingClient({
             </button>
           ))}
         </div>
-        <Button onClick={() => openForPo('')}>+ Record Receipt</Button>
       </div>
 
       <div className="bg-white border-[0.5px] border-neutral-200 rounded-xl overflow-hidden">

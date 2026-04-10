@@ -139,11 +139,11 @@ export default function UsersClient({ users: initial }: { users: User[] }) {
   return (
     <>
       <div className="p-6 space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-semibold text-neutral-900">Users</h1>
-            <p className="text-sm text-neutral-500 mt-0.5">{users.length} user{users.length !== 1 ? 's' : ''}</p>
-          </div>
+        <div>
+          <h1 className="text-xl font-semibold text-neutral-900">Users</h1>
+          <p className="text-sm text-neutral-500 mt-0.5">{users.length} user{users.length !== 1 ? 's' : ''}</p>
+        </div>
+        <div className="flex justify-start">
           <Button onClick={openCreate}>+ New User</Button>
         </div>
 

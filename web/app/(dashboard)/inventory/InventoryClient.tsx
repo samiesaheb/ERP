@@ -161,8 +161,9 @@ export default function InventoryClient({
 
   return (
     <>
-      {/* Tab bar + action button */}
+      {/* Action button + Tab bar */}
       <div className="flex items-center justify-between mb-3">
+        <Button onClick={() => openTransaction()}>+ Stock Transaction</Button>
         <div className="flex gap-1 bg-neutral-100 rounded-lg p-1">
           {(['stock', 'history'] as const).map((t) => (
             <button
@@ -178,7 +179,6 @@ export default function InventoryClient({
             </button>
           ))}
         </div>
-        <Button onClick={() => openTransaction()}>+ Stock Transaction</Button>
       </div>
 
       <div className="bg-white border-[0.5px] border-neutral-200 rounded-xl overflow-hidden">
