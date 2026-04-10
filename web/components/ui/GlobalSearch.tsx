@@ -47,6 +47,7 @@ export default function GlobalSearch() {
   const [loading, setLoading]   = useState(false);
   const [open, setOpen]         = useState(false);
   const [active, setActive]     = useState(-1);
+  const [error, setError]       = useState(false);
   const inputRef  = useRef<HTMLInputElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -57,10 +58,12 @@ export default function GlobalSearch() {
     if (query.trim().length < 2) {
       setResults([]);
       setOpen(false);
+      setError(false);
       return;
     }
     debounceRef.current = setTimeout(async () => {
       setLoading(true);
+      setError(false);
       try {
         const data = await clientFetch<SearchResult[]>(
           `/api/v1/search?q=${encodeURIComponent(query.trim())}`,
@@ -68,8 +71,11 @@ export default function GlobalSearch() {
         setResults(data);
         setOpen(true);
         setActive(-1);
-      } catch {
+      } catch (err) {
+        console.error('Search error:', err);
         setResults([]);
+        setError(true);
+        setOpen(true);
       } finally {
         setLoading(false);
       }
@@ -202,8 +208,15 @@ export default function GlobalSearch() {
         </div>
       )}
 
+      {/* Error state */}
+      {open && error && (
+        <div className="absolute top-full mt-1.5 left-0 right-0 bg-white border-[0.5px] border-red-200 rounded-xl shadow-lg z-50 px-4 py-3">
+          <p className="text-sm text-red-500">Search unavailable — check API connection</p>
+        </div>
+      )}
+
       {/* No results */}
-      {open && !loading && query.trim().length >= 2 && results.length === 0 && (
+      {open && !loading && !error && query.trim().length >= 2 && results.length === 0 && (
         <div className="absolute top-full mt-1.5 left-0 right-0 bg-white border-[0.5px] border-neutral-200 rounded-xl shadow-lg z-50 px-4 py-3">
           <p className="text-sm text-neutral-400">No results for &quot;{query}&quot;</p>
         </div>
