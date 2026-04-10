@@ -5,7 +5,7 @@ use axum::{
 };
 
 use crate::{
-    handlers::{audit, artwork, auth, bom, dashboard, finance, inventory, masters, procurement, production, sales, shipments},
+    handlers::{audit, artwork, auth, bom, dashboard, finance, inventory, masters, procurement, production, sales, search, shipments},
     middleware::auth::require_auth,
     state::AppState,
 };
@@ -109,6 +109,9 @@ pub fn build_router(state: AppState) -> Router {
             get(shipments::list_shipment_lines).post(shipments::create_shipment_line))
         .route("/api/v1/shipments/:shipment_id/documents",
             get(shipments::list_shipping_documents).post(shipments::create_shipping_document))
+
+        // Global Search
+        .route("/api/v1/search", get(search::global_search))
 
         // Audit Trail
         .route("/api/v1/audit-logs", get(audit::list_audit_logs))

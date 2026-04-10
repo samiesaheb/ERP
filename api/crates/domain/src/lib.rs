@@ -9,6 +9,7 @@ pub mod masters;
 pub mod procurement;
 pub mod production;
 pub mod sales;
+pub mod search;
 pub mod shipments;
 
 // ---------------------------------------------------------------------------
@@ -71,6 +72,8 @@ pub use sales::{
     SalesOrder, CreateSalesOrder, UpdateSalesOrder,
     SalesOrderLine, CreateSalesOrderLine,
 };
+
+pub use search::SearchResult;
 
 pub use shipments::{
     Shipment, CreateShipment, UpdateShipment,
