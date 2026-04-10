@@ -107,3 +107,9 @@ pub struct CreateReceiptLine {
     pub lot_number:   Option<String>,
     pub expiry_date:  Option<NaiveDate>,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct UpdateReceiptLine {
+    pub qc_status:   String,          // pending / passed / failed
+    pub expiry_date: Option<NaiveDate>,
+}

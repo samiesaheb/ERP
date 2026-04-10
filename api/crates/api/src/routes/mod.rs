@@ -75,6 +75,8 @@ pub fn build_router(state: AppState) -> Router {
         .route("/api/v1/receipts",         get(procurement::list_receipts).post(procurement::create_receipt))
         .route("/api/v1/receipts/:receipt_id/lines",
             get(procurement::list_receipt_lines))
+        .route("/api/v1/receipts/:receipt_id/lines/:line_id",
+            put(procurement::update_receipt_line))
 
         // Inventory
         .route("/api/v1/inventory",        get(inventory::list_inventory))

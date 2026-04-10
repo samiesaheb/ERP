@@ -1,0 +1,73 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE receipt_lines SET\n             qc_status   = $3,\n             expiry_date = COALESCE($4, expiry_date)\n           WHERE id = $2 AND receipt_id = $1\n           RETURNING id, receipt_id, po_line_id, item_id, qty_received, uom_id,\n                     lot_number, expiry_date, qc_status",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "receipt_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "po_line_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 3,
+        "name": "item_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 4,
+        "name": "qty_received",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 5,
+        "name": "uom_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 6,
+        "name": "lot_number",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 7,
+        "name": "expiry_date",
+        "type_info": "Date"
+      },
+      {
+        "ordinal": 8,
+        "name": "qc_status",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Date"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      false
+    ]
+  },
+  "hash": "ae2b026efd3c9cea9bb1a7f7fbe1e86e523cc02eae8b9d947ae9c62fb9613e89"
+}

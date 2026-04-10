@@ -5,6 +5,7 @@ import {
   getSalesOrders,
   getItems,
   getUoms,
+  getProductionBatches,
 } from '@/lib/api';
 import Topbar from '@/components/layout/Topbar';
 import Link from 'next/link';
@@ -16,18 +17,22 @@ export default async function ShipmentDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [shipment, lines, documents, salesOrders, items, uoms] = await Promise.all([
+  const [shipment, lines, documents, salesOrders, items, uoms, batches] = await Promise.all([
     getShipment(id),
     getShipmentLines(id),
     getShippingDocuments(id),
     getSalesOrders(),
     getItems(),
     getUoms(),
+    getProductionBatches(),
   ]);
 
   const soMap   = Object.fromEntries(salesOrders.map((s) => [s.id, s.order_number]));
   const itemMap = Object.fromEntries(items.map((i) => [i.id, `${i.item_code} — ${i.description}`]));
   const uomMap  = Object.fromEntries(uoms.map((u) => [u.id, u.code]));
+
+  // Only completed batches can be shipped
+  const completedBatches = batches.filter((b) => b.status === 'completed');
 
   return (
     <div>
@@ -49,6 +54,7 @@ export default async function ShipmentDetailPage({
           itemMap={itemMap}
           uoms={uoms}
           uomMap={uomMap}
+          batches={completedBatches}
         />
       </div>
     </div>

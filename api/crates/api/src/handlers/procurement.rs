@@ -13,7 +13,7 @@ use crate::{
 };
 use domain::{
     Claims, CreatePurchaseOrder, CreatePurchaseOrderLine, CreateReceipt, PurchaseOrder, PurchaseOrderLine,
-    Receipt, ReceiptLine, UpdatePurchaseOrder,
+    Receipt, ReceiptLine, UpdatePurchaseOrder, UpdateReceiptLine,
 };
 
 #[derive(Deserialize)]
@@ -358,4 +358,30 @@ pub async fn list_receipt_lines(
     .fetch_all(&state.db)
     .await?;
     Ok(Json(rows))
+}
+
+pub async fn update_receipt_line(
+    State(state): State<AppState>,
+    axum::Extension(claims): axum::Extension<Claims>,
+    Path((receipt_id, line_id)): Path<(Uuid, Uuid)>,
+    Json(body): Json<UpdateReceiptLine>,
+) -> Result<Json<ReceiptLine>> {
+    require_role(&claims, WAREHOUSE_ROLES)?;
+    let row = sqlx::query_as!(
+        ReceiptLine,
+        r#"UPDATE receipt_lines SET
+             qc_status   = $3,
+             expiry_date = COALESCE($4, expiry_date)
+           WHERE id = $2 AND receipt_id = $1
+           RETURNING id, receipt_id, po_line_id, item_id, qty_received, uom_id,
+                     lot_number, expiry_date, qc_status"#,
+        receipt_id,
+        line_id,
+        body.qc_status,
+        body.expiry_date,
+    )
+    .fetch_optional(&state.db)
+    .await?
+    .ok_or_else(|| AppError::NotFound(format!("Receipt line {line_id} not found")))?;
+    Ok(Json(row))
 }

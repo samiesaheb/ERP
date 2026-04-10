@@ -8,7 +8,7 @@ import SlideOver from '@/components/ui/SlideOver';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import { clientFetch } from '@/lib/client-api';
 import { updateShipmentStatus } from '@/lib/mutations';
-import type { Shipment, ShipmentLine, ShippingDocument, Item, Uom } from '@/lib/types';
+import type { Shipment, ShipmentLine, ShippingDocument, Item, Uom, ProductionBatch } from '@/lib/types';
 
 const NEXT_STATUS: Record<string, string> = {
   loading:    'dispatched',
@@ -35,16 +35,17 @@ interface Props {
   itemMap:   Record<string, string>;
   uoms:      Uom[];
   uomMap:    Record<string, string>;
+  batches:   ProductionBatch[];
 }
 
 export default function ShipmentDetailClient({
-  shipment, lines, documents, soMap, items, itemMap, uoms, uomMap,
+  shipment, lines, documents, soMap, items, itemMap, uoms, uomMap, batches,
 }: Props) {
   const router = useRouter();
 
   // Add-line form
   const [lineOpen,    setLineOpen]    = useState(false);
-  const [lineForm,    setLineForm]    = useState({ item_id: '', qty_shipped: '', uom_id: '' });
+  const [lineForm,    setLineForm]    = useState({ item_id: '', qty_shipped: '', uom_id: '', batch_id: '' });
   const [lineSaving,  setLineSaving]  = useState(false);
   const [lineError,   setLineError]   = useState('');
 
@@ -78,14 +79,14 @@ export default function ShipmentDetailClient({
       await clientFetch(`/api/v1/shipments/${shipment.id}/lines`, {
         method: 'POST',
         body: JSON.stringify({
-          item_id:    lineForm.item_id,
+          item_id:     lineForm.item_id,
           qty_shipped: lineForm.qty_shipped,
-          uom_id:     lineForm.uom_id,
-          batch_id:   null,
+          uom_id:      lineForm.uom_id,
+          batch_id:    lineForm.batch_id || null,
         }),
       });
       setLineOpen(false);
-      setLineForm({ item_id: '', qty_shipped: '', uom_id: '' });
+      setLineForm({ item_id: '', qty_shipped: '', uom_id: '', batch_id: '' });
       router.refresh();
     } catch (err) {
       setLineError(err instanceof Error ? err.message : 'Failed');
@@ -217,19 +218,23 @@ export default function ShipmentDetailClient({
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b-[0.5px] border-neutral-200 bg-neutral-50">
-                  {['Item', 'Qty Shipped', 'UOM'].map((h) => (
+                  {['Item', 'Batch', 'Qty Shipped', 'UOM'].map((h) => (
                     <th key={h} className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-neutral-500">{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {lines.map((line) => (
-                  <tr key={line.id} className="border-b-[0.5px] border-neutral-100 last:border-0">
-                    <td className="px-4 py-3">{itemMap[line.item_id] ?? line.item_id}</td>
-                    <td className="px-4 py-3 tabular-nums">{Number(line.qty_shipped).toLocaleString()}</td>
-                    <td className="px-4 py-3 text-neutral-500">{uomMap[line.uom_id] ?? line.uom_id}</td>
-                  </tr>
-                ))}
+                {lines.map((line) => {
+                  const batch = batches.find((b) => b.id === line.batch_id);
+                  return (
+                    <tr key={line.id} className="border-b-[0.5px] border-neutral-100 last:border-0">
+                      <td className="px-4 py-3">{itemMap[line.item_id] ?? line.item_id}</td>
+                      <td className="px-4 py-3 font-mono text-xs text-neutral-500">{batch?.batch_number ?? '—'}</td>
+                      <td className="px-4 py-3 tabular-nums">{Number(line.qty_shipped).toLocaleString()}</td>
+                      <td className="px-4 py-3 text-neutral-500">{uomMap[line.uom_id] ?? line.uom_id}</td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           )}
@@ -274,13 +279,26 @@ export default function ShipmentDetailClient({
             <select required value={lineForm.item_id}
               onChange={(e) => {
                 const item = items.find((i) => i.id === e.target.value);
-                setLineForm({ ...lineForm, item_id: e.target.value, uom_id: item?.uom_id ?? lineForm.uom_id });
+                setLineForm({ ...lineForm, item_id: e.target.value, uom_id: item?.uom_id ?? lineForm.uom_id, batch_id: '' });
               }}
               className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded bg-white">
               <option value="">Select item</option>
               {items.filter((i) => i.item_type === 'FG').map((i) => (
                 <option key={i.id} value={i.id}>{i.item_code} — {i.description}</option>
               ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-neutral-600 mb-1">Production Batch (optional)</label>
+            <select value={lineForm.batch_id}
+              onChange={(e) => setLineForm({ ...lineForm, batch_id: e.target.value })}
+              className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded bg-white">
+              <option value="">— no batch —</option>
+              {batches
+                .filter((b) => !lineForm.item_id || b.manufacturing_order_id)
+                .map((b) => (
+                  <option key={b.id} value={b.id}>{b.batch_number}</option>
+                ))}
             </select>
           </div>
           <div className="grid grid-cols-2 gap-3">

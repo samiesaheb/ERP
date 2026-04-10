@@ -57,7 +57,7 @@ pub use procurement::{
     PurchaseOrder, CreatePurchaseOrder, UpdatePurchaseOrder,
     PurchaseOrderLine, CreatePurchaseOrderLine,
     Receipt, CreateReceipt,
-    ReceiptLine, CreateReceiptLine,
+    ReceiptLine, CreateReceiptLine, UpdateReceiptLine,
 };
 
 pub use production::{

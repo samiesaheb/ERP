@@ -7,7 +7,7 @@ import Badge, { poStatusVariant } from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
 import SlideOver from '@/components/ui/SlideOver';
 import { clientFetch } from '@/lib/client-api';
-import type { PurchaseOrder, PurchaseOrderLine, Receipt, Item, Uom } from '@/lib/types';
+import type { PurchaseOrder, PurchaseOrderLine, Receipt, ReceiptLine, Item, Uom } from '@/lib/types';
 
 const COLUMNS = (supplierMap: Record<string, string>): Column<PurchaseOrder>[] => [
   { key: 'po_number', header: 'PO #', sortable: true },
@@ -17,12 +17,19 @@ const COLUMNS = (supplierMap: Record<string, string>): Column<PurchaseOrder>[] =
   { key: 'expected_date', header: 'Expected', render: (r) => r.expected_date ?? '—', sortable: true },
 ];
 
-interface ReceiptLine {
+interface ReceiptLineForm {
   po_line_id:   string;
   item_id:      string;
   qty_received: string;
   uom_id:       string;
   lot_number:   string;
+  expiry_date:  string;
+}
+
+function qcVariant(status: string): 'gray' | 'green' | 'red' {
+  if (status === 'passed') return 'green';
+  if (status === 'failed') return 'red';
+  return 'gray';
 }
 
 const RECEIPT_COLUMNS = (poMap: Record<string, string>): Column<Receipt>[] => [
@@ -51,14 +58,22 @@ export default function ReceivingClient({
 }) {
   const router = useRouter();
   const [tab, setTab]   = useState<'open' | 'history'>('open');
+
+  // GRN form
   const [open, setOpen] = useState(false);
   const [poId, setPoId] = useState('');
   const [poLines, setPoLines] = useState<PurchaseOrderLine[]>([]);
-  const [lines, setLines] = useState<ReceiptLine[]>([
-    { po_line_id: '', item_id: '', qty_received: '', uom_id: '', lot_number: '' },
+  const [lines, setLines] = useState<ReceiptLineForm[]>([
+    { po_line_id: '', item_id: '', qty_received: '', uom_id: '', lot_number: '', expiry_date: '' },
   ]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // QC review panel
+  const [qcReceipt, setQcReceipt] = useState<Receipt | null>(null);
+  const [qcLines, setQcLines] = useState<ReceiptLine[]>([]);
+  const [qcLoading, setQcLoading] = useState(false);
+  const [qcUpdating, setQcUpdating] = useState<string | null>(null);
 
   // Fetch PO lines whenever the selected PO changes
   useEffect(() => {
@@ -71,13 +86,13 @@ export default function ReceivingClient({
   function openForPo(id: string) {
     setPoId(id);
     setPoLines([]);
-    setLines([{ po_line_id: '', item_id: '', qty_received: '', uom_id: '', lot_number: '' }]);
+    setLines([{ po_line_id: '', item_id: '', qty_received: '', uom_id: '', lot_number: '', expiry_date: '' }]);
     setError('');
     setOpen(true);
   }
 
   function addLine() {
-    setLines([...lines, { po_line_id: '', item_id: '', qty_received: '', uom_id: '', lot_number: '' }]);
+    setLines([...lines, { po_line_id: '', item_id: '', qty_received: '', uom_id: '', lot_number: '', expiry_date: '' }]);
   }
 
   function removeLine(idx: number) {
@@ -85,11 +100,10 @@ export default function ReceivingClient({
     setLines(lines.filter((_, i) => i !== idx));
   }
 
-  function updateLine(idx: number, field: keyof ReceiptLine, value: string) {
+  function updateLine(idx: number, field: keyof ReceiptLineForm, value: string) {
     setLines(lines.map((l, i) => {
       if (i !== idx) return l;
       const updated = { ...l, [field]: value };
-      // Auto-fill item + UOM when a PO line is selected
       if (field === 'po_line_id') {
         const poLine = poLines.find((pl) => pl.id === value);
         if (poLine) {
@@ -112,7 +126,8 @@ export default function ReceivingClient({
           purchase_order_id: poId,
           lines: lines.map((l) => ({
             ...l,
-            lot_number: l.lot_number || null,
+            lot_number:  l.lot_number  || null,
+            expiry_date: l.expiry_date || null,
           })),
         }),
       });
@@ -122,6 +137,36 @@ export default function ReceivingClient({
       setError(err instanceof Error ? err.message : 'Failed');
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function openQcPanel(receipt: Receipt) {
+    setQcReceipt(receipt);
+    setQcLines([]);
+    setQcLoading(true);
+    try {
+      const data = await clientFetch<ReceiptLine[]>(`/api/v1/receipts/${receipt.id}/lines`);
+      setQcLines(data);
+    } catch {
+      setQcLines([]);
+    } finally {
+      setQcLoading(false);
+    }
+  }
+
+  async function updateQcStatus(lineId: string, qcStatus: string) {
+    if (!qcReceipt) return;
+    setQcUpdating(lineId);
+    try {
+      const updated = await clientFetch<ReceiptLine>(
+        `/api/v1/receipts/${qcReceipt.id}/lines/${lineId}`,
+        { method: 'PUT', body: JSON.stringify({ qc_status: qcStatus }) }
+      );
+      setQcLines((prev) => prev.map((l) => l.id === lineId ? updated : l));
+    } catch {
+      // silent — keep existing state
+    } finally {
+      setQcUpdating(null);
     }
   }
 
@@ -156,12 +201,14 @@ export default function ReceivingClient({
             columns={RECEIPT_COLUMNS(poMap)}
             data={receipts}
             actions={(row) => [
-              { label: 'View PO', onClick: () => router.push(`/purchase-orders/${row.purchase_order_id}`) },
+              { label: 'QC Review', onClick: () => openQcPanel(row) },
+              { label: 'View PO',   onClick: () => router.push(`/purchase-orders/${row.purchase_order_id}`) },
             ]}
           />
         )}
       </div>
 
+      {/* GRN slide-over */}
       <SlideOver open={open} onClose={() => setOpen(false)} title="Record Goods Receipt">
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -204,7 +251,6 @@ export default function ReceivingClient({
                       );
                     })}
                   </select>
-                  {/* Show auto-filled item as confirmation */}
                   {line.item_id && (
                     <p className="text-[10px] text-neutral-400 mt-0.5">
                       Item: {items.find((i) => i.id === line.item_id)?.item_code ?? line.item_id}
@@ -230,11 +276,19 @@ export default function ReceivingClient({
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-[11px] text-neutral-500 mb-0.5">Lot number (optional)</label>
-                  <input placeholder="e.g. LOT-2025-001" value={line.lot_number}
-                    onChange={(e) => updateLine(idx, 'lot_number', e.target.value)}
-                    className="w-full px-2 py-1.5 text-xs border-[0.5px] border-neutral-300 rounded" />
+                <div className="grid grid-cols-2 gap-1.5">
+                  <div>
+                    <label className="block text-[11px] text-neutral-500 mb-0.5">Lot number (optional)</label>
+                    <input placeholder="e.g. LOT-2025-001" value={line.lot_number}
+                      onChange={(e) => updateLine(idx, 'lot_number', e.target.value)}
+                      className="w-full px-2 py-1.5 text-xs border-[0.5px] border-neutral-300 rounded" />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] text-neutral-500 mb-0.5">Expiry date (optional)</label>
+                    <input type="date" value={line.expiry_date}
+                      onChange={(e) => updateLine(idx, 'expiry_date', e.target.value)}
+                      className="w-full px-2 py-1.5 text-xs border-[0.5px] border-neutral-300 rounded" />
+                  </div>
                 </div>
               </div>
             ))}
@@ -246,6 +300,65 @@ export default function ReceivingClient({
             <Button type="button" variant="secondary" onClick={() => setOpen(false)}>Cancel</Button>
           </div>
         </form>
+      </SlideOver>
+
+      {/* QC Review slide-over */}
+      <SlideOver open={!!qcReceipt} onClose={() => setQcReceipt(null)}
+        title={`QC Review — ${qcReceipt?.receipt_number ?? ''}`}>
+        <div className="space-y-3">
+          {qcLoading ? (
+            <p className="text-sm text-neutral-400">Loading lines…</p>
+          ) : qcLines.length === 0 ? (
+            <p className="text-sm text-neutral-400">No lines found</p>
+          ) : (
+            qcLines.map((line) => {
+              const item = items.find((i) => i.id === line.item_id);
+              const uom  = uoms.find((u) => u.id === line.uom_id);
+              const isUpdating = qcUpdating === line.id;
+              return (
+                <div key={line.id} className="p-3 border-[0.5px] border-neutral-200 rounded space-y-2">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <p className="text-xs font-medium text-neutral-800">
+                        {item ? `${item.item_code} — ${item.description}` : line.item_id}
+                      </p>
+                      <p className="text-[10px] text-neutral-400 mt-0.5">
+                        Qty: {Number(line.qty_received).toLocaleString()} {uom?.code ?? ''}
+                        {line.lot_number && ` · Lot: ${line.lot_number}`}
+                        {line.expiry_date && ` · Exp: ${line.expiry_date}`}
+                      </p>
+                    </div>
+                    <Badge variant={qcVariant(line.qc_status)}>{line.qc_status}</Badge>
+                  </div>
+                  {line.qc_status === 'pending' && (
+                    <div className="flex gap-2">
+                      <button
+                        disabled={isUpdating}
+                        onClick={() => updateQcStatus(line.id, 'passed')}
+                        className="flex-1 py-1.5 text-xs font-medium rounded border-[0.5px] border-green-300 bg-green-50 text-green-700 hover:bg-green-100 disabled:opacity-50 transition-colors">
+                        {isUpdating ? '…' : '✓ Pass'}
+                      </button>
+                      <button
+                        disabled={isUpdating}
+                        onClick={() => updateQcStatus(line.id, 'failed')}
+                        className="flex-1 py-1.5 text-xs font-medium rounded border-[0.5px] border-red-300 bg-red-50 text-red-700 hover:bg-red-100 disabled:opacity-50 transition-colors">
+                        {isUpdating ? '…' : '✗ Fail'}
+                      </button>
+                    </div>
+                  )}
+                  {line.qc_status !== 'pending' && (
+                    <button
+                      disabled={isUpdating}
+                      onClick={() => updateQcStatus(line.id, 'pending')}
+                      className="text-[10px] text-neutral-400 hover:text-neutral-600 disabled:opacity-50">
+                      Reset to pending
+                    </button>
+                  )}
+                </div>
+              );
+            })
+          )}
+        </div>
       </SlideOver>
     </>
   );
