@@ -11,12 +11,12 @@ import type { User } from '@/lib/types';
 
 const ROLES = ['admin', 'planner', 'supervisor', 'warehouse', 'qc', 'purchasing', 'sales', 'subcontractor'];
 
-const ROLE_VARIANTS: Record<string, 'blue' | 'green' | 'yellow' | 'red' | 'gray'> = {
+const ROLE_VARIANTS: Record<string, 'blue' | 'green' | 'amber' | 'red' | 'gray'> = {
   admin:          'red',
   planner:        'blue',
   supervisor:     'green',
-  warehouse:      'yellow',
-  qc:             'yellow',
+  warehouse:      'amber',
+  qc:             'amber',
   purchasing:     'blue',
   sales:          'green',
   subcontractor:  'gray',
