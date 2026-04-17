@@ -191,14 +191,14 @@ export default function ArtworkClient({ artworks, fdaRegistrations, salesOrders,
   return (
     <>
       {/* Tab bar */}
-      <div className="flex gap-1 mb-4 bg-neutral-100 rounded-lg p-1 w-fit">
+      <div className="flex gap-0.5 bg-neutral-100 rounded-xl p-1 w-fit mb-4">
         {(['artwork', 'fda'] as const).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
-            className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
+            className={`px-4 py-1.5 rounded-[10px] text-sm font-medium transition-all ${
               tab === t
-                ? 'bg-white shadow-sm text-neutral-900'
+                ? 'bg-white text-neutral-900 shadow-sm ring-[0.5px] ring-neutral-900/[0.06]'
                 : 'text-neutral-500 hover:text-neutral-700'
             }`}
           >

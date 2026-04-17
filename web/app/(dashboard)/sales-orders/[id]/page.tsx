@@ -10,11 +10,12 @@ import {
   getUoms,
 } from '@/lib/api';
 import Topbar from '@/components/layout/Topbar';
-import Badge, { shipmentStatusVariant, soStatusVariant } from '@/components/ui/Badge';
+import Badge, { soStatusVariant } from '@/components/ui/Badge';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import Link from 'next/link';
 import StatusPanel from './StatusPanel';
 import AddSoLineButton from './AddSoLineButton';
+import SoTabsClient from './SoTabsClient';
 
 function formatDate(value: string | null | undefined) {
   return value ? new Date(value).toLocaleDateString() : '—';
@@ -230,146 +231,13 @@ export default async function SalesOrderDetailPage({
           </div>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wide">
-              FDA Registrations
-            </p>
-          </CardHeader>
-          <CardBody className="space-y-3">
-            {fdaRegistrations.length === 0 ? (
-              <p className="text-sm text-neutral-400">No FDA registrations linked to this sales order</p>
-            ) : (
-              fdaRegistrations.map((registration) => {
-                const documents = fdaDocumentsByRegistration.get(registration.id) ?? [];
-                return (
-                  <div key={registration.id} className="rounded-xl border-[0.5px] border-neutral-200 p-4">
-                    <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                      <div className="space-y-2 text-sm">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium">{itemMap[registration.item_id] ?? registration.item_id}</span>
-                          <Badge variant={statusVariant(registration.status)}>{registration.status}</Badge>
-                        </div>
-                        <p className="text-neutral-500">
-                          Registration #: {registration.registration_number ?? 'Pending assignment'}
-                        </p>
-                        <p className="text-neutral-500">
-                          Submitted {formatDate(registration.submitted_at)} · Approved {formatDate(registration.approved_at)} · Expires {formatDate(registration.expiry_date)}
-                        </p>
-                        {registration.notes && <p className="text-neutral-600">{registration.notes}</p>}
-                      </div>
-                      <div className="min-w-56 rounded-lg bg-neutral-50 px-3 py-2 text-sm">
-                        <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
-                          Documents
-                        </p>
-                        {documents.length === 0 ? (
-                          <p className="mt-2 text-neutral-400">No documents uploaded</p>
-                        ) : (
-                          <div className="mt-2 space-y-2">
-                            {documents.map((document) => (
-                              <a
-                                key={document.id}
-                                href={document.file_url}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="flex items-center justify-between gap-3 text-blue-600 hover:text-blue-700"
-                              >
-                                <span>{document.doc_type}</span>
-                                <span className="text-xs text-neutral-500">{formatDate(document.uploaded_at)}</span>
-                              </a>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })
-            )}
-          </CardBody>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wide">
-              Artworks
-            </p>
-          </CardHeader>
-          <CardBody>
-            {artworks.length === 0 ? (
-              <p className="text-sm text-neutral-400">No artworks yet</p>
-            ) : (
-              <div className="space-y-2">
-                {artworks.map((art) => (
-                  <div
-                    key={art.id}
-                    className="flex items-center justify-between text-sm py-2
-                               border-b-[0.5px] border-neutral-100 last:border-0"
-                  >
-                    <div>
-                      <span className="font-medium font-mono text-xs">v{art.version}</span>
-                      {art.approved_at && (
-                        <span className="text-neutral-400 ml-2 text-xs">
-                          Approved {new Date(art.approved_at).toLocaleDateString()}
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <Badge variant={statusVariant(art.status)}>
-                        {art.status}
-                      </Badge>
-                      {art.file_url && (
-                        <a
-                          href={art.file_url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-xs text-blue-600 hover:underline"
-                        >
-                          View
-                        </a>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardBody>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wide">
-              Related Shipments
-            </p>
-          </CardHeader>
-          <CardBody className="space-y-2">
-            {relatedShipments.length === 0 ? (
-              <p className="text-sm text-neutral-400">No shipments created for this sales order</p>
-            ) : (
-              relatedShipments.map((shipment) => (
-                <div
-                  key={shipment.id}
-                  className="flex flex-col gap-2 rounded-lg border-[0.5px] border-neutral-200 px-4 py-3 text-sm md:flex-row md:items-center md:justify-between"
-                >
-                  <div>
-                    <p className="font-medium">{shipment.shipment_number}</p>
-                    <p className="text-neutral-500">
-                      {shipment.carrier ?? 'Carrier pending'}
-                      {shipment.tracking_number ? ` · ${shipment.tracking_number}` : ''}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <Badge variant={shipmentStatusVariant(shipment.status)}>{shipment.status}</Badge>
-                    <span className="text-neutral-500">{formatDate(shipment.dispatched_at ?? shipment.created_at)}</span>
-                    <Link href="/shipments" className="text-blue-600 hover:text-blue-700">
-                      View module
-                    </Link>
-                  </div>
-                </div>
-              ))
-            )}
-          </CardBody>
-        </Card>
+        <SoTabsClient
+          artworks={artworks}
+          fdaRegistrations={fdaRegistrations}
+          fdaDocuments={Object.fromEntries(fdaDocumentsByRegistration)}
+          relatedShipments={relatedShipments}
+          itemMap={itemMap}
+        />
 
         {so.notes && (
           <Card>

@@ -1,12 +1,14 @@
-import { getSalesOrders, getCustomers, getCountries } from '@/lib/api';
+import { getSalesOrders, getCustomers, getCountries, getItems, getUoms } from '@/lib/api';
 import Topbar from '@/components/layout/Topbar';
 import SalesOrdersClient from './SalesOrdersClient';
 
 export default async function SalesOrdersPage() {
-  const [orders, customers, countries] = await Promise.all([
+  const [orders, customers, countries, items, uoms] = await Promise.all([
     getSalesOrders(),
     getCustomers(),
     getCountries(),
+    getItems(),
+    getUoms(),
   ]);
   const customerMap = Object.fromEntries(customers.map((c) => [c.id, c.name]));
   return (
@@ -18,6 +20,8 @@ export default async function SalesOrdersPage() {
           customerMap={customerMap}
           customers={customers}
           countries={countries}
+          items={items}
+          uoms={uoms}
         />
       </div>
     </div>

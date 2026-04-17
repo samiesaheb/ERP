@@ -1,4 +1,4 @@
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, NaiveTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -31,24 +31,33 @@ pub struct LoginResponse {
 }
 
 /// A user record returned from the API.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct User {
-    pub id:         Uuid,
-    pub email:      String,
-    pub full_name:  String,
-    pub role:       String,
-    pub is_active:  bool,
-    pub created_at: DateTime<Utc>,
+    pub id:                 Uuid,
+    pub email:              String,
+    pub full_name:          String,
+    pub role:               String,
+    pub is_active:          bool,
+    pub created_at:         DateTime<Utc>,
+    /// Comma-separated short day names: "Mon,Tue,Wed,Thu,Fri"  (NULL = unrestricted)
+    pub allowed_days:       Option<String>,
+    /// UTC wall-clock window start (NULL = unrestricted)
+    pub access_time_start:  Option<NaiveTime>,
+    /// UTC wall-clock window end   (NULL = unrestricted)
+    pub access_time_end:    Option<NaiveTime>,
 }
 
 /// POST /api/v1/users
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CreateUser {
-    pub email:     String,
-    pub password:  String,
-    pub full_name: String,
+    pub email:              String,
+    pub password:           String,
+    pub full_name:          String,
     #[serde(default = "default_role")]
-    pub role:      String,
+    pub role:               String,
+    pub allowed_days:       Option<String>,
+    pub access_time_start:  Option<String>,   // "HH:MM"
+    pub access_time_end:    Option<String>,   // "HH:MM"
 }
 
 fn default_role() -> String { "admin".to_string() }
@@ -56,8 +65,11 @@ fn default_role() -> String { "admin".to_string() }
 /// PUT /api/v1/users/:id
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UpdateUser {
-    pub full_name: Option<String>,
-    pub role:      Option<String>,
-    pub is_active: Option<bool>,
-    pub password:  Option<String>,
+    pub full_name:          Option<String>,
+    pub role:               Option<String>,
+    pub is_active:          Option<bool>,
+    pub password:           Option<String>,
+    pub allowed_days:       Option<String>,
+    pub access_time_start:  Option<String>,   // "HH:MM" or "" to clear
+    pub access_time_end:    Option<String>,   // "HH:MM" or "" to clear
 }

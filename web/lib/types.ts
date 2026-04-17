@@ -453,6 +453,9 @@ export interface User {
   role: string;
   is_active: boolean;
   created_at: string;
+  allowed_days:      string | null;  // e.g. "Mon,Tue,Wed,Thu,Fri"
+  access_time_start: string | null;  // "HH:MM" UTC
+  access_time_end:   string | null;  // "HH:MM" UTC
 }
 
 // ---------------------------------------------------------------------------

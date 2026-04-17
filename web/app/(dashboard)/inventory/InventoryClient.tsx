@@ -162,16 +162,16 @@ export default function InventoryClient({
   return (
     <>
       {/* Action button + Tab bar */}
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex flex-col items-start gap-2 mb-3">
         <Button onClick={() => openTransaction()}>+ Stock Transaction</Button>
-        <div className="flex gap-1 bg-neutral-100 rounded-lg p-1">
+        <div className="flex gap-0.5 bg-neutral-100 rounded-xl p-1">
           {(['stock', 'history'] as const).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
-              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors capitalize ${
+              className={`px-4 py-1.5 rounded-[10px] text-sm font-medium transition-all ${
                 tab === t
-                  ? 'bg-white text-neutral-900 shadow-sm'
+                  ? 'bg-white text-neutral-900 shadow-sm ring-[0.5px] ring-neutral-900/[0.06]'
                   : 'text-neutral-500 hover:text-neutral-700'
               }`}
             >
