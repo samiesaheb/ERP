@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT id, email, full_name, role, is_active, created_at\n         FROM users ORDER BY created_at",
+  "query": "SELECT id, code, name, center_type, capacity, status, notes, created_at\n         FROM work_centers ORDER BY code",
   "describe": {
     "columns": [
       {
@@ -10,26 +10,36 @@
       },
       {
         "ordinal": 1,
-        "name": "email",
+        "name": "code",
         "type_info": "Text"
       },
       {
         "ordinal": 2,
-        "name": "full_name",
+        "name": "name",
         "type_info": "Text"
       },
       {
         "ordinal": 3,
-        "name": "role",
+        "name": "center_type",
         "type_info": "Text"
       },
       {
         "ordinal": 4,
-        "name": "is_active",
-        "type_info": "Bool"
+        "name": "capacity",
+        "type_info": "Numeric"
       },
       {
         "ordinal": 5,
+        "name": "status",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "notes",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 7,
         "name": "created_at",
         "type_info": "Timestamptz"
       }
@@ -42,9 +52,11 @@
       false,
       false,
       false,
+      true,
       false,
+      true,
       false
     ]
   },
-  "hash": "1ed56284f8b3753e54d959278f6465f2ebbab49d5be2bb25e3ee884e1f4cfd3b"
+  "hash": "60386d5650febde775bf57d04d20cd8e8bccea7e467185a12f1d4746d0768a24"
 }

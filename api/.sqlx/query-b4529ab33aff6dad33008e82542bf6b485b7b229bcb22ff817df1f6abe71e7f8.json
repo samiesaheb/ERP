@@ -1,0 +1,76 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, batch_id, test_type, result_value, min_spec, max_spec,\n                pass_fail, tested_by, tested_at, notes\n         FROM qc_tests WHERE batch_id = $1 ORDER BY tested_at DESC",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "batch_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "test_type",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "result_value",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "min_spec",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 5,
+        "name": "max_spec",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 6,
+        "name": "pass_fail",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 7,
+        "name": "tested_by",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 8,
+        "name": "tested_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 9,
+        "name": "notes",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      false,
+      true,
+      false,
+      true
+    ]
+  },
+  "hash": "b4529ab33aff6dad33008e82542bf6b485b7b229bcb22ff817df1f6abe71e7f8"
+}

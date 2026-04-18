@@ -11,6 +11,7 @@ pub mod production;
 pub mod sales;
 pub mod search;
 pub mod shipments;
+pub mod shop_floor;
 
 // ---------------------------------------------------------------------------
 // Convenience re-exports
@@ -70,7 +71,7 @@ pub use production::{
 
 pub use sales::{
     SalesOrder, CreateSalesOrder, UpdateSalesOrder,
-    SalesOrderLine, CreateSalesOrderLine,
+    SalesOrderLine, CreateSalesOrderLine, UpdateSalesOrderLine,
 };
 
 pub use search::SearchResult;
@@ -79,4 +80,12 @@ pub use shipments::{
     Shipment, CreateShipment, UpdateShipment,
     ShipmentLine, CreateShipmentLine,
     ShippingDocument, CreateShippingDocument,
+};
+
+pub use shop_floor::{
+    WorkCenter, CreateWorkCenter, UpdateWorkCenter,
+    RoutingStep, CreateRoutingStep,
+    QcTest, CreateQcTest, UpdateQcTest,
+    DowntimeEvent, CreateDowntimeEvent, UpdateDowntimeEvent,
+    AccessRequest, CreateAccessRequest, UpdateAccessRequest,
 };

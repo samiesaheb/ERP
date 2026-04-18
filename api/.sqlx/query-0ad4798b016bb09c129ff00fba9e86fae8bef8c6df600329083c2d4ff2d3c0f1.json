@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "UPDATE users SET\n             full_name     = COALESCE($2, full_name),\n             role          = COALESCE($3, role),\n             is_active     = COALESCE($4, is_active),\n             password_hash = COALESCE($5, password_hash)\n           WHERE id = $1\n           RETURNING id, email, full_name, role, is_active, created_at",
+  "query": "INSERT INTO work_centers (id, code, name, center_type, capacity, notes)\n         VALUES ($1, $2, $3, $4, $5, $6)\n         RETURNING id, code, name, center_type, capacity, status, notes, created_at",
   "describe": {
     "columns": [
       {
@@ -10,26 +10,36 @@
       },
       {
         "ordinal": 1,
-        "name": "email",
+        "name": "code",
         "type_info": "Text"
       },
       {
         "ordinal": 2,
-        "name": "full_name",
+        "name": "name",
         "type_info": "Text"
       },
       {
         "ordinal": 3,
-        "name": "role",
+        "name": "center_type",
         "type_info": "Text"
       },
       {
         "ordinal": 4,
-        "name": "is_active",
-        "type_info": "Bool"
+        "name": "capacity",
+        "type_info": "Numeric"
       },
       {
         "ordinal": 5,
+        "name": "status",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "notes",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 7,
         "name": "created_at",
         "type_info": "Timestamptz"
       }
@@ -39,7 +49,8 @@
         "Uuid",
         "Text",
         "Text",
-        "Bool",
+        "Text",
+        "Numeric",
         "Text"
       ]
     },
@@ -48,9 +59,11 @@
       false,
       false,
       false,
+      true,
       false,
+      true,
       false
     ]
   },
-  "hash": "5fd0a6c6bded76bfab942338c01a09ed14c9a9861be7311d82834cb7ff9e5dff"
+  "hash": "0ad4798b016bb09c129ff00fba9e86fae8bef8c6df600329083c2d4ff2d3c0f1"
 }

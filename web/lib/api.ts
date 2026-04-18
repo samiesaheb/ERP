@@ -15,6 +15,7 @@ import type {
   Supplier, Uom,
   User,
   AuditLog,
+  WorkCenter, RoutingStep, QcTest, DowntimeEvent, AccessRequest,
 } from './types';
 
 // ---------------------------------------------------------------------------
@@ -203,3 +204,17 @@ export const getAuditLogs = (params?: { table_name?: string; action?: string; re
   ).toString();
   return apiFetch<AuditLog[]>(`/api/v1/audit-logs${q ? `?${q}` : ''}`);
 };
+
+// ---------------------------------------------------------------------------
+// Shop Floor
+// ---------------------------------------------------------------------------
+
+export const getWorkCenters   = () => apiFetch<WorkCenter[]>('/api/v1/work-centers');
+export const getRoutingSteps  = (bomId: string) =>
+  apiFetch<RoutingStep[]>(`/api/v1/boms/${bomId}/routing`);
+export const getQcTests       = (batchId: string) =>
+  apiFetch<QcTest[]>(`/api/v1/production/batches/${batchId}/qc-tests`);
+export const getDowntimeEvents = (batchId: string) =>
+  apiFetch<DowntimeEvent[]>(`/api/v1/production/batches/${batchId}/downtime`);
+export const getAccessRequests = () =>
+  apiFetch<AccessRequest[]>('/api/v1/access-requests');

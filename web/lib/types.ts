@@ -103,6 +103,7 @@ export interface SalesOrderLine {
   uom_id: string;
   unit_price: string | null;
   notes: string | null;
+  bom_id: string | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -456,6 +457,67 @@ export interface User {
   allowed_days:      string | null;  // e.g. "Mon,Tue,Wed,Thu,Fri"
   access_time_start: string | null;  // "HH:MM" UTC
   access_time_end:   string | null;  // "HH:MM" UTC
+}
+
+// ---------------------------------------------------------------------------
+// Shop Floor — Work Centers, Routing, QC, Downtime, Access Requests
+// ---------------------------------------------------------------------------
+
+export interface WorkCenter {
+  id: string;
+  code: string;
+  name: string;
+  center_type: string;   // mixer / filler / packer / lab / general
+  capacity: string | null;
+  status: string;        // active / maintenance / inactive
+  notes: string | null;
+  created_at: string;
+}
+
+export interface RoutingStep {
+  id: string;
+  bom_id: string;
+  step_number: number;
+  name: string;
+  work_center_id: string;
+  std_time_min: string;
+  instructions: string | null;
+}
+
+export interface QcTest {
+  id: string;
+  batch_id: string;
+  test_type: string;     // viscosity / ph / microbial / temperature / appearance / weight / other
+  result_value: string | null;
+  min_spec: string | null;
+  max_spec: string | null;
+  pass_fail: string;     // pending / pass / fail
+  tested_by: string | null;
+  tested_at: string;
+  notes: string | null;
+}
+
+export interface DowntimeEvent {
+  id: string;
+  batch_id: string;
+  work_center_id: string | null;
+  reason_code: string;   // mechanical / cleaning / setup / material_shortage / operator / quality_hold / other
+  description: string | null;
+  start_time: string;
+  end_time: string | null;
+  reported_by: string | null;
+  created_at: string;
+}
+
+export interface AccessRequest {
+  id: string;
+  user_id: string;
+  permission: string;
+  reason: string | null;
+  status: string;        // pending / approved / denied
+  reviewed_by: string | null;
+  reviewed_at: string | null;
+  created_at: string;
 }
 
 // ---------------------------------------------------------------------------

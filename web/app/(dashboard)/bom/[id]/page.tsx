@@ -1,17 +1,20 @@
-import { getBom, getBomLines, getItems, getUoms } from '@/lib/api';
+import { getBom, getBomLines, getItems, getUoms, getRoutingSteps, getWorkCenters } from '@/lib/api';
 import Topbar from '@/components/layout/Topbar';
 import Badge from '@/components/ui/Badge';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import BomExplosionPanel from './BomExplosionPanel';
+import RoutingStepsPanel from './RoutingStepsPanel';
 import Link from 'next/link';
 
 export default async function BomDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const [bom, lines, items, uoms] = await Promise.all([
+  const [bom, lines, items, uoms, routingSteps, workCenters] = await Promise.all([
     getBom(id),
     getBomLines(id),
     getItems(),
     getUoms(),
+    getRoutingSteps(id),
+    getWorkCenters(),
   ]);
   const itemMap = Object.fromEntries(items.map((i) => [i.id, i]));
   const uomMap  = Object.fromEntries(uoms.map((u) => [u.id, u.code]));
@@ -96,6 +99,9 @@ export default async function BomDetailPage({ params }: { params: Promise<{ id: 
             </table>
           </div>
         </Card>
+
+        {/* Routing Steps */}
+        <RoutingStepsPanel bomId={id} steps={routingSteps} workCenters={workCenters} />
 
         {/* BOM Explosion panel — client component */}
         <BomExplosionPanel bomId={id} />

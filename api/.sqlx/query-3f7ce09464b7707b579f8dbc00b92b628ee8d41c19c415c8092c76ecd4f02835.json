@@ -1,0 +1,79 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE qc_tests SET\n             result_value = COALESCE($2, result_value),\n             pass_fail    = COALESCE($3, pass_fail),\n             notes        = COALESCE($4, notes)\n           WHERE id = $1\n           RETURNING id, batch_id, test_type, result_value, min_spec, max_spec,\n                     pass_fail, tested_by, tested_at, notes",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "batch_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "test_type",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "result_value",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "min_spec",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 5,
+        "name": "max_spec",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 6,
+        "name": "pass_fail",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 7,
+        "name": "tested_by",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 8,
+        "name": "tested_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 9,
+        "name": "notes",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Text",
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      false,
+      true,
+      false,
+      true
+    ]
+  },
+  "hash": "3f7ce09464b7707b579f8dbc00b92b628ee8d41c19c415c8092c76ecd4f02835"
+}

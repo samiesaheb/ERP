@@ -61,6 +61,8 @@ const ICONS: Record<string, React.ReactElement> = {
   '/payments':             <Icon path="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />,
   '/users':                <Icon path="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z" />,
   '/audit-logs':           <Icon path="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />,
+  '/work-centers':         <Icon path="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />,
+  '/access-requests':      <Icon path="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />,
 };
 
 interface NavItem {
@@ -106,9 +108,10 @@ const NAV: NavGroup[] = [
   {
     title: 'Production',
     items: [
-      { label: 'Mfg Orders', href: '/manufacturing-orders' },
-      { label: 'MRP Planning', href: '/mrp' },
+      { label: 'Mfg Orders',     href: '/manufacturing-orders' },
+      { label: 'MRP Planning',   href: '/mrp' },
       { label: 'Production Floor', href: '/production' },
+      { label: 'Work Centers',   href: '/work-centers' },
     ],
   },
   {
@@ -121,8 +124,9 @@ const NAV: NavGroup[] = [
   {
     title: 'Admin',
     items: [
-      { label: 'Users',       href: '/users' },
-      { label: 'Audit Trail', href: '/audit-logs' },
+      { label: 'Users',            href: '/users' },
+      { label: 'Access Requests',  href: '/access-requests' },
+      { label: 'Audit Trail',      href: '/audit-logs' },
     ],
   },
 ];

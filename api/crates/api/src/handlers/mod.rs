@@ -11,3 +11,4 @@ pub mod production;
 pub mod sales;
 pub mod search;
 pub mod shipments;
+pub mod shop_floor;

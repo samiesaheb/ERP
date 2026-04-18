@@ -5,7 +5,7 @@ use axum::{
 };
 
 use crate::{
-    handlers::{audit, artwork, auth, bom, dashboard, finance, inventory, masters, procurement, production, sales, search, shipments},
+    handlers::{audit, artwork, auth, bom, dashboard, finance, inventory, masters, procurement, production, sales, search, shipments, shop_floor},
     middleware::auth::require_auth,
     state::AppState,
 };
@@ -46,6 +46,8 @@ pub fn build_router(state: AppState) -> Router {
             get(sales::get_sales_order).put(sales::update_sales_order))
         .route("/api/v1/sales-orders/:so_id/lines",
             get(sales::list_so_lines).post(sales::create_so_line))
+        .route("/api/v1/sales-orders/:so_id/lines/:line_id",
+            put(sales::update_so_line).delete(sales::delete_so_line))
 
         // Artwork & FDA
         .route("/api/v1/artworks",         get(artwork::list_artworks).post(artwork::create_artwork))
@@ -115,6 +117,36 @@ pub fn build_router(state: AppState) -> Router {
 
         // Audit Trail
         .route("/api/v1/audit-logs", get(audit::list_audit_logs))
+
+        // Work Centers
+        .route("/api/v1/work-centers",
+            get(shop_floor::list_work_centers).post(shop_floor::create_work_center))
+        .route("/api/v1/work-centers/:id",
+            put(shop_floor::update_work_center))
+
+        // Routing Steps (per BOM)
+        .route("/api/v1/boms/:bom_id/routing",
+            get(shop_floor::list_routing_steps).post(shop_floor::create_routing_step))
+        .route("/api/v1/boms/:bom_id/routing/:step_id",
+            delete(shop_floor::delete_routing_step))
+
+        // QC Tests (per batch)
+        .route("/api/v1/production/batches/:batch_id/qc-tests",
+            get(shop_floor::list_qc_tests).post(shop_floor::create_qc_test))
+        .route("/api/v1/production/batches/:batch_id/qc-tests/:test_id",
+            put(shop_floor::update_qc_test))
+
+        // Downtime Events (per batch)
+        .route("/api/v1/production/batches/:batch_id/downtime",
+            get(shop_floor::list_downtime_events).post(shop_floor::create_downtime_event))
+        .route("/api/v1/production/batches/:batch_id/downtime/:event_id",
+            put(shop_floor::close_downtime_event))
+
+        // Access Requests
+        .route("/api/v1/access-requests",
+            get(shop_floor::list_access_requests).post(shop_floor::create_access_request))
+        .route("/api/v1/access-requests/:id",
+            put(shop_floor::update_access_request))
 
         // Finance
         .route("/api/v1/invoices",

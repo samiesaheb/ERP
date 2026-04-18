@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "INSERT INTO sales_order_lines (id, sales_order_id, item_id, qty_ordered, uom_id, unit_price, notes)\n         VALUES ($1, $2, $3, $4, $5, $6, $7)\n         RETURNING id, sales_order_id, item_id, qty_ordered, uom_id, unit_price, notes",
+  "query": "INSERT INTO routing_steps (id, bom_id, step_number, name, work_center_id, std_time_min, instructions)\n         VALUES ($1, $2, $3, $4, $5, $6, $7)\n         RETURNING id, bom_id, step_number, name, work_center_id, std_time_min, instructions",
   "describe": {
     "columns": [
       {
@@ -10,32 +10,32 @@
       },
       {
         "ordinal": 1,
-        "name": "sales_order_id",
+        "name": "bom_id",
         "type_info": "Uuid"
       },
       {
         "ordinal": 2,
-        "name": "item_id",
-        "type_info": "Uuid"
+        "name": "step_number",
+        "type_info": "Int4"
       },
       {
         "ordinal": 3,
-        "name": "qty_ordered",
-        "type_info": "Numeric"
+        "name": "name",
+        "type_info": "Text"
       },
       {
         "ordinal": 4,
-        "name": "uom_id",
+        "name": "work_center_id",
         "type_info": "Uuid"
       },
       {
         "ordinal": 5,
-        "name": "unit_price",
+        "name": "std_time_min",
         "type_info": "Numeric"
       },
       {
         "ordinal": 6,
-        "name": "notes",
+        "name": "instructions",
         "type_info": "Text"
       }
     ],
@@ -43,8 +43,8 @@
       "Left": [
         "Uuid",
         "Uuid",
-        "Uuid",
-        "Numeric",
+        "Int4",
+        "Text",
         "Uuid",
         "Numeric",
         "Text"
@@ -56,9 +56,9 @@
       false,
       false,
       false,
-      true,
+      false,
       true
     ]
   },
-  "hash": "6bb10b13f6bf20508ecceb2c82527f5fc2bb430f8eca0e3bc5b7090e2d77622d"
+  "hash": "02308c0d435275052ad2e5293ce6d236ca7b7ca540877d842940fcf7c21b45f2"
 }

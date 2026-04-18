@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT id, sales_order_id, item_id, qty_ordered, uom_id, unit_price, notes\n         FROM sales_order_lines WHERE sales_order_id = $1 ORDER BY id",
+  "query": "SELECT id, bom_id, step_number, name, work_center_id, std_time_min, instructions\n         FROM routing_steps WHERE bom_id = $1 ORDER BY step_number",
   "describe": {
     "columns": [
       {
@@ -10,32 +10,32 @@
       },
       {
         "ordinal": 1,
-        "name": "sales_order_id",
+        "name": "bom_id",
         "type_info": "Uuid"
       },
       {
         "ordinal": 2,
-        "name": "item_id",
-        "type_info": "Uuid"
+        "name": "step_number",
+        "type_info": "Int4"
       },
       {
         "ordinal": 3,
-        "name": "qty_ordered",
-        "type_info": "Numeric"
+        "name": "name",
+        "type_info": "Text"
       },
       {
         "ordinal": 4,
-        "name": "uom_id",
+        "name": "work_center_id",
         "type_info": "Uuid"
       },
       {
         "ordinal": 5,
-        "name": "unit_price",
+        "name": "std_time_min",
         "type_info": "Numeric"
       },
       {
         "ordinal": 6,
-        "name": "notes",
+        "name": "instructions",
         "type_info": "Text"
       }
     ],
@@ -50,9 +50,9 @@
       false,
       false,
       false,
-      true,
+      false,
       true
     ]
   },
-  "hash": "23b7fde56a3981f95abbed4a4d0ef583d3465f15a1b8c7118c33db4acd1f2e28"
+  "hash": "b11bf155f4256c1f78d7f07c281be46e81237ec724cbf5dc1daab966308995b5"
 }

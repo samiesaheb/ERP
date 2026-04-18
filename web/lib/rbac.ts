@@ -49,22 +49,26 @@ export const ROLE_ACCESS: Record<Role, string[] | '*'> = {
     '/manufacturing-orders',
     '/mrp',
     '/production',
+    '/work-centers',
     '/inventory',
     '/purchase-orders',
     '/receiving',
     '/suppliers',
+    '/access-requests',
   ],
 
   supervisor: [
     '/',
     '/manufacturing-orders',
     '/production',
+    '/work-centers',
     '/inventory',
     '/shipments',
     '/receiving',
     '/items',
     '/bom',
     '/sales-orders',
+    '/access-requests',
   ],
 
   warehouse: [
@@ -79,9 +83,11 @@ export const ROLE_ACCESS: Record<Role, string[] | '*'> = {
     '/',
     '/inventory',
     '/production',
+    '/work-centers',
     '/receiving',
     '/artwork',
     '/items',
+    '/access-requests',
   ],
 
   subcontractor: [
