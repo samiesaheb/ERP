@@ -86,12 +86,10 @@ export default function InvoicingClient({
 
   return (
     <>
-      <div className="flex justify-start mb-3">
-        <Button onClick={() => setOpen(true)}>+ New Invoice</Button>
-      </div>
       <div className="bg-white border-[0.5px] border-neutral-200 rounded-xl overflow-hidden">
         <DataTable
           columns={COLUMNS(customerMap, soMap)}
+          toolbar={<Button onClick={() => setOpen(true)}>+ New Invoice</Button>}
           data={invoices}
           onRowClick={(row) => router.push(`/invoicing/${row.id}`)}
           actions={(row) => {

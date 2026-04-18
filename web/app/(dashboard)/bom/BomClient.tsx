@@ -80,13 +80,10 @@ export default function BomClient({
 
   return (
     <>
-      <div className="flex justify-start mb-3">
-        <Button onClick={() => setOpen(true)}>+ New BOM</Button>
-      </div>
-
       <div className="bg-white border-[0.5px] border-neutral-200 rounded-xl overflow-hidden">
         <DataTable
           columns={COLUMNS(itemMap)}
+          toolbar={<Button onClick={() => setOpen(true)}>+ New BOM</Button>}
           data={boms}
           actions={(row) => [
             { label: 'View',   onClick: () => router.push(`/bom/${row.id}`) },

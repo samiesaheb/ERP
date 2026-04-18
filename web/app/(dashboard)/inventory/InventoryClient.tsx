@@ -161,9 +161,8 @@ export default function InventoryClient({
 
   return (
     <>
-      {/* Action button + Tab bar */}
-      <div className="flex flex-col items-start gap-2 mb-3">
-        <Button onClick={() => openTransaction()}>+ Stock Transaction</Button>
+      {/* Tab bar */}
+      <div className="flex items-center gap-2 mb-3">
         <div className="flex gap-0.5 bg-neutral-100 rounded-xl p-1">
           {(['stock', 'history'] as const).map((t) => (
             <button
@@ -185,6 +184,7 @@ export default function InventoryClient({
         {tab === 'stock' ? (
           <DataTable
             columns={STOCK_COLUMNS}
+            toolbar={<Button onClick={() => openTransaction()}>+ Stock Transaction</Button>}
             data={inventory}
             actions={(row) => [
               { label: 'Adjust Stock', onClick: () => openTransaction(row.id) },
@@ -194,6 +194,7 @@ export default function InventoryClient({
         ) : (
           <DataTable
             columns={txnColumns}
+            toolbar={<Button onClick={() => openTransaction()}>+ Stock Transaction</Button>}
             data={transactions}
           />
         )}

@@ -121,13 +121,10 @@ export default function PaymentsClient({
 
   return (
     <>
-      <div className="flex justify-start mb-3">
-        <Button onClick={() => setOpen(true)}>+ New Payment</Button>
-      </div>
-
       <div className="bg-white border-[0.5px] border-neutral-200 rounded-xl overflow-hidden">
         <DataTable
           columns={COLUMNS(customerMap, supplierMap)}
+          toolbar={<Button onClick={() => setOpen(true)}>+ New Payment</Button>}
           data={payments}
           searchable
           actions={(row) => [

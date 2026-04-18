@@ -172,8 +172,7 @@ export default function ReceivingClient({
 
   return (
     <>
-      <div className="flex flex-col items-start gap-2 mb-3">
-        <Button onClick={() => openForPo('')}>+ Record Receipt</Button>
+      <div className="flex items-center gap-2 mb-3">
         <div className="flex gap-0.5 bg-neutral-100 rounded-xl p-1">
           {([['open', 'Open POs'], ['history', 'Receipt History']] as const).map(([t, label]) => (
             <button key={t} onClick={() => setTab(t)}
@@ -192,6 +191,7 @@ export default function ReceivingClient({
         {tab === 'open' ? (
           <DataTable
             columns={COLUMNS(supplierMap)}
+            toolbar={<Button onClick={() => openForPo('')}>+ Record Receipt</Button>}
             data={openPos}
             actions={(row) => [
               { label: 'Record Receipt', onClick: () => openForPo(row.id) },

@@ -96,12 +96,10 @@ export default function MoClient({
 
   return (
     <>
-      <div className="flex justify-start mb-3">
-        <Button onClick={() => setOpen(true)}>+ New MO</Button>
-      </div>
       <div className="bg-white border-[0.5px] border-neutral-200 rounded-xl overflow-hidden">
         <DataTable
           columns={COLUMNS(soMap, itemMap)}
+          toolbar={<Button onClick={() => setOpen(true)}>+ New MO</Button>}
           data={mos}
           onRowClick={(row) => router.push(`/manufacturing-orders/${row.id}`)}
           actions={(row) => [

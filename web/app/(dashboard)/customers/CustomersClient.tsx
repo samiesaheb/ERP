@@ -123,13 +123,10 @@ export default function CustomersClient({
 
   return (
     <>
-      <div className="flex justify-start mb-3">
-        <Button onClick={openCreate}>+ New Customer</Button>
-      </div>
-
       <div className="bg-white border-[0.5px] border-neutral-200 rounded-xl overflow-hidden">
         <DataTable
           columns={COLUMNS(typeMap, countryMap)}
+          toolbar={<Button onClick={openCreate}>+ New Customer</Button>}
           data={customers}
           searchable
           actions={(row) => [

@@ -59,6 +59,7 @@ pub struct SalesOrderLine {
     pub uom_id:         Uuid,
     pub unit_price:     Option<Decimal>, // NUMERIC(18,4)
     pub notes:          Option<String>,
+    pub bom_id:         Option<Uuid>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -68,4 +69,15 @@ pub struct CreateSalesOrderLine {
     pub uom_id:      Uuid,
     pub unit_price:  Option<Decimal>,
     pub notes:       Option<String>,
+    pub bom_id:      Option<Uuid>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct UpdateSalesOrderLine {
+    pub item_id:     Option<Uuid>,
+    pub qty_ordered: Option<Decimal>,
+    pub uom_id:      Option<Uuid>,
+    pub unit_price:  Option<Decimal>,
+    pub notes:       Option<String>,
+    pub bom_id:      Option<Uuid>,
 }

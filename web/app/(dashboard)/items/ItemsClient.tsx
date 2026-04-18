@@ -138,12 +138,10 @@ export default function ItemsClient({
 
   return (
     <>
-      <div className="flex justify-start mb-3">
-        <Button onClick={openCreate}>+ New Item</Button>
-      </div>
       <div className="bg-white border-[0.5px] border-neutral-200 rounded-xl overflow-hidden">
         <DataTable
           columns={COLUMNS(uomMap)}
+          toolbar={<Button onClick={openCreate}>+ New Item</Button>}
           data={items}
           actions={(row) => [
             { label: 'Edit',        onClick: () => openEdit(row) },

@@ -210,12 +210,10 @@ export default function ArtworkClient({ artworks, fdaRegistrations, salesOrders,
       {/* ---- Artworks tab ---- */}
       {tab === 'artwork' && (
         <>
-          <div className="flex justify-start mb-3">
-            <Button onClick={() => setArtOpen(true)}>+ New Artwork</Button>
-          </div>
           <div className="bg-white border-[0.5px] border-neutral-200 rounded-xl overflow-hidden">
             <DataTable
               columns={ARTWORK_COLUMNS}
+              toolbar={<Button onClick={() => setArtOpen(true)}>+ New Artwork</Button>}
               data={artworkRows}
               searchable
               actions={(row) => {
@@ -314,12 +312,10 @@ export default function ArtworkClient({ artworks, fdaRegistrations, salesOrders,
       {/* ---- FDA Registrations tab ---- */}
       {tab === 'fda' && (
         <>
-          <div className="flex justify-start mb-3">
-            <Button onClick={() => setFdaOpen(true)}>+ New FDA Registration</Button>
-          </div>
           <div className="bg-white border-[0.5px] border-neutral-200 rounded-xl overflow-hidden">
             <DataTable
               columns={FDA_COLUMNS}
+              toolbar={<Button onClick={() => setFdaOpen(true)}>+ New FDA Registration</Button>}
               data={fdaRows}
               searchable
               actions={(row) => {

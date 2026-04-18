@@ -6,6 +6,15 @@ import DropdownMenu, { MenuItem } from './DropdownMenu';
 function rowMatchesQuery<T>(row: T, query: string, columns: Column<T>[]): boolean {
   const q = query.toLowerCase();
   return columns.some((col) => {
+    // If the column has a render function that returns a plain string, use that —
+    // it captures computed values like customer names looked up from a map.
+    if (col.render) {
+      const rendered = col.render(row);
+      if (typeof rendered === 'string') {
+        return rendered.toLowerCase().includes(q);
+      }
+    }
+    // Fall back to the raw field value (covers status, boolean fields, etc.)
     const raw = getNestedValue(row, String(col.key));
     const text = String(raw ?? '').toLowerCase();
     return text.includes(q);
@@ -28,6 +37,8 @@ interface DataTableProps<T extends { id: string }> {
   actions?: (row: T) => MenuItem[];
   /** Show the search / filter bar (default true). */
   searchable?: boolean;
+  /** Button or element rendered top-left inside the table toolbar. */
+  toolbar?: React.ReactNode;
 }
 
 type SortDir = 'asc' | 'desc';
@@ -42,6 +53,7 @@ export default function DataTable<T extends { id: string }>({
   onRowClick,
   actions,
   searchable = true,
+  toolbar,
 }: DataTableProps<T>) {
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>('asc');
@@ -71,17 +83,20 @@ export default function DataTable<T extends { id: string }>({
 
   return (
     <div>
-      {searchable && (
-        <div className="px-4 py-2.5 border-b-[0.5px] border-neutral-200">
-          <input
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search…"
-            className="w-full max-w-xs px-3 py-1.5 text-sm border border-neutral-300
-                       rounded bg-white placeholder-neutral-400 outline-none appearance-none
-                       focus:border-neutral-500"
-          />
+      {(toolbar || searchable) && (
+        <div className="flex items-center gap-3 px-4 py-2.5 border-b-[0.5px] border-neutral-200">
+          {toolbar && <div className="shrink-0">{toolbar}</div>}
+          {searchable && (
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search…"
+              className="w-full max-w-xs px-3 py-1.5 text-sm border border-neutral-300
+                         rounded bg-white placeholder-neutral-400 outline-none appearance-none
+                         focus:border-neutral-500"
+            />
+          )}
         </div>
       )}
     <div className="overflow-x-auto">

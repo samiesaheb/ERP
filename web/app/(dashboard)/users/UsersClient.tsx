@@ -212,10 +212,7 @@ export default function UsersClient({ users: initial }: { users: User[] }) {
           <h1 className="text-xl font-semibold text-neutral-900">Users</h1>
           <p className="text-sm text-neutral-500 mt-0.5">{users.length} user{users.length !== 1 ? 's' : ''}</p>
         </div>
-        <div className="flex justify-start">
-          <Button onClick={openCreate}>+ New User</Button>
-        </div>
-        <DataTable columns={columns} data={users} />
+        <DataTable columns={columns} toolbar={<Button onClick={openCreate}>+ New User</Button>} data={users} />
       </div>
 
       <SlideOver

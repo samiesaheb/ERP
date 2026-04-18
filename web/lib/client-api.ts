@@ -35,5 +35,6 @@ export async function clientFetch<T>(
     throw new Error(body.error ?? 'Request failed');
   }
 
+  if (res.status === 204) return undefined as T;
   return res.json() as Promise<T>;
 }

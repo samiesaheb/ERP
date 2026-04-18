@@ -87,12 +87,10 @@ export default function ShipmentsClient({
 
   return (
     <>
-      <div className="flex justify-start mb-3">
-        <Button onClick={() => setOpen(true)}>+ New Shipment</Button>
-      </div>
       <div className="bg-white border-[0.5px] border-neutral-200 rounded-xl overflow-hidden">
         <DataTable
           columns={COLUMNS}
+          toolbar={<Button onClick={() => setOpen(true)}>+ New Shipment</Button>}
           data={rows}
           onRowClick={(row) => router.push(`/shipments/${row.id}`)}
           actions={(row) => {

@@ -252,13 +252,10 @@ export default function MrpClient({
         </Card>
       </div>
 
-      <div className="flex justify-start">
-        <Button onClick={() => setOpen(true)}>+ New Plan</Button>
-      </div>
-
       <div className="bg-white border-[0.5px] border-neutral-200 rounded-xl overflow-hidden">
         <DataTable
           columns={columns(router)}
+          toolbar={<Button onClick={() => setOpen(true)}>+ New Plan</Button>}
           data={tableRows}
           onRowClick={(row) => router.push(`/manufacturing-orders/${row.manufacturing_order_id}`)}
           actions={(row) => [

@@ -1,5 +1,6 @@
 import {
   getArtworksBySo,
+  getBoms,
   getCustomers,
   getFdaDocuments,
   getFdaRegistrations,
@@ -14,7 +15,7 @@ import Badge, { soStatusVariant } from '@/components/ui/Badge';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import Link from 'next/link';
 import StatusPanel from './StatusPanel';
-import AddSoLineButton from './AddSoLineButton';
+import SoLinesClient from './SoLinesClient';
 import SoTabsClient from './SoTabsClient';
 
 function formatDate(value: string | null | undefined) {
@@ -39,7 +40,7 @@ export default async function SalesOrderDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [so, artworks, customers, soLines, allFdaRegistrations, items, uoms, shipments] = await Promise.all([
+  const [so, artworks, customers, soLines, allFdaRegistrations, items, uoms, shipments, boms] = await Promise.all([
     getSalesOrder(id),
     getArtworksBySo(id),
     getCustomers(),
@@ -48,6 +49,7 @@ export default async function SalesOrderDetailPage({
     getItems(),
     getUoms(),
     getShipments(),
+    getBoms(),
   ]);
   const customer = customers.find((c) => c.id === so.customer_id);
   const itemMap = Object.fromEntries(items.map((item) => [item.id, `${item.item_code} — ${item.description}`]));
@@ -188,47 +190,30 @@ export default async function SalesOrderDetailPage({
         </div>
 
         <Card>
-          <CardHeader className="flex items-center justify-between">
+          <CardHeader>
             <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wide">
               Sales Order Lines
             </p>
-            {!['shipped', 'invoiced', 'cancelled'].includes(so.status) && (
-              <AddSoLineButton soId={id} items={items} uoms={uoms} />
-            )}
           </CardHeader>
-          <div className="overflow-x-auto">
-            {soLines.length === 0 ? (
-              <div className="px-4 py-4 text-sm text-neutral-400">No line items yet</div>
-            ) : (
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b-[0.5px] border-neutral-200 bg-neutral-50">
-                    {['Item', 'Qty Ordered', 'UOM', 'Unit Price', 'Notes'].map((header) => (
-                      <th
-                        key={header}
-                        className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-neutral-500"
-                      >
-                        {header}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {soLines.map((line) => (
-                    <tr key={line.id} className="border-b-[0.5px] border-neutral-100 last:border-0">
-                      <td className="px-4 py-3">{itemMap[line.item_id] ?? line.item_id}</td>
-                      <td className="px-4 py-3 tabular-nums">{formatNumber(line.qty_ordered)}</td>
-                      <td className="px-4 py-3 text-neutral-500">{uomMap[line.uom_id] ?? line.uom_id}</td>
-                      <td className="px-4 py-3 tabular-nums">
-                        {line.unit_price ? `$${formatNumber(line.unit_price)}` : '—'}
-                      </td>
-                      <td className="px-4 py-3 text-neutral-500">{line.notes ?? '—'}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </div>
+          <SoLinesClient
+            soId={id}
+            lines={soLines.map((l) => ({
+              ...l,
+              id: String(l.id),
+              sales_order_id: String(l.sales_order_id),
+              item_id: String(l.item_id),
+              qty_ordered: String(l.qty_ordered),
+              uom_id: String(l.uom_id),
+              unit_price: l.unit_price != null ? String(l.unit_price) : null,
+              bom_id: l.bom_id != null ? String(l.bom_id) : null,
+            }))}
+            items={items}
+            uoms={uoms}
+            boms={boms}
+            itemMap={itemMap}
+            uomMap={uomMap}
+            readonly={['shipped', 'invoiced', 'cancelled'].includes(so.status)}
+          />
         </Card>
 
         <SoTabsClient

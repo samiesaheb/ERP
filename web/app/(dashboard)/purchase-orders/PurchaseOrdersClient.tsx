@@ -121,12 +121,10 @@ export default function PurchaseOrdersClient({
 
   return (
     <>
-      <div className="flex justify-start mb-3">
-        <Button onClick={() => setOpen(true)}>+ New PO</Button>
-      </div>
       <div className="bg-white border-[0.5px] border-neutral-200 rounded-xl overflow-hidden">
         <DataTable
           columns={COLUMNS(supplierMap)}
+          toolbar={<Button onClick={() => setOpen(true)}>+ New PO</Button>}
           data={orders}
           onRowClick={(row) => router.push(`/purchase-orders/${row.id}`)}
           actions={(row) => [

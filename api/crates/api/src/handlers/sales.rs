@@ -11,7 +11,7 @@ use crate::{
     middleware::rbac::{require_role, SALES_ROLES},
     state::AppState,
 };
-use domain::{Claims, CreateSalesOrder, CreateSalesOrderLine, SalesOrder, SalesOrderLine, UpdateSalesOrder};
+use domain::{Claims, CreateSalesOrder, CreateSalesOrderLine, SalesOrder, SalesOrderLine, UpdateSalesOrder, UpdateSalesOrderLine};
 
 #[derive(Deserialize)]
 pub struct SoQuery {
@@ -208,12 +208,11 @@ pub async fn list_so_lines(
     State(state): State<AppState>,
     Path(so_id): Path<Uuid>,
 ) -> Result<Json<Vec<SalesOrderLine>>> {
-    let rows = sqlx::query_as!(
-        SalesOrderLine,
-        "SELECT id, sales_order_id, item_id, qty_ordered, uom_id, unit_price, notes
+    let rows = sqlx::query_as::<_, SalesOrderLine>(
+        "SELECT id, sales_order_id, item_id, qty_ordered, uom_id, unit_price, notes, bom_id
          FROM sales_order_lines WHERE sales_order_id = $1 ORDER BY id",
-        so_id
     )
+    .bind(so_id)
     .fetch_all(&state.db)
     .await?;
     Ok(Json(rows))
@@ -225,20 +224,63 @@ pub async fn create_so_line(
     Json(body): Json<CreateSalesOrderLine>,
 ) -> Result<(StatusCode, Json<SalesOrderLine>)> {
     let id = Uuid::new_v4();
-    let row = sqlx::query_as!(
-        SalesOrderLine,
-        "INSERT INTO sales_order_lines (id, sales_order_id, item_id, qty_ordered, uom_id, unit_price, notes)
-         VALUES ($1, $2, $3, $4, $5, $6, $7)
-         RETURNING id, sales_order_id, item_id, qty_ordered, uom_id, unit_price, notes",
-        id,
-        so_id,
-        body.item_id,
-        body.qty_ordered,
-        body.uom_id,
-        body.unit_price,
-        body.notes,
+    let row = sqlx::query_as::<_, SalesOrderLine>(
+        "INSERT INTO sales_order_lines (id, sales_order_id, item_id, qty_ordered, uom_id, unit_price, notes, bom_id)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+         RETURNING id, sales_order_id, item_id, qty_ordered, uom_id, unit_price, notes, bom_id",
     )
+    .bind(id)
+    .bind(so_id)
+    .bind(body.item_id)
+    .bind(body.qty_ordered)
+    .bind(body.uom_id)
+    .bind(body.unit_price)
+    .bind(body.notes)
+    .bind(body.bom_id)
     .fetch_one(&state.db)
     .await?;
     Ok((StatusCode::CREATED, Json(row)))
+}
+
+pub async fn update_so_line(
+    State(state): State<AppState>,
+    Path((_so_id, line_id)): Path<(Uuid, Uuid)>,
+    Json(body): Json<UpdateSalesOrderLine>,
+) -> Result<Json<SalesOrderLine>> {
+    let item_id     = body.item_id.ok_or_else(|| AppError::BadRequest("item_id required".into()))?;
+    let qty_ordered = body.qty_ordered.ok_or_else(|| AppError::BadRequest("qty_ordered required".into()))?;
+    let uom_id      = body.uom_id.ok_or_else(|| AppError::BadRequest("uom_id required".into()))?;
+
+    let row = sqlx::query_as::<_, SalesOrderLine>(
+        "UPDATE sales_order_lines SET
+           item_id     = $1,
+           qty_ordered = $2,
+           uom_id      = $3,
+           unit_price  = $4,
+           notes       = $5,
+           bom_id      = $6
+         WHERE id = $7
+         RETURNING id, sales_order_id, item_id, qty_ordered, uom_id, unit_price, notes, bom_id",
+    )
+    .bind(item_id)
+    .bind(qty_ordered)
+    .bind(uom_id)
+    .bind(body.unit_price)
+    .bind(body.notes)
+    .bind(body.bom_id)
+    .bind(line_id)
+    .fetch_one(&state.db)
+    .await?;
+    Ok(Json(row))
+}
+
+pub async fn delete_so_line(
+    State(state): State<AppState>,
+    Path((_so_id, line_id)): Path<(Uuid, Uuid)>,
+) -> Result<StatusCode> {
+    sqlx::query("DELETE FROM sales_order_lines WHERE id = $1")
+        .bind(line_id)
+        .execute(&state.db)
+        .await?;
+    Ok(StatusCode::NO_CONTENT)
 }

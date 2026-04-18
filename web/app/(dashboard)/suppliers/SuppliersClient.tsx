@@ -133,13 +133,10 @@ export default function SuppliersClient({
 
   return (
     <>
-      <div className="flex justify-start mb-3">
-        <Button onClick={openCreate}>+ New Supplier</Button>
-      </div>
-
       <div className="bg-white border-[0.5px] border-neutral-200 rounded-xl overflow-hidden">
         <DataTable
           columns={COLUMNS(countryMap)}
+          toolbar={<Button onClick={openCreate}>+ New Supplier</Button>}
           data={suppliers}
           actions={(row) => [
             { label: 'Edit',       onClick: () => openEdit(row) },
