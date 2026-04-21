@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 
 export interface ComboOption {
   value: string;
@@ -32,24 +33,11 @@ export default function ComboBox({
   const labelOf = (v: string) =>
     options.find((o) => o.value === v)?.label ?? (freeform ? v : '');
 
-  const [query, setQuery]   = useState('');
-  const [open,  setOpen]    = useState(false);
-  const containerRef        = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (open) return;
-    setQuery('');
-  }, [open]);
-
-  useEffect(() => {
-    function onMouseDown(e: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
-    }
-    document.addEventListener('mousedown', onMouseDown);
-    return () => document.removeEventListener('mousedown', onMouseDown);
-  }, []);
+  const [query, setQuery] = useState('');
+  const [open,  setOpen]  = useState(false);
+  const [rect,  setRect]  = useState<DOMRect | null>(null);
+  const inputRef           = useRef<HTMLInputElement>(null);
+  const listRef            = useRef<HTMLUListElement>(null);
 
   const filtered = query
     ? options.filter((o) => o.label.toLowerCase().includes(query.toLowerCase()))
@@ -57,53 +45,113 @@ export default function ComboBox({
 
   const displayValue = open ? query : labelOf(value);
 
+  // Reposition dropdown on scroll / resize while open
+  useEffect(() => {
+    if (!open) return;
+    function reposition() {
+      const r = inputRef.current?.getBoundingClientRect();
+      if (r) setRect(r);
+    }
+    window.addEventListener('scroll', reposition, true);
+    window.addEventListener('resize', reposition);
+    return () => {
+      window.removeEventListener('scroll', reposition, true);
+      window.removeEventListener('resize', reposition);
+    };
+  }, [open]);
+
+  function openDropdown() {
+    if (disabled) return;
+    const r = inputRef.current?.getBoundingClientRect();
+    if (r) setRect(r);
+    setQuery('');
+    setOpen(true);
+  }
+
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     const v = e.target.value;
     setQuery(v);
     setOpen(true);
     if (freeform) onChange(v);
+    const r = inputRef.current?.getBoundingClientRect();
+    if (r) setRect(r);
   }
 
-  function handleFocus() {
+  function handleBlur(e: React.FocusEvent) {
+    // If focus moved into the dropdown list, don't close
+    if (listRef.current?.contains(e.relatedTarget as Node)) return;
+
+    if (freeform && query) {
+      onChange(query);
+    } else if (!freeform && query) {
+      // Auto-select if typed text exactly matches an option label
+      const match = options.find(
+        (o) => o.label.toLowerCase() === query.toLowerCase()
+      );
+      if (match) onChange(match.value);
+    }
+    setOpen(false);
     setQuery('');
-    setOpen(true);
   }
 
   function handleSelect(opt: ComboOption) {
     setOpen(false);
+    setQuery('');
     onChange(opt.value);
   }
 
+  const dropdown =
+    open && !disabled && filtered.length > 0 && rect
+      ? createPortal(
+          <ul
+            ref={listRef}
+            style={{
+              position: 'fixed',
+              top:   rect.bottom + 4,
+              left:  rect.left,
+              width: rect.width,
+              zIndex: 9999,
+            }}
+            className="max-h-52 overflow-auto rounded-lg border border-neutral-200 bg-white shadow-lg text-sm py-1"
+          >
+            {filtered.map((opt) => (
+              <li
+                key={opt.value}
+                tabIndex={-1}
+                onMouseDown={(e) => {
+                  e.preventDefault(); // keep input focused so blur doesn't fire first
+                  handleSelect(opt);
+                }}
+                className={`px-3 py-2 cursor-pointer hover:bg-neutral-50 ${
+                  opt.value === value
+                    ? 'font-medium text-neutral-900 bg-neutral-50'
+                    : 'text-neutral-700'
+                }`}
+              >
+                {opt.label}
+              </li>
+            ))}
+          </ul>,
+          document.body
+        )
+      : null;
+
   return (
-    <div ref={containerRef} className="relative">
+    <div className="relative">
       <input
+        ref={inputRef}
         type="text"
         value={displayValue}
         onChange={handleChange}
-        onFocus={handleFocus}
+        onFocus={openDropdown}
+        onBlur={handleBlur}
         placeholder={placeholder}
         autoComplete="off"
         disabled={disabled}
         required={required && !value}
         className={className}
       />
-      {open && !disabled && filtered.length > 0 && (
-        <ul className="absolute z-50 mt-1 w-full max-h-52 overflow-auto rounded-lg border border-neutral-200 bg-white shadow-lg text-sm py-1">
-          {filtered.map((opt) => (
-            <li
-              key={opt.value}
-              onMouseDown={() => handleSelect(opt)}
-              className={`px-3 py-2 cursor-pointer hover:bg-neutral-50 ${
-                opt.value === value
-                  ? 'font-medium text-neutral-900 bg-neutral-50'
-                  : 'text-neutral-700'
-              }`}
-            >
-              {opt.label}
-            </li>
-          ))}
-        </ul>
-      )}
+      {dropdown}
     </div>
   );
 }

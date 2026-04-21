@@ -169,6 +169,7 @@ export default function SuppliersClient({
           <div>
             <label className="block text-xs font-medium text-neutral-600 mb-1">Type</label>
             <ComboBox
+              freeform
               value={form.supplier_type}
               onChange={(v) => setForm({ ...form, supplier_type: v })}
               options={[

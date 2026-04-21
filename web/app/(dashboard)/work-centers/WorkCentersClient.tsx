@@ -145,6 +145,7 @@ export default function WorkCentersClient({ workCenters }: Props) {
           <div>
             <label className="block text-xs font-medium text-neutral-600 mb-1">Type</label>
             <ComboBox
+              freeform
               value={form.center_type}
               onChange={(v) => set('center_type', v)}
               options={[

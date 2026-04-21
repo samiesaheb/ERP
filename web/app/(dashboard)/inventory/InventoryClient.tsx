@@ -218,6 +218,7 @@ export default function InventoryClient({
           <div>
             <label className="block text-xs font-medium text-neutral-600 mb-1">Transaction Type</label>
             <ComboBox
+              freeform
               value={form.transaction_type}
               onChange={(v) => setForm({ ...form, transaction_type: v })}
               options={TXN_TYPES.map((t) => ({ value: t.value, label: t.label }))}
