@@ -339,6 +339,7 @@ export default function SalesOrdersClient({ orders, customerMap, customers, coun
                 <div>
                   <label className="block text-xs font-medium text-neutral-600 mb-1">Status</label>
                   <ComboBox
+                    freeform
                     value={details.status}
                     onChange={(v) => setDetails({ ...details, status: v })}
                     options={[

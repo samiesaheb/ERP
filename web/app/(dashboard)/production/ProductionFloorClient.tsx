@@ -266,6 +266,7 @@ export default function ProductionFloorClient({
           <div>
             <label className="block text-xs font-medium text-neutral-600 mb-1">Pass / Fail</label>
             <ComboBox
+              freeform
               value={qcForm.pass_fail}
               onChange={(v) => setQcForm((f) => ({ ...f, pass_fail: v }))}
               options={[

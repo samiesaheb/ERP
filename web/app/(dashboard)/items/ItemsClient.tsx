@@ -174,6 +174,7 @@ export default function ItemsClient({
           <div>
             <label className="block text-xs font-medium text-neutral-600 mb-1">Item Type</label>
             <ComboBox
+              freeform
               value={form.item_type}
               onChange={(v) => setForm({ ...form, item_type: v })}
               disabled={!!editingItem}
