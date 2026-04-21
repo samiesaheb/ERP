@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import DataTable, { Column } from '@/components/ui/DataTable';
 import Badge, { poStatusVariant } from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
+import ComboBox from '@/components/ui/ComboBox';
 import SlideOver from '@/components/ui/SlideOver';
 import { clientFetch } from '@/lib/client-api';
 import type { PurchaseOrder, PurchaseOrderLine, Receipt, ReceiptLine, Item, Uom } from '@/lib/types';
@@ -215,11 +216,14 @@ export default function ReceivingClient({
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-xs font-medium text-neutral-600 mb-1">Purchase Order</label>
-            <select required value={poId} onChange={(e) => setPoId(e.target.value)}
-              className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded bg-white">
-              <option value="">Select PO</option>
-              {openPos.map((po) => <option key={po.id} value={po.id}>{po.po_number}</option>)}
-            </select>
+            <ComboBox
+              required
+              value={poId}
+              onChange={(v) => setPoId(v)}
+              options={openPos.map((po) => ({ value: po.id, label: po.po_number }))}
+              placeholder="Select PO"
+              className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded"
+            />
           </div>
 
           <div>
@@ -238,21 +242,21 @@ export default function ReceivingClient({
 
                 <div>
                   <label className="block text-[11px] text-neutral-500 mb-0.5">PO Line</label>
-                  <select required value={line.po_line_id}
-                    onChange={(e) => updateLine(idx, 'po_line_id', e.target.value)}
-                    className="w-full px-2 py-1.5 text-xs border-[0.5px] border-neutral-300 rounded bg-white">
-                    <option value="">{poId ? (poLines.length === 0 ? 'Loading…' : 'Select line') : 'Select a PO first'}</option>
-                    {poLines.map((pl) => {
+                  <ComboBox
+                    required
+                    value={line.po_line_id}
+                    onChange={(v) => updateLine(idx, 'po_line_id', v)}
+                    options={poLines.map((pl) => {
                       const itemLabel = items.find((it) => it.id === pl.item_id);
                       const remaining = Number(pl.qty_ordered) - Number(pl.qty_received);
-                      return (
-                        <option key={pl.id} value={pl.id}>
-                          {itemLabel ? `${itemLabel.item_code} — ${itemLabel.description}` : pl.item_id}
-                          {' '}(ordered {Number(pl.qty_ordered).toLocaleString()}, remaining {remaining.toLocaleString()})
-                        </option>
-                      );
+                      return {
+                        value: pl.id,
+                        label: `${itemLabel ? `${itemLabel.item_code} — ${itemLabel.description}` : pl.item_id} (remaining ${remaining.toLocaleString()})`,
+                      };
                     })}
-                  </select>
+                    placeholder={poId ? (poLines.length === 0 ? 'Loading…' : 'Select line') : 'Select a PO first'}
+                    className="w-full px-2 py-1.5 text-xs border-[0.5px] border-neutral-300 rounded"
+                  />
                   {line.item_id && (
                     <p className="text-[10px] text-neutral-400 mt-0.5">
                       Item: {items.find((i) => i.id === line.item_id)?.item_code ?? line.item_id}
@@ -269,12 +273,14 @@ export default function ReceivingClient({
                   </div>
                   <div>
                     <label className="block text-[11px] text-neutral-500 mb-0.5">UOM</label>
-                    <select required value={line.uom_id}
-                      onChange={(e) => updateLine(idx, 'uom_id', e.target.value)}
-                      className="w-full px-2 py-1.5 text-xs border-[0.5px] border-neutral-300 rounded bg-white">
-                      <option value="">UOM</option>
-                      {uoms.map((u) => <option key={u.id} value={u.id}>{u.code}</option>)}
-                    </select>
+                    <ComboBox
+                      required
+                      value={line.uom_id}
+                      onChange={(v) => updateLine(idx, 'uom_id', v)}
+                      options={uoms.map((u) => ({ value: u.id, label: u.code }))}
+                      placeholder="UOM"
+                      className="w-full px-2 py-1.5 text-xs border-[0.5px] border-neutral-300 rounded"
+                    />
                   </div>
                 </div>
 

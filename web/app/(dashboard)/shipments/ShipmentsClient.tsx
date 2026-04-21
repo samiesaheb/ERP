@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import DataTable, { Column } from '@/components/ui/DataTable';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
+import ComboBox from '@/components/ui/ComboBox';
 import SlideOver from '@/components/ui/SlideOver';
 import { clientFetch } from '@/lib/client-api';
 import { updateShipmentStatus } from '@/lib/mutations';
@@ -116,19 +117,14 @@ export default function ShipmentsClient({
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-xs font-medium text-neutral-600 mb-1">Sales Order</label>
-            <select
+            <ComboBox
               required
-              className="w-full border border-neutral-200 rounded-lg px-3 py-2 text-sm"
               value={form.sales_order_id}
-              onChange={(e) => setForm({ ...form, sales_order_id: e.target.value })}
-            >
-              <option value="">Select…</option>
-              {availableSalesOrders.map((salesOrder) => (
-                <option key={salesOrder.id} value={salesOrder.id}>
-                  {salesOrder.order_number}
-                </option>
-              ))}
-            </select>
+              onChange={(v) => setForm({ ...form, sales_order_id: v })}
+              options={availableSalesOrders.map((s) => ({ value: s.id, label: s.order_number }))}
+              placeholder="Select…"
+              className="w-full border border-neutral-200 rounded-lg px-3 py-2 text-sm"
+            />
           </div>
           <div>
             <label className="block text-xs font-medium text-neutral-600 mb-1">Carrier</label>

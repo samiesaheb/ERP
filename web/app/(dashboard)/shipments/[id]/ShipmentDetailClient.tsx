@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Badge, { shipmentStatusVariant } from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
+import ComboBox from '@/components/ui/ComboBox';
 import SlideOver from '@/components/ui/SlideOver';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import { clientFetch } from '@/lib/client-api';
@@ -276,30 +277,30 @@ export default function ShipmentDetailClient({
         <form onSubmit={handleAddLine} className="space-y-4">
           <div>
             <label className="block text-xs font-medium text-neutral-600 mb-1">Item</label>
-            <select required value={lineForm.item_id}
-              onChange={(e) => {
-                const item = items.find((i) => i.id === e.target.value);
-                setLineForm({ ...lineForm, item_id: e.target.value, uom_id: item?.uom_id ?? lineForm.uom_id, batch_id: '' });
+            <ComboBox
+              required
+              value={lineForm.item_id}
+              onChange={(v) => {
+                const item = items.find((i) => i.id === v);
+                setLineForm({ ...lineForm, item_id: v, uom_id: item?.uom_id ?? lineForm.uom_id, batch_id: '' });
               }}
-              className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded bg-white">
-              <option value="">Select item</option>
-              {items.filter((i) => i.item_type === 'FG').map((i) => (
-                <option key={i.id} value={i.id}>{i.item_code} — {i.description}</option>
-              ))}
-            </select>
+              options={items.filter((i) => i.item_type === 'FG').map((i) => ({ value: i.id, label: `${i.item_code} — ${i.description}` }))}
+              placeholder="Select item"
+              className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded"
+            />
           </div>
           <div>
             <label className="block text-xs font-medium text-neutral-600 mb-1">Production Batch (optional)</label>
-            <select value={lineForm.batch_id}
-              onChange={(e) => setLineForm({ ...lineForm, batch_id: e.target.value })}
-              className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded bg-white">
-              <option value="">— no batch —</option>
-              {batches
-                .filter((b) => !lineForm.item_id || b.manufacturing_order_id)
-                .map((b) => (
-                  <option key={b.id} value={b.id}>{b.batch_number}</option>
-                ))}
-            </select>
+            <ComboBox
+              value={lineForm.batch_id}
+              onChange={(v) => setLineForm({ ...lineForm, batch_id: v })}
+              options={[
+                { value: '', label: '— no batch —' },
+                ...batches.filter((b) => !lineForm.item_id || b.manufacturing_order_id).map((b) => ({ value: b.id, label: b.batch_number })),
+              ]}
+              placeholder="— no batch —"
+              className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded"
+            />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -311,12 +312,14 @@ export default function ShipmentDetailClient({
             </div>
             <div>
               <label className="block text-xs font-medium text-neutral-600 mb-1">UOM</label>
-              <select required value={lineForm.uom_id}
-                onChange={(e) => setLineForm({ ...lineForm, uom_id: e.target.value })}
-                className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded bg-white">
-                <option value="">Select</option>
-                {uoms.map((u) => <option key={u.id} value={u.id}>{u.code}</option>)}
-              </select>
+              <ComboBox
+                required
+                value={lineForm.uom_id}
+                onChange={(v) => setLineForm({ ...lineForm, uom_id: v })}
+                options={uoms.map((u) => ({ value: u.id, label: u.code }))}
+                placeholder="Select"
+                className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded"
+              />
             </div>
           </div>
           {lineError && <p className="text-xs text-red-600 bg-red-50 border-[0.5px] border-red-200 rounded px-3 py-2">{lineError}</p>}
@@ -332,16 +335,21 @@ export default function ShipmentDetailClient({
         <form onSubmit={handleAddDoc} className="space-y-4">
           <div>
             <label className="block text-xs font-medium text-neutral-600 mb-1">Document Type</label>
-            <select required value={docForm.doc_type}
-              onChange={(e) => setDocForm({ ...docForm, doc_type: e.target.value })}
-              className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded bg-white">
-              <option value="">Select type</option>
-              <option>Bill of Lading</option>
-              <option>Packing List</option>
-              <option>COA</option>
-              <option>COO</option>
-              <option>Commercial Invoice</option>
-            </select>
+            <ComboBox
+              required
+              freeform
+              value={docForm.doc_type}
+              onChange={(v) => setDocForm({ ...docForm, doc_type: v })}
+              options={[
+                { value: 'Bill of Lading',     label: 'Bill of Lading' },
+                { value: 'Packing List',       label: 'Packing List' },
+                { value: 'COA',                label: 'COA' },
+                { value: 'COO',                label: 'COO' },
+                { value: 'Commercial Invoice', label: 'Commercial Invoice' },
+              ]}
+              placeholder="Select type"
+              className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded"
+            />
           </div>
           <div>
             <label className="block text-xs font-medium text-neutral-600 mb-1">File URL</label>

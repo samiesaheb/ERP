@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import DataTable, { Column } from '@/components/ui/DataTable';
 import Badge, { invoiceStatusVariant } from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
+import ComboBox from '@/components/ui/ComboBox';
 import SlideOver from '@/components/ui/SlideOver';
 import { clientFetch } from '@/lib/client-api';
 import { updateInvoiceStatus } from '@/lib/mutations';
@@ -114,39 +115,50 @@ export default function InvoicingClient({
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-xs font-medium text-neutral-600 mb-1">Sales Order</label>
-            <select required value={form.sales_order_id}
-              onChange={(e) => setForm({ ...form, sales_order_id: e.target.value })}
-              className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded bg-white">
-              <option value="">Select SO</option>
-              {salesOrders.map((s) => <option key={s.id} value={s.id}>{s.order_number}</option>)}
-            </select>
+            <ComboBox
+              required
+              value={form.sales_order_id}
+              onChange={(v) => setForm({ ...form, sales_order_id: v })}
+              options={salesOrders.map((s) => ({ value: s.id, label: s.order_number }))}
+              placeholder="Select SO"
+              className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded"
+            />
           </div>
           <div>
             <label className="block text-xs font-medium text-neutral-600 mb-1">Customer</label>
-            <select required value={form.customer_id}
-              onChange={(e) => setForm({ ...form, customer_id: e.target.value })}
-              className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded bg-white">
-              <option value="">Select customer</option>
-              {customers.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
+            <ComboBox
+              required
+              value={form.customer_id}
+              onChange={(v) => setForm({ ...form, customer_id: v })}
+              options={customers.map((c) => ({ value: c.id, label: c.name }))}
+              placeholder="Select customer"
+              className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded"
+            />
           </div>
           <div>
             <label className="block text-xs font-medium text-neutral-600 mb-1">Shipment (optional)</label>
-            <select value={form.shipment_id} onChange={(e) => setForm({ ...form, shipment_id: e.target.value })}
-              className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded bg-white">
-              <option value="">No linked shipment</option>
-              {shipments.map((s) => <option key={s.id} value={s.id}>{s.shipment_number}</option>)}
-            </select>
+            <ComboBox
+              value={form.shipment_id}
+              onChange={(v) => setForm({ ...form, shipment_id: v })}
+              options={[{ value: '', label: 'No linked shipment' }, ...shipments.map((s) => ({ value: s.id, label: s.shipment_number }))]}
+              placeholder="No linked shipment"
+              className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded"
+            />
           </div>
           <div>
             <label className="block text-xs font-medium text-neutral-600 mb-1">Currency</label>
-            <select value={form.currency} onChange={(e) => setForm({ ...form, currency: e.target.value })}
-              className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded bg-white">
-              <option value="USD">USD</option>
-              <option value="EUR">EUR</option>
-              <option value="GBP">GBP</option>
-              <option value="THB">THB</option>
-            </select>
+            <ComboBox
+              freeform
+              value={form.currency}
+              onChange={(v) => setForm({ ...form, currency: v })}
+              options={[
+                { value: 'USD', label: 'USD' },
+                { value: 'EUR', label: 'EUR' },
+                { value: 'GBP', label: 'GBP' },
+                { value: 'THB', label: 'THB' },
+              ]}
+              className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded"
+            />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>

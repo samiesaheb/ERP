@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
+import ComboBox from '@/components/ui/ComboBox';
 import DataTable, { Column } from '@/components/ui/DataTable';
 import SlideOver from '@/components/ui/SlideOver';
 import { clientFetch } from '@/lib/client-api';
@@ -98,19 +99,14 @@ export default function BomClient({
             <label className="block text-xs font-medium text-neutral-600 mb-1">
               Finished Good
             </label>
-            <select
+            <ComboBox
               required
               value={form.finished_good_id}
-              onChange={(e) => setForm({ ...form, finished_good_id: e.target.value })}
-              className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded bg-white"
-            >
-              <option value="">Select item…</option>
-              {items.filter((i) => i.item_type === 'FG').map((i) => (
-                <option key={i.id} value={i.id}>
-                  {i.item_code} — {i.description}
-                </option>
-              ))}
-            </select>
+              onChange={(v) => setForm({ ...form, finished_good_id: v })}
+              options={items.filter((i) => i.item_type === 'FG').map((i) => ({ value: i.id, label: `${i.item_code} — ${i.description}` }))}
+              placeholder="Select item…"
+              className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded"
+            />
           </div>
 
           <div>

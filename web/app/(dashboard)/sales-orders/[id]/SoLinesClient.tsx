@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Button from '@/components/ui/Button';
+import ComboBox from '@/components/ui/ComboBox';
 import DropdownMenu from '@/components/ui/DropdownMenu';
 import SlideOver from '@/components/ui/SlideOver';
 import { clientFetch } from '@/lib/client-api';
@@ -327,35 +328,32 @@ export default function SoLinesClient({ soId, lines: initialLines, items, uoms, 
         <form onSubmit={handleSave} className="space-y-4">
           <div>
             <label className="block text-xs font-medium text-neutral-600 mb-1">Item</label>
-            <select
+            <ComboBox
               required
               value={form.item_id}
-              onChange={(e) => handleItemChange(e.target.value)}
+              onChange={(v) => handleItemChange(v)}
+              options={items.map((i) => ({ value: i.id, label: `${i.item_code} — ${i.description}` }))}
+              placeholder="Select item"
               className={inputCls}
-            >
-              <option value="">Select item</option>
-              {items.map((i) => (
-                <option key={i.id} value={i.id}>{i.item_code} — {i.description}</option>
-              ))}
-            </select>
+            />
           </div>
 
           {/* BOM selection — only shown when the item has at least one BOM */}
           {availableBomsForForm.length > 0 && (
             <div>
               <label className="block text-xs font-medium text-neutral-600 mb-1">BOM</label>
-              <select
+              <ComboBox
                 value={form.bom_id}
-                onChange={(e) => setForm((f) => ({ ...f, bom_id: e.target.value }))}
+                onChange={(v) => setForm((f) => ({ ...f, bom_id: v }))}
+                options={[
+                  { value: '', label: 'None' },
+                  ...availableBomsForForm.map((b) => ({
+                    value: b.id,
+                    label: `v${b.version}${b.is_active ? ' (active)' : ''}${b.description ? ` — ${b.description}` : ''}`,
+                  })),
+                ]}
                 className={inputCls}
-              >
-                <option value="">None</option>
-                {availableBomsForForm.map((b) => (
-                  <option key={b.id} value={b.id}>
-                    v{b.version}{b.is_active ? ' (active)' : ''}{b.description ? ` — ${b.description}` : ''}
-                  </option>
-                ))}
-              </select>
+              />
             </div>
           )}
 
@@ -374,15 +372,14 @@ export default function SoLinesClient({ soId, lines: initialLines, items, uoms, 
             </div>
             <div>
               <label className="block text-xs font-medium text-neutral-600 mb-1">UOM</label>
-              <select
+              <ComboBox
                 required
                 value={form.uom_id}
-                onChange={(e) => setForm((f) => ({ ...f, uom_id: e.target.value }))}
+                onChange={(v) => setForm((f) => ({ ...f, uom_id: v }))}
+                options={uoms.map((u) => ({ value: u.id, label: u.code }))}
+                placeholder="Select"
                 className={inputCls}
-              >
-                <option value="">Select</option>
-                {uoms.map((u) => <option key={u.id} value={u.id}>{u.code}</option>)}
-              </select>
+              />
             </div>
           </div>
 

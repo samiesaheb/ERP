@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
+import ComboBox from '@/components/ui/ComboBox';
 import DataTable, { Column } from '@/components/ui/DataTable';
 import SlideOver from '@/components/ui/SlideOver';
 import { clientFetch } from '@/lib/client-api';
@@ -204,25 +205,24 @@ export default function InventoryClient({
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-xs font-medium text-neutral-600 mb-1">Item</label>
-            <select required value={form.item_id}
-              onChange={(e) => setForm({ ...form, item_id: e.target.value, uom_id: items.find((i) => i.id === e.target.value)?.uom_id ?? '' })}
-              className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded bg-white">
-              <option value="">Select item…</option>
-              {items.map((i) => (
-                <option key={i.id} value={i.id}>{i.item_code} — {i.description}</option>
-              ))}
-            </select>
+            <ComboBox
+              required
+              value={form.item_id}
+              onChange={(v) => setForm({ ...form, item_id: v, uom_id: items.find((i) => i.id === v)?.uom_id ?? '' })}
+              options={items.map((i) => ({ value: i.id, label: `${i.item_code} — ${i.description}` }))}
+              placeholder="Select item…"
+              className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded"
+            />
           </div>
 
           <div>
             <label className="block text-xs font-medium text-neutral-600 mb-1">Transaction Type</label>
-            <select value={form.transaction_type}
-              onChange={(e) => setForm({ ...form, transaction_type: e.target.value })}
-              className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded bg-white">
-              {TXN_TYPES.map((t) => (
-                <option key={t.value} value={t.value}>{t.label}</option>
-              ))}
-            </select>
+            <ComboBox
+              value={form.transaction_type}
+              onChange={(v) => setForm({ ...form, transaction_type: v })}
+              options={TXN_TYPES.map((t) => ({ value: t.value, label: t.label }))}
+              className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded"
+            />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
@@ -235,12 +235,13 @@ export default function InventoryClient({
             </div>
             <div>
               <label className="block text-xs font-medium text-neutral-600 mb-1">UOM</label>
-              <select value={form.uom_id}
-                onChange={(e) => setForm({ ...form, uom_id: e.target.value })}
-                className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded bg-white">
-                <option value="">Select…</option>
-                {uoms.map((u) => <option key={u.id} value={u.id}>{u.code}</option>)}
-              </select>
+              <ComboBox
+                value={form.uom_id}
+                onChange={(v) => setForm({ ...form, uom_id: v })}
+                options={uoms.map((u) => ({ value: u.id, label: u.code }))}
+                placeholder="Select…"
+                className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded"
+              />
             </div>
           </div>
 

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import DataTable, { Column } from '@/components/ui/DataTable';
 import Badge, { paymentStatusVariant } from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
+import ComboBox from '@/components/ui/ComboBox';
 import SlideOver from '@/components/ui/SlideOver';
 import { clientFetch } from '@/lib/client-api';
 import type { Payment, Customer, Supplier, Invoice, PurchaseOrder } from '@/lib/types';
@@ -166,26 +167,24 @@ export default function PaymentsClient({
           {isCustomer ? (
             <div>
               <label className="block text-xs font-medium text-neutral-600 mb-1">Customer</label>
-              <select
+              <ComboBox
                 value={form.customer_id}
-                onChange={(e) => set('customer_id', e.target.value)}
-                className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded bg-white"
-              >
-                <option value="">Select customer</option>
-                {customers.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select>
+                onChange={(v) => set('customer_id', v)}
+                options={customers.map((c) => ({ value: c.id, label: c.name }))}
+                placeholder="Select customer"
+                className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded"
+              />
             </div>
           ) : (
             <div>
               <label className="block text-xs font-medium text-neutral-600 mb-1">Supplier</label>
-              <select
+              <ComboBox
                 value={form.supplier_id}
-                onChange={(e) => set('supplier_id', e.target.value)}
-                className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded bg-white"
-              >
-                <option value="">Select supplier</option>
-                {suppliers.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-              </select>
+                onChange={(v) => set('supplier_id', v)}
+                options={suppliers.map((s) => ({ value: s.id, label: s.name }))}
+                placeholder="Select supplier"
+                className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded"
+              />
             </div>
           )}
 
@@ -193,30 +192,24 @@ export default function PaymentsClient({
           {isCustomer ? (
             <div>
               <label className="block text-xs font-medium text-neutral-600 mb-1">Invoice (optional)</label>
-              <select
+              <ComboBox
                 value={form.invoice_id}
-                onChange={(e) => set('invoice_id', e.target.value)}
-                className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded bg-white"
-              >
-                <option value="">— none —</option>
-                {invoices.map((inv) => (
-                  <option key={inv.id} value={inv.id}>{inv.invoice_number}</option>
-                ))}
-              </select>
+                onChange={(v) => set('invoice_id', v)}
+                options={[{ value: '', label: '— none —' }, ...invoices.map((inv) => ({ value: inv.id, label: inv.invoice_number }))]}
+                placeholder="— none —"
+                className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded"
+              />
             </div>
           ) : (
             <div>
               <label className="block text-xs font-medium text-neutral-600 mb-1">Purchase Order (optional)</label>
-              <select
+              <ComboBox
                 value={form.purchase_order_id}
-                onChange={(e) => set('purchase_order_id', e.target.value)}
-                className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded bg-white"
-              >
-                <option value="">— none —</option>
-                {purchaseOrders.map((po) => (
-                  <option key={po.id} value={po.id}>{po.po_number}</option>
-                ))}
-              </select>
+                onChange={(v) => set('purchase_order_id', v)}
+                options={[{ value: '', label: '— none —' }, ...purchaseOrders.map((po) => ({ value: po.id, label: po.po_number }))]}
+                placeholder="— none —"
+                className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded"
+              />
             </div>
           )}
 
@@ -235,17 +228,19 @@ export default function PaymentsClient({
             </div>
             <div>
               <label className="block text-xs font-medium text-neutral-600 mb-1">Currency</label>
-              <select
+              <ComboBox
+                freeform
                 value={form.currency}
-                onChange={(e) => set('currency', e.target.value)}
-                className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded bg-white"
-              >
-                <option>USD</option>
-                <option>EUR</option>
-                <option>GBP</option>
-                <option>THB</option>
-                <option>AED</option>
-              </select>
+                onChange={(v) => set('currency', v)}
+                options={[
+                  { value: 'USD', label: 'USD' },
+                  { value: 'EUR', label: 'EUR' },
+                  { value: 'GBP', label: 'GBP' },
+                  { value: 'THB', label: 'THB' },
+                  { value: 'AED', label: 'AED' },
+                ]}
+                className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded"
+              />
             </div>
           </div>
 
@@ -261,17 +256,19 @@ export default function PaymentsClient({
             </div>
             <div>
               <label className="block text-xs font-medium text-neutral-600 mb-1">Method</label>
-              <select
+              <ComboBox
+                freeform
                 value={form.method}
-                onChange={(e) => set('method', e.target.value)}
-                className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded bg-white"
-              >
-                <option value="">Select method</option>
-                <option>Wire</option>
-                <option>ACH</option>
-                <option>Check</option>
-                <option>Credit</option>
-              </select>
+                onChange={(v) => set('method', v)}
+                options={[
+                  { value: 'Wire',   label: 'Wire' },
+                  { value: 'ACH',    label: 'ACH' },
+                  { value: 'Check',  label: 'Check' },
+                  { value: 'Credit', label: 'Credit' },
+                ]}
+                placeholder="Select method"
+                className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded"
+              />
             </div>
           </div>
 

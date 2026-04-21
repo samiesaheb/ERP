@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import DataTable, { Column } from '@/components/ui/DataTable';
 import Badge, { moStatusVariant } from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
+import ComboBox from '@/components/ui/ComboBox';
 import SlideOver from '@/components/ui/SlideOver';
 import { clientFetch } from '@/lib/client-api';
 import { updateManufacturingOrderStatus } from '@/lib/mutations';
@@ -115,33 +116,35 @@ export default function MoClient({
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-xs font-medium text-neutral-600 mb-1">Sales Order (optional)</label>
-            <select value={form.sales_order_id} onChange={(e) => setForm({ ...form, sales_order_id: e.target.value })}
-              className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded bg-white">
-              <option value="">No linked SO</option>
-              {salesOrders.map((s) => <option key={s.id} value={s.id}>{s.order_number}</option>)}
-            </select>
+            <ComboBox
+              value={form.sales_order_id}
+              onChange={(v) => setForm({ ...form, sales_order_id: v })}
+              options={[{ value: '', label: 'No linked SO' }, ...salesOrders.map((s) => ({ value: s.id, label: s.order_number }))]}
+              placeholder="No linked SO"
+              className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded"
+            />
           </div>
           <div>
             <label className="block text-xs font-medium text-neutral-600 mb-1">Finished Good</label>
-            <select required value={form.item_id}
-              onChange={(e) => setForm({ ...form, item_id: e.target.value, bom_id: '' })}
-              className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded bg-white">
-              <option value="">Select item</option>
-              {fgItems.map((i) => <option key={i.id} value={i.id}>{i.item_code} — {i.description}</option>)}
-            </select>
+            <ComboBox
+              required
+              value={form.item_id}
+              onChange={(v) => setForm({ ...form, item_id: v, bom_id: '' })}
+              options={fgItems.map((i) => ({ value: i.id, label: `${i.item_code} — ${i.description}` }))}
+              placeholder="Select item"
+              className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded"
+            />
           </div>
           <div>
             <label className="block text-xs font-medium text-neutral-600 mb-1">BOM</label>
-            <select required value={form.bom_id}
-              onChange={(e) => setForm({ ...form, bom_id: e.target.value })}
-              className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded bg-white">
-              <option value="">Select BOM</option>
-              {availableBoms.map((b) => (
-                <option key={b.id} value={b.id}>
-                  {b.description ?? `v${b.version}`} (v{b.version})
-                </option>
-              ))}
-            </select>
+            <ComboBox
+              required
+              value={form.bom_id}
+              onChange={(v) => setForm({ ...form, bom_id: v })}
+              options={availableBoms.map((b) => ({ value: b.id, label: `${b.description ?? `v${b.version}`} (v${b.version})` }))}
+              placeholder="Select BOM"
+              className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded"
+            />
           </div>
           <div>
             <label className="block text-xs font-medium text-neutral-600 mb-1">Planned Qty</label>
@@ -151,11 +154,14 @@ export default function MoClient({
           </div>
           <div>
             <label className="block text-xs font-medium text-neutral-600 mb-1">UOM</label>
-            <select required value={form.uom_id} onChange={(e) => setForm({ ...form, uom_id: e.target.value })}
-              className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded bg-white">
-              <option value="">Select UOM</option>
-              {uoms.map((u) => <option key={u.id} value={u.id}>{u.code}</option>)}
-            </select>
+            <ComboBox
+              required
+              value={form.uom_id}
+              onChange={(v) => setForm({ ...form, uom_id: v })}
+              options={uoms.map((u) => ({ value: u.id, label: u.code }))}
+              placeholder="Select UOM"
+              className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded"
+            />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>

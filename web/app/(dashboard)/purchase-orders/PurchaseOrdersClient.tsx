@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import DataTable, { Column } from '@/components/ui/DataTable';
 import Badge, { poStatusVariant } from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
+import ComboBox from '@/components/ui/ComboBox';
 import SlideOver from '@/components/ui/SlideOver';
 import { clientFetch } from '@/lib/client-api';
 import { updatePurchaseOrderStatus } from '@/lib/mutations';
@@ -140,19 +141,24 @@ export default function PurchaseOrdersClient({
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-xs font-medium text-neutral-600 mb-1">Supplier</label>
-            <select required value={form.supplier_id} onChange={(e) => setForm({ ...form, supplier_id: e.target.value })}
-              className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded bg-white">
-              <option value="">Select supplier</option>
-              {suppliers.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-            </select>
+            <ComboBox
+              required
+              value={form.supplier_id}
+              onChange={(v) => setForm({ ...form, supplier_id: v })}
+              options={suppliers.map((s) => ({ value: s.id, label: s.name }))}
+              placeholder="Select supplier"
+              className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded"
+            />
           </div>
           <div>
             <label className="block text-xs font-medium text-neutral-600 mb-1">Linked MO (optional)</label>
-            <select value={form.manufacturing_order_id} onChange={(e) => setForm({ ...form, manufacturing_order_id: e.target.value })}
-              className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded bg-white">
-              <option value="">None</option>
-              {manufacturingOrders.map((m) => <option key={m.id} value={m.id}>{m.mo_number}</option>)}
-            </select>
+            <ComboBox
+              value={form.manufacturing_order_id}
+              onChange={(v) => setForm({ ...form, manufacturing_order_id: v })}
+              options={[{ value: '', label: 'None' }, ...manufacturingOrders.map((m) => ({ value: m.id, label: m.mo_number }))]}
+              placeholder="None"
+              className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded"
+            />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -186,24 +192,28 @@ export default function PurchaseOrdersClient({
                     <button type="button" onClick={() => removeLine(idx)} className="text-[11px] text-red-500 hover:underline">Remove</button>
                   )}
                 </div>
-                <select required value={line.item_id}
-                  onChange={(e) => updateLine(idx, 'item_id', e.target.value)}
-                  className="px-2 py-1.5 text-xs border-[0.5px] border-neutral-300 rounded col-span-2 bg-white">
-                  <option value="">Select item…</option>
-                  {items.map((i) => <option key={i.id} value={i.id}>{i.item_code} — {i.description}</option>)}
-                </select>
+                <ComboBox
+                  required
+                  value={line.item_id}
+                  onChange={(v) => updateLine(idx, 'item_id', v)}
+                  options={items.map((i) => ({ value: i.id, label: `${i.item_code} — ${i.description}` }))}
+                  placeholder="Select item…"
+                  className="px-2 py-1.5 text-xs border-[0.5px] border-neutral-300 rounded col-span-2"
+                />
                 <input required placeholder="Qty" type="number" min="0.0001" step="any" value={line.qty_ordered}
                   onChange={(e) => updateLine(idx, 'qty_ordered', e.target.value)}
                   className="px-2 py-1.5 text-xs border-[0.5px] border-neutral-300 rounded" />
                 <input placeholder="Unit Cost" type="number" min="0" step="any" value={line.unit_cost}
                   onChange={(e) => updateLine(idx, 'unit_cost', e.target.value)}
                   className="px-2 py-1.5 text-xs border-[0.5px] border-neutral-300 rounded" />
-                <select required value={line.uom_id}
-                  onChange={(e) => updateLine(idx, 'uom_id', e.target.value)}
-                  className="px-2 py-1.5 text-xs border-[0.5px] border-neutral-300 rounded col-span-2 bg-white">
-                  <option value="">Select UOM…</option>
-                  {uoms.map((u) => <option key={u.id} value={u.id}>{u.code}</option>)}
-                </select>
+                <ComboBox
+                  required
+                  value={line.uom_id}
+                  onChange={(v) => updateLine(idx, 'uom_id', v)}
+                  options={uoms.map((u) => ({ value: u.id, label: u.code }))}
+                  placeholder="Select UOM…"
+                  className="px-2 py-1.5 text-xs border-[0.5px] border-neutral-300 rounded col-span-2"
+                />
               </div>
             ))}
           </div>

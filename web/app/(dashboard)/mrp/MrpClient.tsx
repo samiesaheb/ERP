@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import DataTable, { Column } from '@/components/ui/DataTable';
 import Badge, { moStatusVariant, poStatusVariant } from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
+import ComboBox from '@/components/ui/ComboBox';
 import SlideOver from '@/components/ui/SlideOver';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import { clientFetch } from '@/lib/client-api';
@@ -293,27 +294,22 @@ export default function MrpClient({
 
           <div>
             <label className="block text-xs font-medium text-neutral-600 mb-1">Manufacturing Order</label>
-            <select
+            <ComboBox
               required
               value={form.manufacturing_order_id}
-              onChange={(event) => {
-                const nextMo = activeMos.find((mo) => mo.id === event.target.value) ?? null;
+              onChange={(v) => {
+                const nextMo = activeMos.find((mo) => mo.id === v) ?? null;
                 setForm({
                   ...form,
-                  manufacturing_order_id: event.target.value,
+                  manufacturing_order_id: v,
                   purchase_order_id: '',
                   planned_qty: form.planned_qty || nextMo?.qty_planned || '',
                 });
               }}
-              className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded bg-white"
-            >
-              <option value="">Select MO</option>
-              {activeMos.map((mo) => (
-                <option key={mo.id} value={mo.id}>
-                  {mo.mo_number} · {itemMap[mo.item_id] ?? mo.item_id}
-                </option>
-              ))}
-            </select>
+              options={activeMos.map((mo) => ({ value: mo.id, label: `${mo.mo_number} · ${itemMap[mo.item_id] ?? mo.item_id}` }))}
+              placeholder="Select MO"
+              className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded"
+            />
           </div>
 
           {selectedMo && (
@@ -332,18 +328,13 @@ export default function MrpClient({
 
           <div>
             <label className="block text-xs font-medium text-neutral-600 mb-1">Linked Purchase Order</label>
-            <select
+            <ComboBox
               value={form.purchase_order_id}
-              onChange={(event) => setForm({ ...form, purchase_order_id: event.target.value })}
-              className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded bg-white"
-            >
-              <option value="">No linked PO</option>
-              {relatedPurchaseOrders.map((po) => (
-                <option key={po.id} value={po.id}>
-                  {po.po_number}
-                </option>
-              ))}
-            </select>
+              onChange={(v) => setForm({ ...form, purchase_order_id: v })}
+              options={[{ value: '', label: 'No linked PO' }, ...relatedPurchaseOrders.map((po) => ({ value: po.id, label: po.po_number }))]}
+              placeholder="No linked PO"
+              className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded"
+            />
           </div>
 
           <div>

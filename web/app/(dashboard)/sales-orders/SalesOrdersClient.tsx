@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import DataTable, { Column } from '@/components/ui/DataTable';
 import Badge, { soStatusVariant } from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
+import ComboBox from '@/components/ui/ComboBox';
 import SlideOver from '@/components/ui/SlideOver';
 import { clientFetch } from '@/lib/client-api';
 import { updateSalesOrderStatus } from '@/lib/mutations';
@@ -298,35 +299,29 @@ export default function SalesOrdersClient({ orders, customerMap, customers, coun
             <>
               <div>
                 <label className="block text-xs font-medium text-neutral-600 mb-1">Customer</label>
-                <select
+                <ComboBox
                   required
                   value={details.customer_id}
-                  onChange={(e) => {
-                    const c = customers.find((x) => x.id === e.target.value);
-                    setDetails({ ...details, customer_id: e.target.value, country_id: c?.country_id ?? details.country_id });
+                  onChange={(v) => {
+                    const c = customers.find((x) => x.id === v);
+                    setDetails({ ...details, customer_id: v, country_id: c?.country_id ?? details.country_id });
                   }}
+                  options={customers.map((c) => ({ value: c.id, label: c.name }))}
+                  placeholder="Select customer"
                   className={inputCls}
-                >
-                  <option value="">Select customer</option>
-                  {customers.map((c) => (
-                    <option key={c.id} value={c.id}>{c.name}</option>
-                  ))}
-                </select>
+                />
               </div>
 
               <div>
                 <label className="block text-xs font-medium text-neutral-600 mb-1">Destination Country</label>
-                <select
+                <ComboBox
                   required
                   value={details.country_id}
-                  onChange={(e) => setDetails({ ...details, country_id: e.target.value })}
+                  onChange={(v) => setDetails({ ...details, country_id: v })}
+                  options={countries.map((c) => ({ value: c.id, label: c.name }))}
+                  placeholder="Select country"
                   className={inputCls}
-                >
-                  <option value="">Select country</option>
-                  {countries.map((c) => (
-                    <option key={c.id} value={c.id}>{c.name}</option>
-                  ))}
-                </select>
+                />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
@@ -343,14 +338,15 @@ export default function SalesOrdersClient({ orders, customerMap, customers, coun
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-neutral-600 mb-1">Status</label>
-                  <select
+                  <ComboBox
                     value={details.status}
-                    onChange={(e) => setDetails({ ...details, status: e.target.value })}
+                    onChange={(v) => setDetails({ ...details, status: v })}
+                    options={[
+                      { value: 'draft',     label: 'Draft' },
+                      { value: 'confirmed', label: 'Confirmed' },
+                    ]}
                     className={inputCls}
-                  >
-                    <option value="draft">Draft</option>
-                    <option value="confirmed">Confirmed</option>
-                  </select>
+                  />
                 </div>
               </div>
 
@@ -437,19 +433,16 @@ export default function SalesOrdersClient({ orders, customerMap, customers, coun
                 <p className="text-xs font-medium text-neutral-500">Add a product line</p>
                 <div>
                   <label className="block text-xs font-medium text-neutral-600 mb-1">Item</label>
-                  <select
+                  <ComboBox
                     value={draftLine.item_id}
-                    onChange={(e) => {
-                      const item = items.find((i) => i.id === e.target.value);
-                      setDraftLine({ ...draftLine, item_id: e.target.value, uom_id: item?.uom_id ?? draftLine.uom_id });
+                    onChange={(v) => {
+                      const item = items.find((i) => i.id === v);
+                      setDraftLine({ ...draftLine, item_id: v, uom_id: item?.uom_id ?? draftLine.uom_id });
                     }}
+                    options={items.map((i) => ({ value: i.id, label: `${i.item_code} — ${i.description}` }))}
+                    placeholder="Select item"
                     className={inputCls}
-                  >
-                    <option value="">Select item</option>
-                    {items.map((i) => (
-                      <option key={i.id} value={i.id}>{i.item_code} — {i.description}</option>
-                    ))}
-                  </select>
+                  />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
@@ -466,14 +459,13 @@ export default function SalesOrdersClient({ orders, customerMap, customers, coun
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-neutral-600 mb-1">UOM</label>
-                    <select
+                    <ComboBox
                       value={draftLine.uom_id}
-                      onChange={(e) => setDraftLine({ ...draftLine, uom_id: e.target.value })}
+                      onChange={(v) => setDraftLine({ ...draftLine, uom_id: v })}
+                      options={uoms.map((u) => ({ value: u.id, label: u.code }))}
+                      placeholder="Select"
                       className={inputCls}
-                    >
-                      <option value="">Select</option>
-                      {uoms.map((u) => <option key={u.id} value={u.id}>{u.code}</option>)}
-                    </select>
+                    />
                   </div>
                 </div>
                 <div>
@@ -506,16 +498,13 @@ export default function SalesOrdersClient({ orders, customerMap, customers, coun
               <p className="text-xs text-neutral-400">Optional — leave Item blank to skip artwork creation.</p>
               <div>
                 <label className="block text-xs font-medium text-neutral-600 mb-1">Item</label>
-                <select
+                <ComboBox
                   value={artwork.item_id}
-                  onChange={(e) => setArtwork({ ...artwork, item_id: e.target.value })}
+                  onChange={(v) => setArtwork({ ...artwork, item_id: v })}
+                  options={[{ value: '', label: 'None (skip)' }, ...items.map((i) => ({ value: i.id, label: `${i.item_code} — ${i.description}` }))]}
+                  placeholder="Select item (optional)"
                   className={inputCls}
-                >
-                  <option value="">Select item (optional)</option>
-                  {items.map((i) => (
-                    <option key={i.id} value={i.id}>{i.item_code} — {i.description}</option>
-                  ))}
-                </select>
+                />
               </div>
               <div>
                 <label className="block text-xs font-medium text-neutral-600 mb-1">Version</label>
@@ -555,16 +544,13 @@ export default function SalesOrdersClient({ orders, customerMap, customers, coun
               <p className="text-xs text-neutral-400">Optional — leave Item blank to skip FDA registration.</p>
               <div>
                 <label className="block text-xs font-medium text-neutral-600 mb-1">Item</label>
-                <select
+                <ComboBox
                   value={fda.item_id}
-                  onChange={(e) => setFda({ ...fda, item_id: e.target.value })}
+                  onChange={(v) => setFda({ ...fda, item_id: v })}
+                  options={[{ value: '', label: 'None (skip)' }, ...items.map((i) => ({ value: i.id, label: `${i.item_code} — ${i.description}` }))]}
+                  placeholder="Select item (optional)"
                   className={inputCls}
-                >
-                  <option value="">Select item (optional)</option>
-                  {items.map((i) => (
-                    <option key={i.id} value={i.id}>{i.item_code} — {i.description}</option>
-                  ))}
-                </select>
+                />
               </div>
               <div>
                 <label className="block text-xs font-medium text-neutral-600 mb-1">Notes</label>

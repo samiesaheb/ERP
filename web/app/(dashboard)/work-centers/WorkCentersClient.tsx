@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import DataTable, { Column } from '@/components/ui/DataTable';
 import Button from '@/components/ui/Button';
+import ComboBox from '@/components/ui/ComboBox';
 import SlideOver from '@/components/ui/SlideOver';
 import Badge from '@/components/ui/Badge';
 import { clientFetch } from '@/lib/client-api';
@@ -143,14 +144,18 @@ export default function WorkCentersClient({ workCenters }: Props) {
           </div>
           <div>
             <label className="block text-xs font-medium text-neutral-600 mb-1">Type</label>
-            <select className="w-full border border-neutral-300 rounded-md px-3 py-1.5 text-sm"
-              value={form.center_type} onChange={(e) => set('center_type', e.target.value)}>
-              <option value="mixer">Mixer</option>
-              <option value="filler">Filler</option>
-              <option value="packer">Packer</option>
-              <option value="lab">Lab / QC</option>
-              <option value="general">General</option>
-            </select>
+            <ComboBox
+              value={form.center_type}
+              onChange={(v) => set('center_type', v)}
+              options={[
+                { value: 'mixer',   label: 'Mixer' },
+                { value: 'filler',  label: 'Filler' },
+                { value: 'packer',  label: 'Packer' },
+                { value: 'lab',     label: 'Lab / QC' },
+                { value: 'general', label: 'General' },
+              ]}
+              className="w-full border border-neutral-300 rounded-md px-3 py-1.5 text-sm"
+            />
           </div>
           <div>
             <label className="block text-xs font-medium text-neutral-600 mb-1">Capacity per Shift</label>
@@ -165,12 +170,16 @@ export default function WorkCentersClient({ workCenters }: Props) {
           {editing && (
             <div>
               <label className="block text-xs font-medium text-neutral-600 mb-1">Status</label>
-              <select className="w-full border border-neutral-300 rounded-md px-3 py-1.5 text-sm"
-                value={form.status} onChange={(e) => set('status', e.target.value)}>
-                <option value="active">Active</option>
-                <option value="maintenance">Maintenance</option>
-                <option value="inactive">Inactive</option>
-              </select>
+              <ComboBox
+                value={form.status}
+                onChange={(v) => set('status', v)}
+                options={[
+                  { value: 'active',      label: 'Active' },
+                  { value: 'maintenance', label: 'Maintenance' },
+                  { value: 'inactive',    label: 'Inactive' },
+                ]}
+                className="w-full border border-neutral-300 rounded-md px-3 py-1.5 text-sm"
+              />
             </div>
           )}
           <div>

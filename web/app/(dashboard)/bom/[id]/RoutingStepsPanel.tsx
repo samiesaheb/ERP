@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardHeader, CardBody } from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
+import ComboBox from '@/components/ui/ComboBox';
 import SlideOver from '@/components/ui/SlideOver';
 import { clientFetch } from '@/lib/client-api';
 import type { RoutingStep, WorkCenter } from '@/lib/types';
@@ -159,14 +160,13 @@ export default function RoutingStepsPanel({ bomId, steps, workCenters }: Props) 
             {workCenters.length === 0 ? (
               <p className="text-xs text-amber-600">No work centers defined yet. Create one at Production → Work Centers first.</p>
             ) : (
-              <select className="w-full border border-neutral-300 rounded-md px-3 py-1.5 text-sm"
+              <ComboBox
                 value={form.work_center_id}
-                onChange={(e) => set('work_center_id', e.target.value)}>
-                <option value="">Select…</option>
-                {workCenters.map((wc) => (
-                  <option key={wc.id} value={wc.id}>{wc.name} ({wc.code})</option>
-                ))}
-              </select>
+                onChange={(v) => set('work_center_id', v)}
+                options={workCenters.map((wc) => ({ value: wc.id, label: `${wc.name} (${wc.code})` }))}
+                placeholder="Select…"
+                className="w-full border border-neutral-300 rounded-md px-3 py-1.5 text-sm"
+              />
             )}
           </div>
           <div>

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import DataTable, { Column } from '@/components/ui/DataTable';
 import Button from '@/components/ui/Button';
+import ComboBox from '@/components/ui/ComboBox';
 import SlideOver from '@/components/ui/SlideOver';
 import Badge from '@/components/ui/Badge';
 import { clientFetch } from '@/lib/client-api';
@@ -153,32 +154,26 @@ export default function CustomersClient({
 
           <div>
             <label className="block text-xs font-medium text-neutral-600 mb-1">Customer Type</label>
-            <select
+            <ComboBox
               required
               value={form.customer_type_id}
-              onChange={(e) => set('customer_type_id', e.target.value)}
-              className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded bg-white"
-            >
-              <option value="">Select type</option>
-              {customerTypes.map((t) => (
-                <option key={t.id} value={t.id}>{t.name}</option>
-              ))}
-            </select>
+              onChange={(v) => set('customer_type_id', v)}
+              options={customerTypes.map((t) => ({ value: t.id, label: t.name }))}
+              placeholder="Select type"
+              className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded"
+            />
           </div>
 
           <div>
             <label className="block text-xs font-medium text-neutral-600 mb-1">Country</label>
-            <select
+            <ComboBox
               required
               value={form.country_id}
-              onChange={(e) => set('country_id', e.target.value)}
-              className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded bg-white"
-            >
-              <option value="">Select country</option>
-              {countries.map((c) => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
-            </select>
+              onChange={(v) => set('country_id', v)}
+              options={countries.map((c) => ({ value: c.id, label: c.name }))}
+              placeholder="Select country"
+              className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded"
+            />
           </div>
 
           <div>

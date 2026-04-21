@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import DataTable, { Column } from '@/components/ui/DataTable';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
+import ComboBox from '@/components/ui/ComboBox';
 import SlideOver from '@/components/ui/SlideOver';
 import { clientFetch } from '@/lib/client-api';
 import { updateItem } from '@/lib/mutations';
@@ -172,22 +173,29 @@ export default function ItemsClient({
           </div>
           <div>
             <label className="block text-xs font-medium text-neutral-600 mb-1">Item Type</label>
-            <select value={form.item_type} onChange={(e) => setForm({ ...form, item_type: e.target.value })}
+            <ComboBox
+              value={form.item_type}
+              onChange={(v) => setForm({ ...form, item_type: v })}
               disabled={!!editingItem}
-              className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded bg-white disabled:bg-neutral-50 disabled:text-neutral-400">
-              <option value="FG">Finished Good</option>
-              <option value="RawMat">Raw Material</option>
-              <option value="PackMat">Packaging Material</option>
-            </select>
+              options={[
+                { value: 'FG',      label: 'Finished Good' },
+                { value: 'RawMat',  label: 'Raw Material' },
+                { value: 'PackMat', label: 'Packaging Material' },
+              ]}
+              className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded disabled:bg-neutral-50 disabled:text-neutral-400"
+            />
           </div>
           <div>
             <label className="block text-xs font-medium text-neutral-600 mb-1">UOM</label>
-            <select value={form.uom_id} onChange={(e) => setForm({ ...form, uom_id: e.target.value })}
-              required disabled={!!editingItem}
-              className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded bg-white disabled:bg-neutral-50 disabled:text-neutral-400">
-              <option value="">Select UOM</option>
-              {uoms.map((u) => <option key={u.id} value={u.id}>{u.code}{u.description ? ` — ${u.description}` : ''}</option>)}
-            </select>
+            <ComboBox
+              required
+              value={form.uom_id}
+              onChange={(v) => setForm({ ...form, uom_id: v })}
+              disabled={!!editingItem}
+              options={uoms.map((u) => ({ value: u.id, label: u.code + (u.description ? ` — ${u.description}` : '') }))}
+              placeholder="Select UOM"
+              className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded disabled:bg-neutral-50 disabled:text-neutral-400"
+            />
           </div>
           <div className="flex items-center gap-2">
             <input type="checkbox" id="fda_req" checked={form.fda_required}

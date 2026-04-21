@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
+import ComboBox from '@/components/ui/ComboBox';
 import DataTable, { Column } from '@/components/ui/DataTable';
 import SlideOver from '@/components/ui/SlideOver';
 import { clientFetch } from '@/lib/client-api';
@@ -156,19 +157,26 @@ export default function SuppliersClient({
           </div>
           <div>
             <label className="block text-xs font-medium text-neutral-600 mb-1">Country</label>
-            <select required value={form.country_id} onChange={(e) => setForm({ ...form, country_id: e.target.value })}
-              className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded bg-white">
-              <option value="">Select country…</option>
-              {countries.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
+            <ComboBox
+              required
+              value={form.country_id}
+              onChange={(v) => setForm({ ...form, country_id: v })}
+              options={countries.map((c) => ({ value: c.id, label: c.name }))}
+              placeholder="Select country…"
+              className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded"
+            />
           </div>
           <div>
             <label className="block text-xs font-medium text-neutral-600 mb-1">Type</label>
-            <select value={form.supplier_type} onChange={(e) => setForm({ ...form, supplier_type: e.target.value })}
-              className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded bg-white">
-              <option value="local">Local</option>
-              <option value="international">International</option>
-            </select>
+            <ComboBox
+              value={form.supplier_type}
+              onChange={(v) => setForm({ ...form, supplier_type: v })}
+              options={[
+                { value: 'local',         label: 'Local' },
+                { value: 'international', label: 'International' },
+              ]}
+              className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded"
+            />
           </div>
           <div>
             <label className="block text-xs font-medium text-neutral-600 mb-1">Email</label>

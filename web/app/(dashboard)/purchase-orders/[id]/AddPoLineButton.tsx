@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Button from '@/components/ui/Button';
+import ComboBox from '@/components/ui/ComboBox';
 import SlideOver from '@/components/ui/SlideOver';
 import { clientFetch } from '@/lib/client-api';
 import type { Item, Uom } from '@/lib/types';
@@ -56,17 +57,17 @@ export default function AddPoLineButton({ poId, items, uoms }: Props) {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-xs font-medium text-neutral-600 mb-1">Item</label>
-            <select required value={form.item_id}
-              onChange={(e) => {
-                const item = items.find((i) => i.id === e.target.value);
-                setForm({ ...form, item_id: e.target.value, uom_id: item?.uom_id ?? form.uom_id });
+            <ComboBox
+              required
+              value={form.item_id}
+              onChange={(v) => {
+                const item = items.find((i) => i.id === v);
+                setForm({ ...form, item_id: v, uom_id: item?.uom_id ?? form.uom_id });
               }}
-              className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded bg-white">
-              <option value="">Select item</option>
-              {items.map((i) => (
-                <option key={i.id} value={i.id}>{i.item_code} — {i.description}</option>
-              ))}
-            </select>
+              options={items.map((i) => ({ value: i.id, label: `${i.item_code} — ${i.description}` }))}
+              placeholder="Select item"
+              className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded"
+            />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -77,12 +78,14 @@ export default function AddPoLineButton({ poId, items, uoms }: Props) {
             </div>
             <div>
               <label className="block text-xs font-medium text-neutral-600 mb-1">UOM</label>
-              <select required value={form.uom_id}
-                onChange={(e) => setForm({ ...form, uom_id: e.target.value })}
-                className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded bg-white">
-                <option value="">Select</option>
-                {uoms.map((u) => <option key={u.id} value={u.id}>{u.code}</option>)}
-              </select>
+              <ComboBox
+                required
+                value={form.uom_id}
+                onChange={(v) => setForm({ ...form, uom_id: v })}
+                options={uoms.map((u) => ({ value: u.id, label: u.code }))}
+                placeholder="Select"
+                className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded"
+              />
             </div>
           </div>
           <div>

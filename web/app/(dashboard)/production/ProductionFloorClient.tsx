@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
+import ComboBox from '@/components/ui/ComboBox';
 import DropdownMenu from '@/components/ui/DropdownMenu';
 import SlideOver from '@/components/ui/SlideOver';
 import type { ProductionBatch } from '@/lib/types';
@@ -231,11 +232,13 @@ export default function ProductionFloorClient({
         <div className="space-y-4">
           <div>
             <label className="block text-xs font-medium text-neutral-600 mb-1">Test Type</label>
-            <select className="w-full border border-neutral-300 rounded-md px-3 py-1.5 text-sm"
+            <ComboBox
+              freeform
               value={qcForm.test_type}
-              onChange={(e) => setQcForm((f) => ({ ...f, test_type: e.target.value }))}>
-              {QC_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
-            </select>
+              onChange={(v) => setQcForm((f) => ({ ...f, test_type: v }))}
+              options={QC_TYPES.map((t) => ({ value: t, label: t }))}
+              className="w-full border border-neutral-300 rounded-md px-3 py-1.5 text-sm"
+            />
           </div>
           <div>
             <label className="block text-xs font-medium text-neutral-600 mb-1">Result Value</label>
@@ -262,13 +265,16 @@ export default function ProductionFloorClient({
           </div>
           <div>
             <label className="block text-xs font-medium text-neutral-600 mb-1">Pass / Fail</label>
-            <select className="w-full border border-neutral-300 rounded-md px-3 py-1.5 text-sm"
+            <ComboBox
               value={qcForm.pass_fail}
-              onChange={(e) => setQcForm((f) => ({ ...f, pass_fail: e.target.value }))}>
-              <option value="pending">Pending</option>
-              <option value="pass">Pass</option>
-              <option value="fail">Fail</option>
-            </select>
+              onChange={(v) => setQcForm((f) => ({ ...f, pass_fail: v }))}
+              options={[
+                { value: 'pending', label: 'Pending' },
+                { value: 'pass',    label: 'Pass' },
+                { value: 'fail',    label: 'Fail' },
+              ]}
+              className="w-full border border-neutral-300 rounded-md px-3 py-1.5 text-sm"
+            />
           </div>
           <div>
             <label className="block text-xs font-medium text-neutral-600 mb-1">Notes</label>
@@ -293,11 +299,13 @@ export default function ProductionFloorClient({
         <div className="space-y-4">
           <div>
             <label className="block text-xs font-medium text-neutral-600 mb-1">Reason Code</label>
-            <select className="w-full border border-neutral-300 rounded-md px-3 py-1.5 text-sm"
+            <ComboBox
+              freeform
               value={dtForm.reason_code}
-              onChange={(e) => setDtForm((f) => ({ ...f, reason_code: e.target.value }))}>
-              {DOWNTIME_CODES.map((c) => <option key={c} value={c}>{c.replace('_', ' ')}</option>)}
-            </select>
+              onChange={(v) => setDtForm((f) => ({ ...f, reason_code: v }))}
+              options={DOWNTIME_CODES.map((c) => ({ value: c, label: c.replace('_', ' ') }))}
+              className="w-full border border-neutral-300 rounded-md px-3 py-1.5 text-sm"
+            />
           </div>
           <div>
             <label className="block text-xs font-medium text-neutral-600 mb-1">Description</label>

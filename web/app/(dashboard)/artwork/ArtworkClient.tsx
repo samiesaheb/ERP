@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import DataTable, { Column } from '@/components/ui/DataTable';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
+import ComboBox from '@/components/ui/ComboBox';
 import SlideOver from '@/components/ui/SlideOver';
 import { clientFetch } from '@/lib/client-api';
 import { updateArtworkStatus, updateFdaStatus } from '@/lib/mutations';
@@ -244,29 +245,23 @@ export default function ArtworkClient({ artworks, fdaRegistrations, salesOrders,
             <div className="space-y-4">
               <div>
                 <label className="block text-xs font-medium text-neutral-600 mb-1">Sales Order</label>
-                <select
-                  className="w-full border-[0.5px] border-neutral-300 rounded px-3 py-2 text-sm bg-white"
+                <ComboBox
                   value={artForm.sales_order_id}
-                  onChange={(e) => setArtForm({ ...artForm, sales_order_id: e.target.value })}
-                >
-                  <option value="">Select…</option>
-                  {salesOrders.map((s) => (
-                    <option key={s.id} value={s.id}>{s.order_number}</option>
-                  ))}
-                </select>
+                  onChange={(v) => setArtForm({ ...artForm, sales_order_id: v })}
+                  options={salesOrders.map((s) => ({ value: s.id, label: s.order_number }))}
+                  placeholder="Select…"
+                  className="w-full border-[0.5px] border-neutral-300 rounded px-3 py-2 text-sm"
+                />
               </div>
               <div>
                 <label className="block text-xs font-medium text-neutral-600 mb-1">Item</label>
-                <select
-                  className="w-full border-[0.5px] border-neutral-300 rounded px-3 py-2 text-sm bg-white"
+                <ComboBox
                   value={artForm.item_id}
-                  onChange={(e) => setArtForm({ ...artForm, item_id: e.target.value })}
-                >
-                  <option value="">Select…</option>
-                  {items.map((i) => (
-                    <option key={i.id} value={i.id}>{i.item_code} — {i.description}</option>
-                  ))}
-                </select>
+                  onChange={(v) => setArtForm({ ...artForm, item_id: v })}
+                  options={items.map((i) => ({ value: i.id, label: `${i.item_code} — ${i.description}` }))}
+                  placeholder="Select…"
+                  className="w-full border-[0.5px] border-neutral-300 rounded px-3 py-2 text-sm"
+                />
               </div>
               <div>
                 <label className="block text-xs font-medium text-neutral-600 mb-1">Version</label>
@@ -346,32 +341,26 @@ export default function ArtworkClient({ artworks, fdaRegistrations, salesOrders,
             <form onSubmit={handleSaveFda} className="space-y-4">
               <div>
                 <label className="block text-xs font-medium text-neutral-600 mb-1">Sales Order</label>
-                <select
+                <ComboBox
                   required
-                  className="w-full border-[0.5px] border-neutral-300 rounded px-3 py-2 text-sm bg-white"
                   value={fdaForm.sales_order_id}
-                  onChange={(e) => setFdaForm({ ...fdaForm, sales_order_id: e.target.value })}
-                >
-                  <option value="">Select…</option>
-                  {salesOrders.filter((s) => s.fda_required).map((s) => (
-                    <option key={s.id} value={s.id}>{s.order_number}</option>
-                  ))}
-                </select>
+                  onChange={(v) => setFdaForm({ ...fdaForm, sales_order_id: v })}
+                  options={salesOrders.filter((s) => s.fda_required).map((s) => ({ value: s.id, label: s.order_number }))}
+                  placeholder="Select…"
+                  className="w-full border-[0.5px] border-neutral-300 rounded px-3 py-2 text-sm"
+                />
                 <p className="text-[11px] text-neutral-400 mt-1">Showing FDA-required orders only</p>
               </div>
               <div>
                 <label className="block text-xs font-medium text-neutral-600 mb-1">Item</label>
-                <select
+                <ComboBox
                   required
-                  className="w-full border-[0.5px] border-neutral-300 rounded px-3 py-2 text-sm bg-white"
                   value={fdaForm.item_id}
-                  onChange={(e) => setFdaForm({ ...fdaForm, item_id: e.target.value })}
-                >
-                  <option value="">Select…</option>
-                  {items.map((i) => (
-                    <option key={i.id} value={i.id}>{i.item_code} — {i.description}</option>
-                  ))}
-                </select>
+                  onChange={(v) => setFdaForm({ ...fdaForm, item_id: v })}
+                  options={items.map((i) => ({ value: i.id, label: `${i.item_code} — ${i.description}` }))}
+                  placeholder="Select…"
+                  className="w-full border-[0.5px] border-neutral-300 rounded px-3 py-2 text-sm"
+                />
               </div>
               <div>
                 <label className="block text-xs font-medium text-neutral-600 mb-1">Registration Number</label>

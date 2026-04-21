@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
+import ComboBox from '@/components/ui/ComboBox';
 import DataTable, { Column } from '@/components/ui/DataTable';
 import SlideOver from '@/components/ui/SlideOver';
 import { clientFetch } from '@/lib/client-api';
@@ -261,15 +262,14 @@ export default function UsersClient({ users: initial }: { users: User[] }) {
 
           <div>
             <label className="block text-xs font-medium text-neutral-700 mb-1">Role *</label>
-            <select
+            <ComboBox
+              freeform
               value={form.role}
-              onChange={(e) => setForm((f) => ({ ...f, role: e.target.value }))}
+              onChange={(v) => setForm((f) => ({ ...f, role: v.toLowerCase().trim() }))}
+              options={ROLES.map((r) => ({ value: r, label: r.charAt(0).toUpperCase() + r.slice(1) }))}
+              placeholder="Select or type a new role"
               className={inputCls}
-            >
-              {ROLES.map((r) => (
-                <option key={r} value={r}>{r.charAt(0).toUpperCase() + r.slice(1)}</option>
-              ))}
-            </select>
+            />
           </div>
 
           {/* ── Access Window ── */}
