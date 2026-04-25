@@ -94,6 +94,7 @@ export default function AccessRequestsClient({ requests, userMap }: Props) {
       <DataTable
         data={requests}
         columns={makeColumns(userMap, setReviewing)}
+        onRowClick={(row) => setReviewing(row)}
         toolbar={
           <Button variant="primary" size="sm" onClick={() => setNewOpen(true)}>
             + Request Access

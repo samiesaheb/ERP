@@ -194,6 +194,7 @@ export default function ReceivingClient({
             columns={COLUMNS(supplierMap)}
             toolbar={<Button onClick={() => openForPo('')}>+ Record Receipt</Button>}
             data={openPos}
+            onRowClick={(row) => router.push(`/purchase-orders/${row.id}`)}
             actions={(row) => [
               { label: 'Record Receipt', onClick: () => openForPo(row.id) },
               { label: 'View PO',        onClick: () => router.push(`/purchase-orders/${row.id}`) },
@@ -203,6 +204,7 @@ export default function ReceivingClient({
           <DataTable
             columns={RECEIPT_COLUMNS(poMap)}
             data={receipts}
+            onRowClick={(row) => openQcPanel(row)}
             actions={(row) => [
               { label: 'QC Review', onClick: () => openQcPanel(row) },
               { label: 'View PO',   onClick: () => router.push(`/purchase-orders/${row.purchase_order_id}`) },

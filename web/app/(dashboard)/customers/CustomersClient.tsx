@@ -130,6 +130,7 @@ export default function CustomersClient({
           toolbar={<Button onClick={openCreate}>+ New Customer</Button>}
           data={customers}
           searchable
+          onRowClick={(row) => openEdit(row)}
           actions={(row) => [
             { label: 'Edit',              onClick: () => openEdit(row) },
             { label: 'View Sales Orders', onClick: () => router.push('/sales-orders') },
@@ -139,7 +140,7 @@ export default function CustomersClient({
         />
       </div>
 
-      <SlideOver open={open} onClose={() => setOpen(false)} title={editingCustomer ? 'Edit Customer' : 'New Customer'}>
+      <SlideOver open={open} onClose={() => setOpen(false)} title={editingCustomer ? editingCustomer.name : 'New Customer'}>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-xs font-medium text-neutral-600 mb-1">Name</label>

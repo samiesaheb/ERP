@@ -121,7 +121,7 @@ export default function WorkCentersClient({ workCenters }: Props) {
       />
 
       <SlideOver open={open} onClose={() => setOpen(false)}
-        title={editing ? 'Edit Work Center' : 'New Work Center'}>
+        title={editing ? editing.code : 'New Work Center'}>
         <div className="space-y-4">
           <div>
             <label className="block text-xs font-medium text-neutral-600 mb-1">Code *</label>

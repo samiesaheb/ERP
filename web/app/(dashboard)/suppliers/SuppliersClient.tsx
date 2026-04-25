@@ -139,6 +139,7 @@ export default function SuppliersClient({
           columns={COLUMNS(countryMap)}
           toolbar={<Button onClick={openCreate}>+ New Supplier</Button>}
           data={suppliers}
+          onRowClick={(row) => openEdit(row)}
           actions={(row) => [
             { label: 'Edit',       onClick: () => openEdit(row) },
             { label: 'View Items', onClick: () => router.push('/items') },
@@ -147,7 +148,7 @@ export default function SuppliersClient({
         />
       </div>
 
-      <SlideOver open={open} onClose={() => setOpen(false)} title={editingSupplier ? 'Edit Supplier' : 'New Supplier'}>
+      <SlideOver open={open} onClose={() => setOpen(false)} title={editingSupplier ? editingSupplier.name : 'New Supplier'}>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-xs font-medium text-neutral-600 mb-1">Name</label>

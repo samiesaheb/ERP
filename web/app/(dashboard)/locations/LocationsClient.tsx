@@ -169,6 +169,7 @@ export default function LocationsClient({ locations: initial }: { locations: War
           columns={COLUMNS}
           toolbar={<Button onClick={openCreate}>+ New Location</Button>}
           data={locations}
+          onRowClick={(row) => openEdit(row)}
           actions={(row) => [
             { label: 'Edit', onClick: () => openEdit(row) },
           ]}
@@ -183,7 +184,7 @@ export default function LocationsClient({ locations: initial }: { locations: War
       <SlideOver
         open={open}
         onClose={() => setOpen(false)}
-        title={editLoc ? 'Edit Location' : 'New Location'}
+        title={editLoc ? editLoc.code : 'New Location'}
       >
         <div className="space-y-5">
           <div>

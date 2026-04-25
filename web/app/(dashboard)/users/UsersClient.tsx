@@ -254,7 +254,7 @@ export default function UsersClient({ users: initial }: { users: User[] }) {
           <h1 className="text-xl font-semibold text-neutral-900">Users</h1>
           <p className="text-sm text-neutral-500 mt-0.5">{users.length} user{users.length !== 1 ? 's' : ''}</p>
         </div>
-        <DataTable columns={columns} toolbar={<Button onClick={openCreate}>+ New User</Button>} data={users} />
+        <DataTable columns={columns} toolbar={<Button onClick={openCreate}>+ New User</Button>} data={users} onRowClick={(row) => openEdit(row)} />
 
         {customRoles.length > 0 && (
           <div>
@@ -283,7 +283,7 @@ export default function UsersClient({ users: initial }: { users: User[] }) {
       <SlideOver
         open={open}
         onClose={() => setOpen(false)}
-        title={editUser ? 'Edit User' : 'New User'}
+        title={editUser ? editUser.full_name : 'New User'}
       >
         <div className="space-y-5">
           {/* ── Identity ── */}

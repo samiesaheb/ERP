@@ -144,6 +144,7 @@ export default function ItemsClient({
           columns={COLUMNS(uomMap)}
           toolbar={<Button onClick={openCreate}>+ New Item</Button>}
           data={items}
+          onRowClick={(row) => openEdit(row)}
           actions={(row) => [
             { label: 'Edit',        onClick: () => openEdit(row) },
             { label: 'View BOM',    onClick: () => router.push('/bom') },
@@ -156,7 +157,7 @@ export default function ItemsClient({
         />
       </div>
 
-      <SlideOver open={open} onClose={() => setOpen(false)} title={editingItem ? 'Edit Item' : 'New Item'}>
+      <SlideOver open={open} onClose={() => setOpen(false)} title={editingItem ? editingItem.item_code : 'New Item'}>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-xs font-medium text-neutral-600 mb-1">Item Code</label>

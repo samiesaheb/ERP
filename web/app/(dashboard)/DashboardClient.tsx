@@ -11,6 +11,15 @@ function fmt(val: string | number) {
   return Number(val).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 }
 
+const STAGE_HREF: Record<string, string> = {
+  'Sales Order':      '/sales-orders',
+  'Mfg Order':        '/manufacturing-orders',
+  'Bulk Production':  '/production',
+  'Filling':          '/production',
+  'Packing':          '/production',
+  'Loading':          '/shipments',
+};
+
 /* ── Pipeline ─────────────────────────────────────────────────────── */
 function PipelineCard({ data, router }: { data: DashboardData; router: ReturnType<typeof useRouter> }) {
   const max = Math.max(...data.pipeline.map((s) => s.count), 1);
@@ -26,20 +35,24 @@ function PipelineCard({ data, router }: { data: DashboardData; router: ReturnTyp
       <div className="flex-1 px-5 pb-4 pt-3">
         <div className="grid grid-cols-6 gap-3 h-full">
           {data.pipeline.map((stage) => (
-            <div key={stage.stage} className="flex flex-col justify-between">
-              <div className="flex-1 flex items-end mb-2">
+            <button
+              key={stage.stage}
+              onClick={() => router.push(STAGE_HREF[stage.stage] ?? '/')}
+              className="flex flex-col justify-between text-left group hover:opacity-80 transition-opacity"
+            >
+              <div className="flex-1 flex items-end mb-2 w-full">
                 <div className="w-full bg-neutral-100 rounded overflow-hidden" style={{ height: '64px' }}>
                   <div
-                    className="w-full bg-neutral-800 rounded transition-all duration-500"
+                    className="w-full bg-neutral-800 rounded transition-all duration-500 group-hover:bg-neutral-600"
                     style={{ height: `${(stage.count / max) * 100}%` }}
                   />
                 </div>
               </div>
               <p className="text-xl font-bold text-neutral-900 tabular-nums leading-none">{stage.count}</p>
-              <p className="text-[9px] font-semibold uppercase tracking-wide text-neutral-400 mt-1 truncate">
+              <p className="text-[9px] font-semibold uppercase tracking-wide text-neutral-400 mt-1 truncate group-hover:text-neutral-600">
                 {stage.stage}
               </p>
-            </div>
+            </button>
           ))}
         </div>
       </div>
@@ -72,8 +85,12 @@ function RecentSoCard({ orders }: { orders: SalesOrder[] }) {
           </thead>
           <tbody>
             {orders.slice(0, 8).map((so) => (
-              <tr key={so.id} className="border-b-[0.5px] border-neutral-50 hover:bg-neutral-50 transition-colors group">
-                <td className="px-2 py-3">
+              <tr
+                key={so.id}
+                onClick={() => router.push(`/sales-orders/${so.id}`)}
+                className="border-b-[0.5px] border-neutral-50 hover:bg-neutral-50 transition-colors group cursor-pointer"
+              >
+                <td className="px-2 py-3" onClick={(e) => e.stopPropagation()}>
                   <div className="opacity-0 group-hover:opacity-100 transition-opacity flex justify-start">
                     <DropdownMenu align="left" items={[
                       { label: 'View Order',   onClick: () => router.push(`/sales-orders/${so.id}`) },

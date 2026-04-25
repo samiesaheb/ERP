@@ -86,6 +86,7 @@ export default function BomClient({
           columns={COLUMNS(itemMap)}
           toolbar={<Button onClick={() => setOpen(true)}>+ New BOM</Button>}
           data={boms}
+          onRowClick={(row) => router.push(`/bom/${row.id}`)}
           actions={(row) => [
             { label: 'View',   onClick: () => router.push(`/bom/${row.id}`) },
             { label: 'Delete', onClick: () => deleteBom(row.id).then(() => router.refresh()), variant: 'danger' },
