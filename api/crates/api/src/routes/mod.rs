@@ -5,7 +5,7 @@ use axum::{
 };
 
 use crate::{
-    handlers::{audit, artwork, auth, bom, dashboard, finance, inventory, masters, procurement, production, sales, search, shipments, shop_floor},
+    handlers::{audit, artwork, auth, bom, dashboard, finance, inventory, locations, masters, procurement, production, sales, search, shipments, shop_floor},
     middleware::auth::require_auth,
     state::AppState,
 };
@@ -85,6 +85,12 @@ pub fn build_router(state: AppState) -> Router {
         .route("/api/v1/inventory/transact", post(inventory::transact_inventory))
         .route("/api/v1/inventory/transactions",
             get(inventory::list_inventory_transactions))
+        .route("/api/v1/inventory/:item_id/cycle-count",
+            post(inventory::cycle_count))
+
+        // Warehouse Locations
+        .route("/api/v1/locations",   get(locations::list_locations).post(locations::create_location))
+        .route("/api/v1/locations/:id", put(locations::update_location))
 
         // Manufacturing
         .route("/api/v1/manufacturing-orders",

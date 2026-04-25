@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
@@ -10,7 +10,16 @@ import SlideOver from '@/components/ui/SlideOver';
 import { clientFetch } from '@/lib/client-api';
 import type { User } from '@/lib/types';
 
-const ROLES = ['admin', 'planner', 'supervisor', 'warehouse', 'qc', 'purchasing', 'sales', 'subcontractor'];
+const DEFAULT_ROLES = ['admin', 'planner', 'supervisor', 'warehouse', 'qc', 'purchasing', 'sales', 'subcontractor'];
+const BUILT_IN_ROLE_SET = new Set(DEFAULT_ROLES);
+
+function normalizeRole(r: string): string {
+  const trimmed = r.trim();
+  if (!trimmed) return trimmed;
+  const lower = trimmed.toLowerCase();
+  // Built-in roles must stay lowercase — RBAC checks exact lowercase strings
+  return lower;
+}
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const;
 
@@ -87,6 +96,17 @@ export default function UsersClient({ users: initial }: { users: User[] }) {
   const router = useRouter();
   const [users, setUsers] = useState(initial);
   useEffect(() => { setUsers(initial); }, [initial]);
+
+  const allRoles = useMemo(() => {
+    const fromUsers = users.map((u) => u.role).filter(Boolean).map(normalizeRole);
+    return Array.from(new Set([...DEFAULT_ROLES, ...fromUsers])).sort();
+  }, [users]);
+
+  const customRoles = useMemo(
+    () => allRoles.filter((r) => !BUILT_IN_ROLE_SET.has(r)),
+    [allRoles],
+  );
+
   const [open, setOpen]       = useState(false);
   const [editUser, setEditUser] = useState<User | null>(null);
   const [form, setForm]       = useState<FormState>(EMPTY_FORM);
@@ -127,6 +147,27 @@ export default function UsersClient({ users: initial }: { users: User[] }) {
         ? f.allowed_days.filter((d) => d !== day)
         : [...f.allowed_days, day],
     }));
+  }
+
+  async function handleDeleteRole(role: string) {
+    const affected = users.filter((u) => u.role === role);
+    const msg = affected.length > 0
+      ? `Delete "${role}"? ${affected.length} user${affected.length !== 1 ? 's' : ''} will be reassigned to admin.`
+      : `Delete role "${role}"?`;
+    if (!window.confirm(msg)) return;
+    try {
+      await Promise.all(
+        affected.map((u) =>
+          clientFetch(`/api/v1/users/${u.id}`, {
+            method: 'PUT',
+            body: JSON.stringify({ role: 'admin' }),
+          }),
+        ),
+      );
+      router.refresh();
+    } catch {
+      window.alert('Failed to delete role');
+    }
   }
 
   async function handleSave() {
@@ -214,6 +255,29 @@ export default function UsersClient({ users: initial }: { users: User[] }) {
           <p className="text-sm text-neutral-500 mt-0.5">{users.length} user{users.length !== 1 ? 's' : ''}</p>
         </div>
         <DataTable columns={columns} toolbar={<Button onClick={openCreate}>+ New User</Button>} data={users} />
+
+        {customRoles.length > 0 && (
+          <div>
+            <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wide mb-2">Custom Roles</p>
+            <div className="flex flex-wrap gap-2">
+              {customRoles.map((role) => (
+                <span
+                  key={role}
+                  className="inline-flex items-center gap-1.5 bg-neutral-100 border border-neutral-200 rounded-lg px-3 py-1 text-sm text-neutral-700"
+                >
+                  {role}
+                  <button
+                    onClick={() => handleDeleteRole(role)}
+                    className="text-neutral-400 hover:text-red-500 leading-none"
+                    title={`Delete role "${role}"`}
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       <SlideOver
@@ -265,11 +329,14 @@ export default function UsersClient({ users: initial }: { users: User[] }) {
             <ComboBox
               freeform
               value={form.role}
-              onChange={(v) => setForm((f) => ({ ...f, role: v.toLowerCase().trim() }))}
-              options={ROLES.map((r) => ({ value: r, label: r.charAt(0).toUpperCase() + r.slice(1) }))}
-              placeholder="Select or type a new role"
+              onChange={(v) => setForm((f) => ({ ...f, role: normalizeRole(v) }))}
+              options={allRoles.map((r) => ({ value: r, label: r }))}
+              placeholder="Select or type a new role…"
               className={inputCls}
             />
+            <p className="text-[11px] text-neutral-400 mt-1">
+              Type a custom name to create a new role.
+            </p>
           </div>
 
           {/* ── Access Window ── */}

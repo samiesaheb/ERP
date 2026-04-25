@@ -43,6 +43,8 @@ pub use finance::{
 pub use inventory::{
     Inventory, InventoryWithItem,
     InventoryTransaction, CreateInventoryTransaction,
+    CycleCount,
+    WarehouseLocation, CreateWarehouseLocation, UpdateWarehouseLocation,
 };
 
 pub use masters::{

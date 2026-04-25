@@ -1,11 +1,9 @@
-use axum::{extract::State, http::StatusCode, Json};
+use axum::{extract::{Path, State}, http::StatusCode, Json};
 use rust_decimal::Decimal;
 use uuid::Uuid;
 
 use crate::{error::Result, state::AppState};
-use domain::{CreateInventoryTransaction, InventoryTransaction, InventoryWithItem};
-
-const LOW_STOCK_THRESHOLD: Decimal = rust_decimal_macros::dec!(20);
+use domain::{CycleCount, CreateInventoryTransaction, InventoryTransaction, InventoryWithItem};
 
 pub async fn list_inventory(
     State(state): State<AppState>,
@@ -19,7 +17,9 @@ pub async fn list_inventory(
                   i.qty_available,
                   i.qty_reserved,
                   i.uom_id,
-                  i.last_updated
+                  i.last_updated,
+                  i.last_counted_at,
+                  it.reorder_point
            FROM inventory i
            JOIN items it ON it.id = i.item_id
            ORDER BY it.item_code"#
@@ -29,18 +29,24 @@ pub async fn list_inventory(
 
     let result = rows
         .into_iter()
-        .map(|r| InventoryWithItem {
-            id:            r.id,
-            item_id:       r.item_id,
-            item_code:     r.item_code,
-            description:   r.description,
-            location:      r.location,
-            lot_number:    r.lot_number,
-            qty_available: r.qty_available,
-            qty_reserved:  r.qty_reserved,
-            uom_id:        r.uom_id,
-            last_updated:  r.last_updated,
-            low_stock:     r.qty_available < LOW_STOCK_THRESHOLD,
+        .map(|r| {
+            let atp = r.qty_available - r.qty_reserved;
+            let reorder_alert = r.reorder_point.map_or(false, |rop| atp < rop);
+            InventoryWithItem {
+                id:              r.id,
+                item_id:         r.item_id,
+                item_code:       r.item_code,
+                description:     r.description,
+                location:        r.location,
+                lot_number:      r.lot_number,
+                qty_available:   r.qty_available,
+                qty_reserved:    r.qty_reserved,
+                uom_id:          r.uom_id,
+                last_updated:    r.last_updated,
+                last_counted_at: r.last_counted_at,
+                reorder_point:   r.reorder_point,
+                reorder_alert,
+            }
         })
         .collect();
 
@@ -57,7 +63,6 @@ pub async fn transact_inventory(
         _ => body.qty, // adjustment: signed qty
     };
 
-    // Upsert inventory balance
     let uom_id = body.uom_id.unwrap_or_else(Uuid::new_v4);
     sqlx::query!(
         r#"INSERT INTO inventory (id, item_id, qty_available, qty_reserved, uom_id, lot_number, location)
@@ -76,7 +81,6 @@ pub async fn transact_inventory(
     .execute(&state.db)
     .await?;
 
-    // Record transaction
     let id = Uuid::new_v4();
     let row = sqlx::query_as!(
         InventoryTransaction,
@@ -113,4 +117,56 @@ pub async fn list_inventory_transactions(
     .fetch_all(&state.db)
     .await?;
     Ok(Json(rows))
+}
+
+/// POST /api/v1/inventory/:item_id/cycle-count
+/// Records a physical count: creates an adjustment transaction for the delta
+/// and stamps last_counted_at on the inventory row.
+pub async fn cycle_count(
+    State(state): State<AppState>,
+    Path(item_id): Path<Uuid>,
+    Json(body): Json<CycleCount>,
+) -> Result<Json<InventoryTransaction>> {
+    // Read current balance
+    let current = sqlx::query!(
+        "SELECT qty_available, uom_id FROM inventory WHERE item_id = $1",
+        item_id
+    )
+    .fetch_one(&state.db)
+    .await?;
+
+    let delta = body.counted_qty - current.qty_available;
+
+    // Update the balance and stamp the count timestamp
+    sqlx::query!(
+        r#"UPDATE inventory
+           SET qty_available  = $2,
+               last_counted_at = NOW(),
+               last_updated    = NOW()
+           WHERE item_id = $1"#,
+        item_id,
+        body.counted_qty,
+    )
+    .execute(&state.db)
+    .await?;
+
+    let id = Uuid::new_v4();
+    let notes = body.notes.as_deref().unwrap_or("Cycle count adjustment");
+    let row = sqlx::query_as!(
+        InventoryTransaction,
+        "INSERT INTO inventory_transactions
+             (id, item_id, transaction_type, qty, uom_id, notes, reference_type)
+         VALUES ($1, $2, 'adjustment', $3, $4, $5, 'cycle_count')
+         RETURNING id, item_id, transaction_type, reference_type, reference_id,
+                   qty, uom_id, lot_number, notes, created_by, created_at",
+        id,
+        item_id,
+        delta,
+        current.uom_id,
+        notes,
+    )
+    .fetch_one(&state.db)
+    .await?;
+
+    Ok(Json(row))
 }

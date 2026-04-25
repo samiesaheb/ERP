@@ -118,14 +118,17 @@ pub struct UpdateSupplier {
 
 #[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct Item {
-    pub id:           Uuid,
-    pub item_code:    String,
-    pub description:  String,
-    pub item_type:    String,   // FG / RawMat / PackMat
-    pub uom_id:       Uuid,
-    pub fda_required: bool,
-    pub is_active:    bool,
-    pub created_at:   DateTime<Utc>,
+    pub id:               Uuid,
+    pub item_code:        String,
+    pub description:      String,
+    pub item_type:        String,           // FG / RawMat / PackMat
+    pub uom_id:           Uuid,
+    pub fda_required:     bool,
+    pub is_active:        bool,
+    pub created_at:       DateTime<Utc>,
+    pub reorder_point:    Option<Decimal>,  // trigger purchase / production
+    pub abc_class:        Option<String>,   // A / B / C
+    pub lifecycle_status: String,           // active / phaseout / obsolete
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -136,13 +139,18 @@ pub struct CreateItem {
     pub uom_id:       Uuid,
     #[serde(default)]
     pub fda_required: bool,
+    pub reorder_point:    Option<Decimal>,
+    pub abc_class:        Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UpdateItem {
-    pub description:  Option<String>,
-    pub fda_required: Option<bool>,
-    pub is_active:    Option<bool>,
+    pub description:      Option<String>,
+    pub fda_required:     Option<bool>,
+    pub is_active:        Option<bool>,
+    pub reorder_point:    Option<Decimal>,
+    pub abc_class:        Option<String>,
+    pub lifecycle_status: Option<String>,
 }
 
 // ---------------------------------------------------------------------------

@@ -5,6 +5,7 @@ pub mod bom;
 pub mod dashboard;
 pub mod finance;
 pub mod inventory;
+pub mod locations;
 pub mod masters;
 pub mod procurement;
 pub mod production;

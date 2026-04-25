@@ -98,7 +98,7 @@ function RecentSoCard({ orders }: { orders: SalesOrder[] }) {
 /* ── Low Stock Alerts ─────────────────────────────────────────────── */
 function LowStockCard({ items }: { items: InventoryWithItem[] }) {
   const router = useRouter();
-  const alerts = items.filter((i) => i.low_stock);
+  const alerts = items.filter((i) => i.reorder_alert);
   return (
     <div className="bg-white rounded-xl overflow-hidden h-full flex flex-col">
       <div className="px-5 py-4 border-b-[0.5px] border-neutral-100 flex items-center gap-2">

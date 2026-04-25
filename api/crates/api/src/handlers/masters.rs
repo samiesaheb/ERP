@@ -137,7 +137,8 @@ pub async fn list_items(
             let pattern = format!("%{s}%");
             sqlx::query_as!(
                 Item,
-                "SELECT id, item_code, description, item_type, uom_id, fda_required, is_active, created_at
+                "SELECT id, item_code, description, item_type, uom_id, fda_required, is_active,
+                        created_at, reorder_point, abc_class, lifecycle_status
                  FROM items
                  WHERE item_type = $1 AND (item_code ILIKE $2 OR description ILIKE $2)
                  ORDER BY item_code",
@@ -150,7 +151,8 @@ pub async fn list_items(
         (Some(it), None) => {
             sqlx::query_as!(
                 Item,
-                "SELECT id, item_code, description, item_type, uom_id, fda_required, is_active, created_at
+                "SELECT id, item_code, description, item_type, uom_id, fda_required, is_active,
+                        created_at, reorder_point, abc_class, lifecycle_status
                  FROM items WHERE item_type = $1 ORDER BY item_code",
                 it
             )
@@ -161,7 +163,8 @@ pub async fn list_items(
             let pattern = format!("%{s}%");
             sqlx::query_as!(
                 Item,
-                "SELECT id, item_code, description, item_type, uom_id, fda_required, is_active, created_at
+                "SELECT id, item_code, description, item_type, uom_id, fda_required, is_active,
+                        created_at, reorder_point, abc_class, lifecycle_status
                  FROM items WHERE item_code ILIKE $1 OR description ILIKE $1
                  ORDER BY item_code",
                 pattern
@@ -172,7 +175,8 @@ pub async fn list_items(
         (None, None) => {
             sqlx::query_as!(
                 Item,
-                "SELECT id, item_code, description, item_type, uom_id, fda_required, is_active, created_at
+                "SELECT id, item_code, description, item_type, uom_id, fda_required, is_active,
+                        created_at, reorder_point, abc_class, lifecycle_status
                  FROM items ORDER BY item_code"
             )
             .fetch_all(&state.db)
@@ -189,15 +193,19 @@ pub async fn create_item(
     let id = Uuid::new_v4();
     let row = sqlx::query_as!(
         Item,
-        "INSERT INTO items (id, item_code, description, item_type, uom_id, fda_required, is_active)
-         VALUES ($1, $2, $3, $4, $5, $6, TRUE)
-         RETURNING id, item_code, description, item_type, uom_id, fda_required, is_active, created_at",
+        "INSERT INTO items (id, item_code, description, item_type, uom_id, fda_required, is_active,
+                            reorder_point, abc_class)
+         VALUES ($1, $2, $3, $4, $5, $6, TRUE, $7, $8)
+         RETURNING id, item_code, description, item_type, uom_id, fda_required, is_active,
+                   created_at, reorder_point, abc_class, lifecycle_status",
         id,
         body.item_code,
         body.description,
         body.item_type,
         body.uom_id,
         body.fda_required,
+        body.reorder_point,
+        body.abc_class,
     )
     .fetch_one(&state.db)
     .await?;
@@ -212,15 +220,22 @@ pub async fn update_item(
     let row = sqlx::query_as!(
         Item,
         r#"UPDATE items SET
-             description  = COALESCE($2, description),
-             fda_required = COALESCE($3, fda_required),
-             is_active     = COALESCE($4, is_active)
+             description      = COALESCE($2, description),
+             fda_required     = COALESCE($3, fda_required),
+             is_active        = COALESCE($4, is_active),
+             reorder_point    = COALESCE($5, reorder_point),
+             abc_class        = COALESCE($6, abc_class),
+             lifecycle_status = COALESCE($7, lifecycle_status)
            WHERE id = $1
-           RETURNING id, item_code, description, item_type, uom_id, fda_required, is_active, created_at"#,
+           RETURNING id, item_code, description, item_type, uom_id, fda_required, is_active,
+                     created_at, reorder_point, abc_class, lifecycle_status"#,
         item_id,
         body.description,
         body.fda_required,
         body.is_active,
+        body.reorder_point,
+        body.abc_class,
+        body.lifecycle_status,
     )
     .fetch_one(&state.db)
     .await?;

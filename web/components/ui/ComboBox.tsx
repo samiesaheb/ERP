@@ -105,6 +105,8 @@ export default function ComboBox({
       ? createPortal(
           <ul
             ref={listRef}
+            onMouseDown={(e) => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
             style={{
               position: 'fixed',
               top:   rect.bottom + 4,

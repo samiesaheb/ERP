@@ -35,7 +35,7 @@ const STOCK_COLUMNS: Column<InventoryWithItem>[] = [
   { key: 'lot_number',  header: 'Lot',        render: (r) => r.lot_number ?? '—' },
   {
     key: 'qty_available',
-    header: 'Available',
+    header: 'On Hand',
     sortable: true,
     className: 'tabular-nums font-medium',
     render: (r) => Number(r.qty_available).toLocaleString(),
@@ -47,12 +47,34 @@ const STOCK_COLUMNS: Column<InventoryWithItem>[] = [
     render: (r) => Number(r.qty_reserved).toLocaleString(),
   },
   {
-    key: 'low_stock',
+    key: 'reorder_point',
+    header: 'ATP',
+    className: 'tabular-nums',
+    render: (r) => {
+      const atp = Number(r.qty_available) - Number(r.qty_reserved);
+      return (
+        <span className={atp < 0 ? 'text-red-600 font-medium' : ''}>
+          {atp.toLocaleString()}
+        </span>
+      );
+    },
+  },
+  {
+    key: 'reorder_alert',
     header: 'Alert',
+    render: (r) => {
+      if (r.reorder_alert) return <Badge variant="red">Reorder</Badge>;
+      if (r.reorder_point) return <Badge variant="green">OK</Badge>;
+      return <Badge variant="gray">—</Badge>;
+    },
+  },
+  {
+    key: 'last_counted_at',
+    header: 'Last Count',
     render: (r) =>
-      r.low_stock
-        ? <Badge variant="red">Low Stock</Badge>
-        : <Badge variant="green">OK</Badge>,
+      r.last_counted_at
+        ? <span className="text-xs text-neutral-500">{new Date(r.last_counted_at).toLocaleDateString()}</span>
+        : <span className="text-xs text-neutral-400">Never</span>,
   },
   {
     key: 'last_updated',
@@ -72,6 +94,8 @@ const EMPTY_FORM = {
   notes:            '',
 };
 
+const EMPTY_COUNT = { counted_qty: '', notes: '' };
+
 export default function InventoryClient({
   inventory,
   transactions,
@@ -89,21 +113,37 @@ export default function InventoryClient({
 }) {
   const router = useRouter();
   const [tab, setTab]   = useState<'stock' | 'history'>('stock');
-  const [open, setOpen] = useState(false);
-  const [form, setForm] = useState(EMPTY_FORM);
-  const [loading, setLoading] = useState(false);
-  const [error,   setError]   = useState('');
+
+  // Transaction slide-over
+  const [txnOpen,    setTxnOpen]    = useState(false);
+  const [form,       setForm]       = useState(EMPTY_FORM);
+  const [txnLoading, setTxnLoading] = useState(false);
+  const [txnError,   setTxnError]   = useState('');
+
+  // Cycle count slide-over
+  const [countOpen,    setCountOpen]    = useState(false);
+  const [countItem,    setCountItem]    = useState<InventoryWithItem | null>(null);
+  const [countForm,    setCountForm]    = useState(EMPTY_COUNT);
+  const [countLoading, setCountLoading] = useState(false);
+  const [countError,   setCountError]   = useState('');
 
   function openTransaction(itemId = '') {
     setForm({ ...EMPTY_FORM, item_id: itemId });
-    setError('');
-    setOpen(true);
+    setTxnError('');
+    setTxnOpen(true);
+  }
+
+  function openCycleCount(row: InventoryWithItem) {
+    setCountItem(row);
+    setCountForm({ counted_qty: Number(row.qty_available).toString(), notes: '' });
+    setCountError('');
+    setCountOpen(true);
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setError('');
-    setLoading(true);
+    setTxnError('');
+    setTxnLoading(true);
     try {
       await clientFetch('/api/v1/inventory/transact', {
         method: 'POST',
@@ -111,19 +151,42 @@ export default function InventoryClient({
           item_id:          form.item_id,
           transaction_type: form.transaction_type,
           qty:              form.qty,
-          uom_id:           form.uom_id           || null,
-          lot_number:       form.lot_number        || null,
-          location:         form.location          || null,
-          notes:            form.notes             || null,
+          uom_id:           form.uom_id    || null,
+          lot_number:       form.lot_number || null,
+          location:         form.location   || null,
+          notes:            form.notes      || null,
         }),
       });
-      setOpen(false);
+      setTxnOpen(false);
       setForm(EMPTY_FORM);
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed');
+      setTxnError(err instanceof Error ? err.message : 'Failed');
     } finally {
-      setLoading(false);
+      setTxnLoading(false);
+    }
+  }
+
+  async function handleCycleCount(e: React.FormEvent) {
+    e.preventDefault();
+    if (!countItem) return;
+    setCountError('');
+    setCountLoading(true);
+    try {
+      await clientFetch(`/api/v1/inventory/${countItem.item_id}/cycle-count`, {
+        method: 'POST',
+        body: JSON.stringify({
+          counted_qty: countForm.counted_qty,
+          notes:       countForm.notes || null,
+        }),
+      });
+      setCountOpen(false);
+      setCountItem(null);
+      router.refresh();
+    } catch (err) {
+      setCountError(err instanceof Error ? err.message : 'Failed');
+    } finally {
+      setCountLoading(false);
     }
   }
 
@@ -155,9 +218,9 @@ export default function InventoryClient({
       className: 'tabular-nums font-medium',
       render: (r) => `${Number(r.qty).toLocaleString()} ${r.uom_id ? (uomMap[r.uom_id] ?? '') : ''}`,
     },
-    { key: 'lot_number',     header: 'Lot',       render: (r) => r.lot_number ?? '—' },
-    { key: 'reference_type', header: 'Ref Type',  render: (r) => r.reference_type ?? '—' },
-    { key: 'notes',          header: 'Notes',     render: (r) => r.notes ?? '—' },
+    { key: 'lot_number',     header: 'Lot',      render: (r) => r.lot_number    ?? '—' },
+    { key: 'reference_type', header: 'Ref Type', render: (r) => r.reference_type ?? '—' },
+    { key: 'notes',          header: 'Notes',    render: (r) => r.notes          ?? '—' },
   ];
 
   return (
@@ -188,8 +251,9 @@ export default function InventoryClient({
             toolbar={<Button onClick={() => openTransaction()}>+ Stock Transaction</Button>}
             data={inventory}
             actions={(row) => [
-              { label: 'Adjust Stock', onClick: () => openTransaction(row.id) },
-              { label: 'Create PO',    onClick: () => router.push('/purchase-orders?new=1') },
+              { label: 'Adjust Stock',  onClick: () => openTransaction(row.item_id) },
+              { label: 'Cycle Count',   onClick: () => openCycleCount(row) },
+              { label: 'Create PO',     onClick: () => router.push('/purchase-orders?new=1') },
             ]}
           />
         ) : (
@@ -201,7 +265,8 @@ export default function InventoryClient({
         )}
       </div>
 
-      <SlideOver open={open} onClose={() => setOpen(false)} title="Stock Transaction">
+      {/* Stock Transaction Slide-over */}
+      <SlideOver open={txnOpen} onClose={() => setTxnOpen(false)} title="Stock Transaction">
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-xs font-medium text-neutral-600 mb-1">Item</label>
@@ -258,7 +323,7 @@ export default function InventoryClient({
               <label className="block text-xs font-medium text-neutral-600 mb-1">Location</label>
               <input value={form.location}
                 onChange={(e) => setForm({ ...form, location: e.target.value })}
-                placeholder="e.g. Warehouse A / Bin 3"
+                placeholder="e.g. RM-STORE / Bin 3"
                 className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded" />
             </div>
           </div>
@@ -272,16 +337,72 @@ export default function InventoryClient({
               className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded resize-none" />
           </div>
 
-          {error && (
-            <p className="text-xs text-red-600 bg-red-50 border-[0.5px] border-red-200 rounded px-3 py-2">{error}</p>
+          {txnError && (
+            <p className="text-xs text-red-600 bg-red-50 border-[0.5px] border-red-200 rounded px-3 py-2">{txnError}</p>
           )}
           <div className="flex gap-2 pt-2">
-            <Button type="submit" disabled={loading} className="flex-1">
-              {loading ? 'Saving…' : 'Save Transaction'}
+            <Button type="submit" disabled={txnLoading} className="flex-1">
+              {txnLoading ? 'Saving…' : 'Save Transaction'}
             </Button>
-            <Button type="button" variant="secondary" onClick={() => setOpen(false)}>Cancel</Button>
+            <Button type="button" variant="secondary" onClick={() => setTxnOpen(false)}>Cancel</Button>
           </div>
         </form>
+      </SlideOver>
+
+      {/* Cycle Count Slide-over */}
+      <SlideOver open={countOpen} onClose={() => setCountOpen(false)} title="Cycle Count">
+        {countItem && (
+          <form onSubmit={handleCycleCount} className="space-y-4">
+            <div className="bg-neutral-50 rounded-lg px-4 py-3 text-sm">
+              <p className="font-medium text-neutral-800">{countItem.item_code}</p>
+              <p className="text-neutral-500 text-xs mt-0.5">{countItem.description}</p>
+              <p className="text-neutral-500 text-xs mt-2">
+                System quantity: <span className="font-medium text-neutral-700">{Number(countItem.qty_available).toLocaleString()}</span>
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-neutral-600 mb-1">Counted Quantity *</label>
+              <input
+                required
+                type="number"
+                min="0"
+                step="any"
+                value={countForm.counted_qty}
+                onChange={(e) => setCountForm({ ...countForm, counted_qty: e.target.value })}
+                placeholder="Enter physical count"
+                className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded"
+              />
+              {countForm.counted_qty !== '' && (
+                <p className="text-[11px] text-neutral-400 mt-1">
+                  Adjustment: {(Number(countForm.counted_qty) - Number(countItem.qty_available) >= 0 ? '+' : '')}
+                  {(Number(countForm.counted_qty) - Number(countItem.qty_available)).toLocaleString()}
+                </p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-neutral-600 mb-1">Notes</label>
+              <textarea
+                value={countForm.notes}
+                onChange={(e) => setCountForm({ ...countForm, notes: e.target.value })}
+                rows={2}
+                placeholder="Reason for discrepancy (optional)"
+                className="w-full px-3 py-2 text-sm border-[0.5px] border-neutral-300 rounded resize-none"
+              />
+            </div>
+
+            {countError && (
+              <p className="text-xs text-red-600 bg-red-50 border-[0.5px] border-red-200 rounded px-3 py-2">{countError}</p>
+            )}
+            <div className="flex gap-2 pt-2">
+              <Button type="submit" disabled={countLoading} className="flex-1">
+                {countLoading ? 'Saving…' : 'Record Count'}
+              </Button>
+              <Button type="button" variant="secondary" onClick={() => setCountOpen(false)}>Cancel</Button>
+            </div>
+          </form>
+        )}
       </SlideOver>
     </>
   );

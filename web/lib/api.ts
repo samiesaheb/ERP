@@ -15,6 +15,7 @@ import type {
   Supplier, Uom,
   User,
   AuditLog,
+  WarehouseLocation,
   WorkCenter, RoutingStep, QcTest, DowntimeEvent, AccessRequest,
 } from './types';
 
@@ -139,6 +140,7 @@ export const getReceiptLines   = (receiptId: string) =>
 export const getInventory     = () => apiFetch<InventoryWithItem[]>('/api/v1/inventory');
 export const getInventoryTxns = () =>
   apiFetch<InventoryTransaction[]>('/api/v1/inventory/transactions');
+export const getLocations     = () => apiFetch<WarehouseLocation[]>('/api/v1/locations');
 
 // ---------------------------------------------------------------------------
 // Manufacturing Orders

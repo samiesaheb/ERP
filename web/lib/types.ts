@@ -43,6 +43,9 @@ export interface Item {
   fda_required: boolean;
   is_active: boolean;
   created_at: string;
+  reorder_point: string | null;      // NUMERIC — trigger replenishment
+  abc_class: string | null;          // 'A' | 'B' | 'C'
+  lifecycle_status: string;          // 'active' | 'phaseout' | 'obsolete'
 }
 
 export interface Supplier {
@@ -246,7 +249,24 @@ export interface InventoryWithItem {
   qty_reserved: string;
   uom_id: string;
   last_updated: string;
-  low_stock: boolean;
+  last_counted_at: string | null;
+  reorder_point: string | null;
+  reorder_alert: boolean;   // ATP (available − reserved) < reorder_point
+}
+
+export interface WarehouseLocation {
+  id: string;
+  code: string;
+  zone: string | null;
+  aisle: string | null;
+  section: string | null;
+  shelf_level: string | null;
+  travel_sequence: number | null;
+  location_type: string;   // 'rack' | 'bin' | 'virtual' | 'dock'
+  is_active: boolean;
+  is_virtual: boolean;
+  notes: string | null;
+  created_at: string;
 }
 
 export interface InventoryTransaction {
