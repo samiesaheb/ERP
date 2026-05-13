@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "UPDATE items SET\n             description  = COALESCE($2, description),\n             fda_required = COALESCE($3, fda_required),\n             is_active     = COALESCE($4, is_active)\n           WHERE id = $1\n           RETURNING id, item_code, description, item_type, uom_id, fda_required, is_active, created_at",
+  "query": "SELECT id, item_code, description, item_type, uom_id, fda_required, is_active,\n                        created_at, reorder_point, abc_class, lifecycle_status\n                 FROM items WHERE item_code ILIKE $1 OR description ILIKE $1\n                 ORDER BY item_code",
   "describe": {
     "columns": [
       {
@@ -42,14 +42,26 @@
         "ordinal": 7,
         "name": "created_at",
         "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 8,
+        "name": "reorder_point",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 9,
+        "name": "abc_class",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 10,
+        "name": "lifecycle_status",
+        "type_info": "Text"
       }
     ],
     "parameters": {
       "Left": [
-        "Uuid",
-        "Text",
-        "Bool",
-        "Bool"
+        "Text"
       ]
     },
     "nullable": [
@@ -60,8 +72,11 @@
       false,
       false,
       false,
+      false,
+      true,
+      true,
       false
     ]
   },
-  "hash": "0c9de32931cd77bf83fe062310f9f1e203b381ade4bfb54b2ef50460a2bf695d"
+  "hash": "2c8cf171954cf1f57c8a7907c10569729780f5ba94c8568c48f5b644a9b10a7f"
 }

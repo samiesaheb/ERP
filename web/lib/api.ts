@@ -5,6 +5,7 @@ import type {
   Bom, BomExplosionResult, BomLine,
   Country, Customer, CustomerType,
   DashboardData,
+  Formulation, FormulationProduct, Ingredient,
   Invoice, InvoiceLine, Payment,
   InventoryWithItem, InventoryTransaction,
   Item, ItemSupplier, ItemUomConversion,
@@ -104,6 +105,15 @@ export const getFdaRegistrations  = () =>
   apiFetch<FdaRegistration[]>('/api/v1/fda-registrations');
 export const getFdaDocuments      = (regId: string) =>
   apiFetch<FdaDocument[]>(`/api/v1/fda-registrations/${regId}/documents`);
+
+// ---------------------------------------------------------------------------
+// Formulation
+// ---------------------------------------------------------------------------
+
+export const getFormulations        = () => apiFetch<Formulation[]>('/api/v1/formulations');
+export const getFormulation         = (id: string) => apiFetch<Formulation>(`/api/v1/formulations/${id}`);
+export const getIngredients         = () => apiFetch<Ingredient[]>('/api/v1/ingredients');
+export const getFormulationProducts = () => apiFetch<FormulationProduct[]>('/api/v1/products');
 
 // ---------------------------------------------------------------------------
 // BOM

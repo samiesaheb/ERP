@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT id, item_code, description, item_type, uom_id, fda_required, is_active, created_at\n                 FROM items WHERE item_type = $1 ORDER BY item_code",
+  "query": "SELECT id, item_code, description, item_type, uom_id, fda_required, is_active,\n                        created_at, reorder_point, abc_class, lifecycle_status\n                 FROM items\n                 WHERE item_type = $1 AND (item_code ILIKE $2 OR description ILIKE $2)\n                 ORDER BY item_code",
   "describe": {
     "columns": [
       {
@@ -42,10 +42,26 @@
         "ordinal": 7,
         "name": "created_at",
         "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 8,
+        "name": "reorder_point",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 9,
+        "name": "abc_class",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 10,
+        "name": "lifecycle_status",
+        "type_info": "Text"
       }
     ],
     "parameters": {
       "Left": [
+        "Text",
         "Text"
       ]
     },
@@ -57,8 +73,11 @@
       false,
       false,
       false,
+      false,
+      true,
+      true,
       false
     ]
   },
-  "hash": "268d4544b21735727bf8e7af23772a5ec91dfda183868c9f70634335b94ac17c"
+  "hash": "6f9d1f3ba08ea5304a13aec5db3cf3f10456b4dcb6f1aa82a7b62d8fda221778"
 }

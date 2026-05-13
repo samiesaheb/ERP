@@ -1,0 +1,3 @@
+ALTER TABLE formulations
+    ADD COLUMN batch_qty  NUMERIC(12,4) NOT NULL DEFAULT 100,
+    ADD COLUMN batch_unit VARCHAR(16)   NOT NULL DEFAULT 'g';

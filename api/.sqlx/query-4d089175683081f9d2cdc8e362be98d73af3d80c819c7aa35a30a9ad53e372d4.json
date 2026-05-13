@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "DELETE FROM formulation_lines WHERE formulation_id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "4d089175683081f9d2cdc8e362be98d73af3d80c819c7aa35a30a9ad53e372d4"
+}

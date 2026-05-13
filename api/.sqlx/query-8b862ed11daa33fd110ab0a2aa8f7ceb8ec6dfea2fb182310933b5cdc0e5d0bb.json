@@ -1,0 +1,86 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, code, zone, aisle, section, shelf_level, travel_sequence,\n                location_type, is_active, is_virtual, notes, created_at\n         FROM warehouse_locations\n         ORDER BY travel_sequence NULLS LAST, code",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "code",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "zone",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "aisle",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "section",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "shelf_level",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "travel_sequence",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 7,
+        "name": "location_type",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 8,
+        "name": "is_active",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 9,
+        "name": "is_virtual",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 10,
+        "name": "notes",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 11,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false,
+      false,
+      false,
+      true,
+      false
+    ]
+  },
+  "hash": "8b862ed11daa33fd110ab0a2aa8f7ceb8ec6dfea2fb182310933b5cdc0e5d0bb"
+}

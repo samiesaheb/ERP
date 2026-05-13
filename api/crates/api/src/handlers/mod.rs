@@ -2,6 +2,7 @@ pub mod audit;
 pub mod artwork;
 pub mod auth;
 pub mod bom;
+pub mod formulation;
 pub mod dashboard;
 pub mod finance;
 pub mod inventory;

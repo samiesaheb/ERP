@@ -1,0 +1,64 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT fl.id, fl.formulation_id, fl.ingredient_id, fl.percentage, fl.phase, fl.comment,\n                  i.code, i.inci_name\n           FROM formulation_lines fl\n           JOIN ingredients i ON i.id = fl.ingredient_id\n           WHERE fl.formulation_id = ANY($1)\n           ORDER BY fl.formulation_id, fl.id",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "formulation_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "ingredient_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 3,
+        "name": "percentage",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 4,
+        "name": "phase",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 5,
+        "name": "comment",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 6,
+        "name": "code",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 7,
+        "name": "inci_name",
+        "type_info": "Varchar"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "UuidArray"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "01d94bded09253fc85760340ba7b7c5a07b05efcc9503360e256a8581f8012d6"
+}

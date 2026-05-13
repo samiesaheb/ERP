@@ -5,7 +5,7 @@ use axum::{
 };
 
 use crate::{
-    handlers::{audit, artwork, auth, bom, dashboard, finance, inventory, locations, masters, procurement, production, sales, search, shipments, shop_floor},
+    handlers::{audit, artwork, auth, bom, dashboard, finance, formulation, inventory, locations, masters, procurement, production, sales, search, shipments, shop_floor},
     middleware::auth::require_auth,
     state::AppState,
 };
@@ -60,6 +60,18 @@ pub fn build_router(state: AppState) -> Router {
             put(artwork::update_fda_registration))
         .route("/api/v1/fda-registrations/:reg_id/documents",
             get(artwork::list_fda_documents).post(artwork::create_fda_document))
+
+        // Formulations
+        .route("/api/v1/formulations",
+            get(formulation::list_formulations).post(formulation::create_formulation))
+        .route("/api/v1/formulations/:id",
+            get(formulation::get_formulation)
+            .patch(formulation::patch_formulation)
+            .delete(formulation::delete_formulation))
+        .route("/api/v1/ingredients",
+            get(formulation::list_ingredients).post(formulation::create_ingredient))
+        .route("/api/v1/products",
+            get(formulation::list_products))
 
         // BOM
         .route("/api/v1/boms",             get(bom::list_boms).post(bom::create_bom))

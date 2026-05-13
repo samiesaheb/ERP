@@ -2,6 +2,7 @@ pub mod audit;
 pub mod auth;
 pub mod artwork;
 pub mod bom;
+pub mod formulation;
 pub mod dashboard;
 pub mod finance;
 pub mod inventory;
@@ -30,6 +31,15 @@ pub use bom::{
     Bom, CreateBom,
     BomLine, CreateBomLine,
     BomExplosionLine, BomExplosionResult,
+};
+
+pub use formulation::{
+    Ingredient, CreateIngredient,
+    IngredientDetail, ProductDetail,
+    FormulationLineOut, FormulationOut,
+    ProductOut,
+    CreateFormulationLine, CreateFormulation, PatchFormulation,
+    FormulationRow,
 };
 
 pub use dashboard::{DashboardData, DashboardKpis, PipelineStage};

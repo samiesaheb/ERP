@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT id, item_code, description, item_type, uom_id, fda_required, is_active, created_at\n                 FROM items ORDER BY item_code",
+  "query": "INSERT INTO items (id, item_code, description, item_type, uom_id, fda_required, is_active,\n                            reorder_point, abc_class)\n         VALUES ($1, $2, $3, $4, $5, $6, TRUE, $7, $8)\n         RETURNING id, item_code, description, item_type, uom_id, fda_required, is_active,\n                   created_at, reorder_point, abc_class, lifecycle_status",
   "describe": {
     "columns": [
       {
@@ -42,10 +42,34 @@
         "ordinal": 7,
         "name": "created_at",
         "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 8,
+        "name": "reorder_point",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 9,
+        "name": "abc_class",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 10,
+        "name": "lifecycle_status",
+        "type_info": "Text"
       }
     ],
     "parameters": {
-      "Left": []
+      "Left": [
+        "Uuid",
+        "Text",
+        "Text",
+        "Text",
+        "Uuid",
+        "Bool",
+        "Numeric",
+        "Text"
+      ]
     },
     "nullable": [
       false,
@@ -55,8 +79,11 @@
       false,
       false,
       false,
+      false,
+      true,
+      true,
       false
     ]
   },
-  "hash": "a731f5b851a810e3915656a496909459723fc41860dc38894557c587e838e4cd"
+  "hash": "a0464ec920e9e62f62ad8532e569783bdae7db931ff6d2151d68ad7a196e47d7"
 }

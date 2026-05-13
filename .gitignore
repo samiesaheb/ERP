@@ -1,0 +1,28 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Office temp files
+~$*
+
+# Rust
+target/
+api/target/
+
+# Node
+web/node_modules/
+web/.next/
+web/.env.local
+
+# Env files with secrets
+api/.env
+.env
+
+# Large reference Excel/PDF dump (not source code)
+/formulations/
+/demo_crm/
+
+# Scratch files
+table_names.rtf
+generate_schema_excel.py

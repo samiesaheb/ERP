@@ -48,6 +48,7 @@ const ICONS: Record<string, React.ReactElement> = {
   '/artwork':              <Icon path="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />,
   '/items':                <Icon path="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />,
   '/bom':                  <Icon path="M4 6h16M4 10h16M4 14h10M4 18h6" />,
+  '/formulations':         <Icon path="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />,
   '/suppliers':            <Icon path="M1 3h15v13H1z" path2="M16 8h4l3 3v5h-7V8zM5.5 19a1.5 1.5 0 100-3 1.5 1.5 0 000 3zM18.5 19a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" />,
   '/purchase-orders':      <Icon path="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />,
   '/receiving':            <Icon path="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />,
@@ -94,6 +95,7 @@ const NAV: NavGroup[] = [
     items: [
       { label: 'Items',            href: '/items' },
       { label: 'Bill of Materials',href: '/bom' },
+      { label: 'Formulations',     href: '/formulations' },
       { label: 'Customers',        href: '/customers' },
       { label: 'Suppliers',        href: '/suppliers' },
     ],

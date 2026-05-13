@@ -86,6 +86,21 @@ export function deleteBom(id: string) {
 }
 
 // ---------------------------------------------------------------------------
+// Formulations
+// ---------------------------------------------------------------------------
+
+export function deleteFormulation(id: string) {
+  return clientFetch(`/api/v1/formulations/${id}`, { method: 'DELETE' });
+}
+
+export function patchFormulation(id: string, body: object) {
+  return clientFetch(`/api/v1/formulations/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(body),
+  });
+}
+
+// ---------------------------------------------------------------------------
 // Items
 // ---------------------------------------------------------------------------
 

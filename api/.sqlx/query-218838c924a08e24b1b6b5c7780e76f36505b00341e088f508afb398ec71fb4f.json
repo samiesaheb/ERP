@@ -1,0 +1,86 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO inventory_transactions\n             (id, item_id, transaction_type, qty, uom_id, notes, reference_type)\n         VALUES ($1, $2, 'adjustment', $3, $4, $5, 'cycle_count')\n         RETURNING id, item_id, transaction_type, reference_type, reference_id,\n                   qty, uom_id, lot_number, notes, created_by, created_at",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "item_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "transaction_type",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "reference_type",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "reference_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 5,
+        "name": "qty",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 6,
+        "name": "uom_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 7,
+        "name": "lot_number",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 8,
+        "name": "notes",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 9,
+        "name": "created_by",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 10,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Numeric",
+        "Uuid",
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      true,
+      false,
+      true,
+      true,
+      true,
+      true,
+      false
+    ]
+  },
+  "hash": "218838c924a08e24b1b6b5c7780e76f36505b00341e088f508afb398ec71fb4f"
+}

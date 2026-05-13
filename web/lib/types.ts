@@ -541,6 +541,45 @@ export interface AccessRequest {
 }
 
 // ---------------------------------------------------------------------------
+// Formulation
+// ---------------------------------------------------------------------------
+
+export interface Ingredient {
+  id: string;
+  code: string;
+  inci_name: string;
+  is_active: boolean;
+}
+
+export interface FormulationProduct {
+  id: string;
+  sku: string;
+  name: string;
+  item_type: string;
+}
+
+export interface FormulationLine {
+  id: string;
+  ingredient: string;
+  ingredient_detail: { id: string; code: string; inci_name: string } | null;
+  percentage: string;
+  phase: string;
+  comment: string;
+}
+
+export interface Formulation {
+  id: string;
+  product: string;
+  product_detail: { id: string; sku: string; name: string } | null;
+  version: number;
+  is_active: boolean;
+  note: string;
+  batch_qty: string;
+  batch_unit: string;
+  lines: FormulationLine[];
+}
+
+// ---------------------------------------------------------------------------
 // Audit
 // ---------------------------------------------------------------------------
 
