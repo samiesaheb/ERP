@@ -19,7 +19,7 @@ pub fn build_router(state: AppState) -> Router {
         // Users
         .route("/api/v1/users/me", get(auth::get_me))
         .route("/api/v1/users",    get(auth::list_users).post(auth::create_user))
-        .route("/api/v1/users/:id", put(auth::update_user))
+        .route("/api/v1/users/:id", put(auth::update_user).delete(auth::delete_user))
 
         // Dashboard
         .route("/api/v1/dashboard/kpis", get(dashboard::get_dashboard))

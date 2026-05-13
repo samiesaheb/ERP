@@ -296,3 +296,25 @@ pub async fn update_user(
 
     Ok(Json(row))
 }
+
+// ---------------------------------------------------------------------------
+// DELETE /api/v1/users/:id
+// ---------------------------------------------------------------------------
+
+pub async fn delete_user(
+    State(state): State<AppState>,
+    axum::Extension(claims): axum::Extension<Claims>,
+    Path(user_id): Path<Uuid>,
+) -> Result<StatusCode> {
+    require_role(&claims, ADMIN)?;
+    let caller: Uuid = claims.sub.parse()
+        .map_err(|_| AppError::Unauthorized("Bad token".into()))?;
+    if caller == user_id {
+        return Err(AppError::BadRequest("Cannot delete your own account".to_string()));
+    }
+    sqlx::query("DELETE FROM users WHERE id = $1")
+        .bind(user_id)
+        .execute(&state.db)
+        .await?;
+    Ok(StatusCode::NO_CONTENT)
+}

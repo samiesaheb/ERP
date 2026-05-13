@@ -209,6 +209,16 @@ export default function UsersClient({ users: initial }: { users: User[] }) {
     }
   }
 
+  async function handleDelete(user: User) {
+    if (!window.confirm(`Delete "${user.full_name}"? This cannot be undone.`)) return;
+    try {
+      await clientFetch(`/api/v1/users/${user.id}`, { method: 'DELETE' });
+      setUsers((prev) => prev.filter((u) => u.id !== user.id));
+    } catch (e: unknown) {
+      window.alert(e instanceof Error ? e.message : 'Failed to delete user');
+    }
+  }
+
   async function toggleActive(user: User) {
     try {
       await clientFetch(`/api/v1/users/${user.id}`, {
@@ -240,6 +250,12 @@ export default function UsersClient({ users: initial }: { users: User[] }) {
           >
             {row.is_active ? 'Deactivate' : 'Activate'}
           </button>
+          <button
+            onClick={(e) => { e.stopPropagation(); handleDelete(row); }}
+            className="text-xs underline text-red-500 hover:text-red-700"
+          >
+            Delete
+          </button>
         </div>
       ),
     },
@@ -255,29 +271,6 @@ export default function UsersClient({ users: initial }: { users: User[] }) {
           <p className="text-sm text-neutral-500 mt-0.5">{users.length} user{users.length !== 1 ? 's' : ''}</p>
         </div>
         <DataTable columns={columns} toolbar={<Button onClick={openCreate}>+ New User</Button>} data={users} onRowClick={(row) => openEdit(row)} />
-
-        {customRoles.length > 0 && (
-          <div>
-            <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wide mb-2">Custom Roles</p>
-            <div className="flex flex-wrap gap-2">
-              {customRoles.map((role) => (
-                <span
-                  key={role}
-                  className="inline-flex items-center gap-1.5 bg-neutral-100 border border-neutral-200 rounded-lg px-3 py-1 text-sm text-neutral-700"
-                >
-                  {role}
-                  <button
-                    onClick={() => handleDeleteRole(role)}
-                    className="text-neutral-400 hover:text-red-500 leading-none"
-                    title={`Delete role "${role}"`}
-                  >
-                    ×
-                  </button>
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
 
       <SlideOver
