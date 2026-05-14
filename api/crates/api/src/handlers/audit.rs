@@ -27,7 +27,7 @@ pub async fn list_audit_logs(
             al.old_data,
             al.new_data,
             al.changed_by,
-            u.full_name AS changed_by_name,
+            CASE WHEN al.changed_by IS NOT NULL THEN u.full_name END AS changed_by_name,
             al.changed_at
         FROM audit_logs al
         LEFT JOIN users u ON u.id = al.changed_by

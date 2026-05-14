@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n        SELECT\n            al.id,\n            al.table_name,\n            al.record_id,\n            al.action,\n            al.old_data,\n            al.new_data,\n            al.changed_by,\n            u.full_name AS changed_by_name,\n            al.changed_at\n        FROM audit_logs al\n        LEFT JOIN users u ON u.id = al.changed_by\n        WHERE ($1::TEXT IS NULL OR al.table_name = $1)\n          AND ($2::TEXT IS NULL OR al.record_id  = $2)\n          AND ($3::TEXT IS NULL OR al.action     = $3)\n        ORDER BY al.changed_at DESC\n        LIMIT  $4\n        OFFSET $5\n        ",
+  "query": "\n        SELECT\n            al.id,\n            al.table_name,\n            al.record_id,\n            al.action,\n            al.old_data,\n            al.new_data,\n            al.changed_by,\n            CASE WHEN al.changed_by IS NOT NULL THEN u.full_name END AS changed_by_name,\n            al.changed_at\n        FROM audit_logs al\n        LEFT JOIN users u ON u.id = al.changed_by\n        WHERE ($1::TEXT IS NULL OR al.table_name = $1)\n          AND ($2::TEXT IS NULL OR al.record_id  = $2)\n          AND ($3::TEXT IS NULL OR al.action     = $3)\n        ORDER BY al.changed_at DESC\n        LIMIT  $4\n        OFFSET $5\n        ",
   "describe": {
     "columns": [
       {
@@ -66,9 +66,9 @@
       true,
       true,
       true,
-      false,
+      true,
       false
     ]
   },
-  "hash": "a5ba7ddbc1a3a279ab8dcdeed08c1d0724d47ab9a8e227a1b955f5fdd4ad7a57"
+  "hash": "af431e8790a907fb7073f6866f8eb2f44631390dc5eb978fd1262be39b51a0f7"
 }
