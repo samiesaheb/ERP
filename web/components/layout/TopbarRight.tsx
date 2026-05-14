@@ -1,11 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useAppPrefs } from '@/contexts/AppPrefsContext';
 
 const DAYS   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
-function getShift(hour: number): string {
+function getShiftKey(hour: number): string {
   if (hour >= 6  && hour < 14) return 'Morning shift';
   if (hour >= 14 && hour < 22) return 'Afternoon shift';
   return 'Night shift';
@@ -17,7 +18,8 @@ interface TopbarRightProps {
 }
 
 export default function TopbarRight({ alertCount = 0, userInitials = 'SS' }: TopbarRightProps) {
-  const [display, setDisplay] = useState<{ time: string; shift: string } | null>(null);
+  const [display, setDisplay] = useState<{ time: string; shiftKey: string } | null>(null);
+  const { t } = useAppPrefs();
 
   useEffect(() => {
     function tick() {
@@ -25,8 +27,8 @@ export default function TopbarRight({ alertCount = 0, userInitials = 'SS' }: Top
       const hh  = String(now.getHours()).padStart(2, '0');
       const mm  = String(now.getMinutes()).padStart(2, '0');
       setDisplay({
-        time:  `${DAYS[now.getDay()]} ${now.getDate()} ${MONTHS[now.getMonth()]} · ${hh}:${mm}`,
-        shift: getShift(now.getHours()),
+        time:     `${DAYS[now.getDay()]} ${now.getDate()} ${MONTHS[now.getMonth()]} · ${hh}:${mm}`,
+        shiftKey: getShiftKey(now.getHours()),
       });
     }
     tick();
@@ -42,7 +44,7 @@ export default function TopbarRight({ alertCount = 0, userInitials = 'SS' }: Top
             {display.time}
           </span>
           <span className="text-[11px] font-medium px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-600 whitespace-nowrap">
-            {display.shift}
+            {t(display.shiftKey)}
           </span>
         </>
       )}

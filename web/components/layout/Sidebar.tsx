@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { canAccess, getRoleFromCookie } from '@/lib/rbac';
+import { useAppPrefs } from '@/contexts/AppPrefsContext';
 
 function Icon({ path, path2 }: { path: string; path2?: string }) {
   return (
@@ -139,12 +140,12 @@ export default function Sidebar() {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const [role, setRole] = useState<string | null>(null);
+  const { t, lang, setLang, currency, setCurrency } = useAppPrefs();
 
   useEffect(() => {
     setRole(getRoleFromCookie());
   }, []);
 
-  // Persist collapsed state
   useEffect(() => {
     const stored = localStorage.getItem('sidebar-collapsed');
     if (stored !== null) setCollapsed(stored === 'true');
@@ -156,6 +157,11 @@ export default function Sidebar() {
       return !prev;
     });
   }
+
+  const toggleCls = (active: boolean) =>
+    `text-[10px] px-1.5 py-0.5 rounded font-medium transition-colors ${
+      active ? 'bg-neutral-900 text-white' : 'text-neutral-400 hover:text-neutral-700'
+    }`;
 
   return (
     <aside
@@ -186,7 +192,7 @@ export default function Sidebar() {
           <div key={group.title}>
             {!collapsed && (
               <p className="px-2 mb-1.5 text-[9px] font-bold uppercase tracking-[0.12em] text-neutral-400">
-                {group.title}
+                {t(group.title)}
               </p>
             )}
             <div className={`space-y-0.5 ${collapsed ? 'mt-1' : ''}`}>
@@ -209,7 +215,7 @@ export default function Sidebar() {
                     <span className={active ? 'text-white' : 'text-neutral-400'}>
                       {ICONS[item.href]}
                     </span>
-                    {!collapsed && item.label}
+                    {!collapsed && t(item.label)}
                   </Link>
                 );
               })}
@@ -220,7 +226,16 @@ export default function Sidebar() {
 
       {/* Footer */}
       {!collapsed && (
-        <div className="border-t-[0.5px] border-neutral-200 px-4 py-3">
+        <div className="border-t-[0.5px] border-neutral-200 px-3 py-3 space-y-2">
+          <div className="flex items-center gap-1">
+            <button onClick={() => setLang('en')} className={toggleCls(lang === 'en')}>EN</button>
+            <span className="text-neutral-300 text-[10px]">/</span>
+            <button onClick={() => setLang('th')} className={toggleCls(lang === 'th')}>TH</button>
+            <span className="flex-1" />
+            <button onClick={() => setCurrency('THB')} className={toggleCls(currency === 'THB')}>฿</button>
+            <span className="text-neutral-300 text-[10px]">/</span>
+            <button onClick={() => setCurrency('USD')} className={toggleCls(currency === 'USD')}>$</button>
+          </div>
           <p className="text-[11px] text-neutral-400">Cosmetics OEM · v0.1</p>
         </div>
       )}

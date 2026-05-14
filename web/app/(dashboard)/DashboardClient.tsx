@@ -5,6 +5,7 @@ import KpiCard from '@/components/ui/KpiCard';
 import Badge, { soStatusVariant } from '@/components/ui/Badge';
 import DropdownMenu from '@/components/ui/DropdownMenu';
 import SwipeCard from '@/components/ui/SwipeCard';
+import { useAppPrefs } from '@/contexts/AppPrefsContext';
 import type { DashboardData, SalesOrder, InventoryWithItem } from '@/lib/types';
 
 function fmt(val: string | number) {
@@ -22,6 +23,7 @@ const STAGE_HREF: Record<string, string> = {
 
 /* ── Pipeline ─────────────────────────────────────────────────────── */
 function PipelineCard({ data, router }: { data: DashboardData; router: ReturnType<typeof useRouter> }) {
+  const { t } = useAppPrefs();
   const max = Math.max(...data.pipeline.map((s) => s.count), 1);
   return (
     <div className="bg-white rounded-xl h-full flex flex-col">
@@ -30,7 +32,7 @@ function PipelineCard({ data, router }: { data: DashboardData; router: ReturnTyp
           { label: 'View All MOs', onClick: () => router.push('/manufacturing-orders') },
           { label: 'Refresh',      onClick: () => router.refresh() },
         ]} />
-        <p className="text-[10px] font-bold uppercase tracking-widest text-neutral-400">Production Pipeline</p>
+        <p className="text-[10px] font-bold uppercase tracking-widest text-neutral-400">{t('Production Pipeline')}</p>
       </div>
       <div className="flex-1 px-5 pb-4 pt-3">
         <div className="grid grid-cols-6 gap-3 h-full">
@@ -63,6 +65,7 @@ function PipelineCard({ data, router }: { data: DashboardData; router: ReturnTyp
 /* ── Recent SOs ───────────────────────────────────────────────────── */
 function RecentSoCard({ orders }: { orders: SalesOrder[] }) {
   const router = useRouter();
+  const { t } = useAppPrefs();
   return (
     <div className="spring-card bg-white border-[0.5px] border-neutral-200 rounded-xl overflow-hidden h-full flex flex-col">
       <div className="px-5 py-4 border-b-[0.5px] border-neutral-100 flex items-center gap-2">
@@ -70,17 +73,17 @@ function RecentSoCard({ orders }: { orders: SalesOrder[] }) {
           { label: 'View All',   onClick: () => router.push('/sales-orders') },
           { label: 'Export CSV', onClick: () => router.push('/sales-orders') },
         ]} />
-        <p className="text-[10px] font-bold uppercase tracking-widest text-neutral-400">Recent Sales Orders</p>
+        <p className="text-[10px] font-bold uppercase tracking-widest text-neutral-400">{t('Recent Sales Orders')}</p>
       </div>
       <div className="overflow-x-auto flex-1">
         <table className="w-full">
           <thead>
             <tr className="border-b-[0.5px] border-neutral-100">
               <th className="w-10 px-2 py-2.5" />
-              <th className="px-5 py-2.5 text-left text-[10px] font-bold uppercase tracking-widest text-neutral-400">SO #</th>
-              <th className="px-5 py-2.5 text-left text-[10px] font-bold uppercase tracking-widest text-neutral-400">Pieces</th>
-              <th className="px-5 py-2.5 text-left text-[10px] font-bold uppercase tracking-widest text-neutral-400">Status</th>
-              <th className="px-5 py-2.5 text-left text-[10px] font-bold uppercase tracking-widest text-neutral-400">Date</th>
+              <th className="px-5 py-2.5 text-left text-[10px] font-bold uppercase tracking-widest text-neutral-400">{t('SO #')}</th>
+              <th className="px-5 py-2.5 text-left text-[10px] font-bold uppercase tracking-widest text-neutral-400">{t('Pieces')}</th>
+              <th className="px-5 py-2.5 text-left text-[10px] font-bold uppercase tracking-widest text-neutral-400">{t('Status')}</th>
+              <th className="px-5 py-2.5 text-left text-[10px] font-bold uppercase tracking-widest text-neutral-400">{t('Date')}</th>
             </tr>
           </thead>
           <tbody>
@@ -115,6 +118,7 @@ function RecentSoCard({ orders }: { orders: SalesOrder[] }) {
 /* ── Low Stock Alerts ─────────────────────────────────────────────── */
 function LowStockCard({ items }: { items: InventoryWithItem[] }) {
   const router = useRouter();
+  const { t } = useAppPrefs();
   const alerts = items.filter((i) => i.reorder_alert);
   return (
     <div className="bg-white rounded-xl overflow-hidden h-full flex flex-col">
@@ -123,7 +127,7 @@ function LowStockCard({ items }: { items: InventoryWithItem[] }) {
           { label: 'View All Inventory', onClick: () => router.push('/inventory') },
           { label: 'Export',             onClick: () => router.push('/inventory') },
         ]} />
-        <p className="text-[10px] font-bold uppercase tracking-widest text-neutral-400">Low Stock</p>
+        <p className="text-[10px] font-bold uppercase tracking-widest text-neutral-400">{t('Low Stock')}</p>
         {alerts.length > 0 && (
           <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-red-100 text-red-600 text-[10px] font-bold">
             {alerts.length}
@@ -139,7 +143,7 @@ function LowStockCard({ items }: { items: InventoryWithItem[] }) {
                   <polyline points="20 6 9 17 4 12" />
                 </svg>
               </div>
-              <p className="text-xs text-neutral-400">All stocked up</p>
+              <p className="text-xs text-neutral-400">{t('All stocked up')}</p>
             </div>
           </div>
         ) : (
@@ -183,6 +187,7 @@ export default function DashboardClient({
   inventory: InventoryWithItem[];
 }) {
   const router = useRouter();
+  const { t, formatMoney } = useAppPrefs();
 
   return (
     <div className="px-6 py-5">
@@ -197,7 +202,7 @@ export default function DashboardClient({
             ]}
           >
             <KpiCard
-              label="Open Sales Orders"
+              label={t('Open Sales Orders')}
               value={dashboard.kpis.open_sales_orders}
               accent="blue"
               menuItems={[
@@ -217,7 +222,7 @@ export default function DashboardClient({
             ]}
           >
             <KpiCard
-              label="Active Mfg Orders"
+              label={t('Active Mfg Orders')}
               value={dashboard.kpis.active_manufacturing_orders}
               accent="amber"
               menuItems={[
@@ -237,7 +242,7 @@ export default function DashboardClient({
             ]}
           >
             <KpiCard
-              label="Open Purchase Orders"
+              label={t('Open Purchase Orders')}
               value={dashboard.kpis.open_purchase_orders}
               accent="purple"
               menuItems={[
@@ -257,8 +262,8 @@ export default function DashboardClient({
             ]}
           >
             <KpiCard
-              label="Pending Invoices"
-              value={`$${fmt(dashboard.kpis.pending_invoices_value)}`}
+              label={t('Pending Invoices')}
+              value={formatMoney(dashboard.kpis.pending_invoices_value)}
               accent="red"
               menuItems={[
                 { label: 'View All Invoices', onClick: () => router.push('/invoicing') },
