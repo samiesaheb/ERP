@@ -9,6 +9,7 @@ import ComboBox from '@/components/ui/ComboBox';
 import SlideOver from '@/components/ui/SlideOver';
 import { clientFetch } from '@/lib/client-api';
 import { updateShipmentStatus } from '@/lib/mutations';
+import { useAppPrefs } from '@/contexts/AppPrefsContext';
 import type { SalesOrder, Shipment } from '@/lib/types';
 
 type ShipmentRow = Shipment & { so_label: string };
@@ -21,20 +22,20 @@ function statusVariant(s: string): 'gray' | 'amber' | 'blue' | 'green' {
   return 'gray';
 }
 
-const COLUMNS: Column<ShipmentRow>[] = [
-  { key: 'shipment_number', header: 'Shipment #', sortable: true },
-  { key: 'so_label',        header: 'Sales Order' },
-  { key: 'carrier',         header: 'Carrier',   render: (r) => r.carrier ?? '—' },
-  { key: 'tracking_number', header: 'Tracking',  render: (r) => r.tracking_number ?? '—' },
+const COLUMNS = (t: (k: string) => string): Column<ShipmentRow>[] => [
+  { key: 'shipment_number', header: t('Shipment #'), sortable: true },
+  { key: 'so_label',        header: t('Sales Order') },
+  { key: 'carrier',         header: t('Carrier'),   render: (r) => r.carrier ?? '—' },
+  { key: 'tracking_number', header: t('Tracking'),  render: (r) => r.tracking_number ?? '—' },
   {
     key: 'status',
-    header: 'Status',
+    header: t('Status'),
     sortable: true,
     render: (r) => <Badge variant={statusVariant(r.status)}>{r.status}</Badge>,
   },
   {
     key: 'created_at',
-    header: 'Created',
+    header: t('Created'),
     sortable: true,
     render: (r) => new Date(r.created_at).toLocaleDateString(),
   },
@@ -52,6 +53,7 @@ export default function ShipmentsClient({
   initialSalesOrderId?: string;
 }) {
   const router = useRouter();
+  const { t } = useAppPrefs();
   const availableSalesOrders = salesOrders ?? [];
   const salesOrderMap = soMap ?? Object.fromEntries(
     availableSalesOrders.map((salesOrder) => [salesOrder.id, salesOrder.order_number]),
@@ -90,7 +92,7 @@ export default function ShipmentsClient({
     <>
       <div className="bg-white border-[0.5px] border-neutral-200 rounded-xl overflow-hidden">
         <DataTable
-          columns={COLUMNS}
+          columns={COLUMNS(t)}
           toolbar={<Button onClick={() => setOpen(true)}>+ New Shipment</Button>}
           data={rows}
           onRowClick={(row) => router.push(`/shipments/${row.id}`)}

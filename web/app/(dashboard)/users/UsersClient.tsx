@@ -8,6 +8,7 @@ import ComboBox from '@/components/ui/ComboBox';
 import DataTable, { Column } from '@/components/ui/DataTable';
 import SlideOver from '@/components/ui/SlideOver';
 import { clientFetch } from '@/lib/client-api';
+import { useAppPrefs } from '@/contexts/AppPrefsContext';
 import type { User } from '@/lib/types';
 
 const DEFAULT_ROLES = ['admin', 'planner', 'supervisor', 'warehouse', 'qc', 'purchasing', 'sales', 'subcontractor'];
@@ -43,9 +44,9 @@ function formatTimeWindow(user: User): string {
   return parts.join(' · ');
 }
 
-const BASE_COLUMNS: Column<User>[] = [
-  { key: 'full_name', header: 'Name',  sortable: true },
-  { key: 'email',     header: 'Email', sortable: true },
+const makeBaseColumns = (t: (k: string) => string): Column<User>[] => [
+  { key: 'full_name', header: t('Name'),  sortable: true },
+  { key: 'email',     header: t('Email'), sortable: true },
   {
     key: 'role',
     header: 'Role',
@@ -58,7 +59,7 @@ const BASE_COLUMNS: Column<User>[] = [
   },
   {
     key: 'is_active',
-    header: 'Status',
+    header: t('Status'),
     render: (row) => (
       <Badge variant={row.is_active ? 'green' : 'gray'}>
         {row.is_active ? 'Active' : 'Inactive'}
@@ -67,14 +68,14 @@ const BASE_COLUMNS: Column<User>[] = [
   },
   {
     key: 'allowed_days',
-    header: 'Access Window',
+    header: t('Access Window'),
     render: (row) => (
       <span className="text-xs text-neutral-500">{formatTimeWindow(row)}</span>
     ),
   },
   {
     key: 'created_at',
-    header: 'Created',
+    header: t('Created'),
     sortable: true,
     render: (row) => new Date(row.created_at).toLocaleDateString(),
   },
@@ -94,6 +95,7 @@ type FormState = typeof EMPTY_FORM;
 
 export default function UsersClient({ users: initial }: { users: User[] }) {
   const router = useRouter();
+  const { t } = useAppPrefs();
   const [users, setUsers] = useState(initial);
   useEffect(() => { setUsers(initial); }, [initial]);
 
@@ -232,10 +234,10 @@ export default function UsersClient({ users: initial }: { users: User[] }) {
   }
 
   const columns: Column<User>[] = [
-    ...BASE_COLUMNS,
+    ...makeBaseColumns(t),
     {
       key: 'id',
-      header: 'Actions',
+      header: t('Actions'),
       render: (row) => (
         <div className="flex items-center gap-2">
           <button

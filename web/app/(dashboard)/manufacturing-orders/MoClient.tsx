@@ -9,22 +9,24 @@ import ComboBox from '@/components/ui/ComboBox';
 import SlideOver from '@/components/ui/SlideOver';
 import { clientFetch } from '@/lib/client-api';
 import { updateManufacturingOrderStatus } from '@/lib/mutations';
+import { useAppPrefs } from '@/contexts/AppPrefsContext';
 import type { ManufacturingOrder, SalesOrder, Item, Uom, Bom } from '@/lib/types';
 
 const COLUMNS = (
+  t: (k: string) => string,
   soMap: Record<string, string>,
   itemMap: Record<string, string>
 ): Column<ManufacturingOrder>[] => [
-  { key: 'mo_number', header: 'MO #', sortable: true },
-  { key: 'sales_order_id', header: 'Sales Order', render: (r) => r.sales_order_id ? soMap[r.sales_order_id] ?? '—' : '—' },
-  { key: 'item_id', header: 'Finished Good', render: (r) => itemMap[r.item_id] ?? '—' },
-  { key: 'qty_planned', header: 'Planned Qty',
+  { key: 'mo_number', header: t('MO #'), sortable: true },
+  { key: 'sales_order_id', header: t('Sales Order'), render: (r) => r.sales_order_id ? soMap[r.sales_order_id] ?? '—' : '—' },
+  { key: 'item_id', header: t('Finished Good'), render: (r) => itemMap[r.item_id] ?? '—' },
+  { key: 'qty_planned', header: t('Planned Qty'),
     render: (r) => Number(r.qty_planned).toLocaleString(), className: 'tabular-nums', sortable: true },
-  { key: 'qty_produced', header: 'Produced',
+  { key: 'qty_produced', header: t('Produced'),
     render: (r) => Number(r.qty_produced).toLocaleString(), className: 'tabular-nums' },
-  { key: 'status', header: 'Status',
+  { key: 'status', header: t('Status'),
     render: (r) => <Badge variant={moStatusVariant(r.status)}>{r.status}</Badge>, sortable: true },
-  { key: 'created_at', header: 'Created',
+  { key: 'created_at', header: t('Created'),
     render: (r) => new Date(r.created_at).toLocaleDateString(), sortable: true },
 ];
 
@@ -40,6 +42,7 @@ export default function MoClient({
   boms: Bom[];
 }) {
   const router = useRouter();
+  const { t } = useAppPrefs();
   const searchParams = useSearchParams();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({
@@ -99,7 +102,7 @@ export default function MoClient({
     <>
       <div className="bg-white border-[0.5px] border-neutral-200 rounded-xl overflow-hidden">
         <DataTable
-          columns={COLUMNS(soMap, itemMap)}
+          columns={COLUMNS(t, soMap, itemMap)}
           toolbar={<Button onClick={() => setOpen(true)}>+ New MO</Button>}
           data={mos}
           onRowClick={(row) => router.push(`/manufacturing-orders/${row.id}`)}

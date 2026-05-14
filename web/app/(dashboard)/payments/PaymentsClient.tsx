@@ -8,6 +8,7 @@ import Button from '@/components/ui/Button';
 import ComboBox from '@/components/ui/ComboBox';
 import SlideOver from '@/components/ui/SlideOver';
 import { clientFetch } from '@/lib/client-api';
+import { useAppPrefs } from '@/contexts/AppPrefsContext';
 import type { Payment, Customer, Supplier, Invoice, PurchaseOrder } from '@/lib/types';
 
 interface Props {
@@ -21,28 +22,29 @@ interface Props {
 }
 
 const COLUMNS = (
+  t: (k: string) => string,
   customerMap: Record<string, string>,
   supplierMap: Record<string, string>,
 ): Column<Payment>[] => [
-  { key: 'payment_number', header: 'Payment #', sortable: true },
-  { key: 'payment_type',   header: 'Type',
+  { key: 'payment_number', header: t('Payment #'), sortable: true },
+  { key: 'payment_type',   header: t('Type'),
     render: (r) => (
       <Badge variant={r.payment_type === 'customer' ? 'blue' : 'purple'}>
         {r.payment_type}
       </Badge>
     ),
   },
-  { key: 'customer_id', header: 'Party',
+  { key: 'customer_id', header: t('Party'),
     render: (r) =>
       r.payment_type === 'customer'
         ? (customerMap[r.customer_id ?? ''] ?? '—')
         : (supplierMap[r.supplier_id ?? ''] ?? '—'),
   },
-  { key: 'amount', header: 'Amount', sortable: true, className: 'tabular-nums',
+  { key: 'amount', header: t('Amount'), sortable: true, className: 'tabular-nums',
     render: (r) => `${r.currency} ${Number(r.amount).toLocaleString()}` },
-  { key: 'method',       header: 'Method',  render: (r) => r.method   ?? '—' },
-  { key: 'payment_date', header: 'Date',    render: (r) => r.payment_date ?? '—', sortable: true },
-  { key: 'status',       header: 'Status',  sortable: true,
+  { key: 'method',       header: t('Method'),  render: (r) => r.method   ?? '—' },
+  { key: 'payment_date', header: t('Date'),    render: (r) => r.payment_date ?? '—', sortable: true },
+  { key: 'status',       header: t('Status'),  sortable: true,
     render: (r) => <Badge variant={paymentStatusVariant(r.status)}>{r.status}</Badge> },
 ];
 
@@ -78,6 +80,7 @@ export default function PaymentsClient({
   payments, customers, suppliers, invoices, purchaseOrders, customerMap, supplierMap,
 }: Props) {
   const router  = useRouter();
+  const { t } = useAppPrefs();
   const [open,    setOpen]    = useState(false);
   const [form,    setForm]    = useState<Form>(EMPTY);
   const [loading, setLoading] = useState(false);
@@ -124,7 +127,7 @@ export default function PaymentsClient({
     <>
       <div className="bg-white border-[0.5px] border-neutral-200 rounded-xl overflow-hidden">
         <DataTable
-          columns={COLUMNS(customerMap, supplierMap)}
+          columns={COLUMNS(t, customerMap, supplierMap)}
           toolbar={<Button onClick={() => setOpen(true)}>+ New Payment</Button>}
           data={payments}
           searchable

@@ -8,6 +8,7 @@ import ComboBox from '@/components/ui/ComboBox';
 import SlideOver from '@/components/ui/SlideOver';
 import Badge from '@/components/ui/Badge';
 import { clientFetch } from '@/lib/client-api';
+import { useAppPrefs } from '@/contexts/AppPrefsContext';
 import type { Customer, CustomerType, Country } from '@/lib/types';
 
 interface Props {
@@ -19,19 +20,20 @@ interface Props {
 }
 
 const COLUMNS = (
+  t: (k: string) => string,
   typeMap: Record<string, string>,
   countryMap: Record<string, string>,
 ): Column<Customer>[] => [
-  { key: 'name',             header: 'Name',    sortable: true },
-  { key: 'customer_type_id', header: 'Type',    sortable: true,
+  { key: 'name',             header: t('Name'),    sortable: true },
+  { key: 'customer_type_id', header: t('Type'),    sortable: true,
     render: (r) => <Badge variant="blue">{typeMap[r.customer_type_id] ?? '—'}</Badge> },
-  { key: 'country_id',       header: 'Country', sortable: true,
+  { key: 'country_id',       header: t('Country'), sortable: true,
     render: (r) => countryMap[r.country_id] ?? '—' },
-  { key: 'email',            header: 'Email',
+  { key: 'email',            header: t('Email'),
     render: (r) => r.email ?? '—' },
-  { key: 'phone',            header: 'Phone',
+  { key: 'phone',            header: t('Phone'),
     render: (r) => r.phone ?? '—' },
-  { key: 'created_at',       header: 'Created', sortable: true,
+  { key: 'created_at',       header: t('Created'), sortable: true,
     render: (r) => new Date(r.created_at).toLocaleDateString() },
 ];
 
@@ -57,6 +59,7 @@ export default function CustomersClient({
   customers, customerTypes, countries, typeMap, countryMap,
 }: Props) {
   const router  = useRouter();
+  const { t } = useAppPrefs();
   const [open,           setOpen]           = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const [form,           setForm]           = useState<Form>(EMPTY);
@@ -126,7 +129,7 @@ export default function CustomersClient({
     <>
       <div className="bg-white border-[0.5px] border-neutral-200 rounded-xl overflow-hidden">
         <DataTable
-          columns={COLUMNS(typeMap, countryMap)}
+          columns={COLUMNS(t, typeMap, countryMap)}
           toolbar={<Button onClick={openCreate}>+ New Customer</Button>}
           data={customers}
           searchable

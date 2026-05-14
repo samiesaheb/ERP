@@ -8,6 +8,7 @@ import ComboBox from '@/components/ui/ComboBox';
 import SlideOver from '@/components/ui/SlideOver';
 import Badge from '@/components/ui/Badge';
 import { clientFetch } from '@/lib/client-api';
+import { useAppPrefs } from '@/contexts/AppPrefsContext';
 import type { WorkCenter } from '@/lib/types';
 
 interface Props {
@@ -28,16 +29,16 @@ const TYPE_LABELS: Record<string, string> = {
   general: 'General',
 };
 
-const COLUMNS: Column<WorkCenter>[] = [
-  { key: 'code',        header: 'Code',     sortable: true },
-  { key: 'name',        header: 'Name',     sortable: true },
-  { key: 'center_type', header: 'Type',     sortable: true,
+const COLUMNS = (t: (k: string) => string): Column<WorkCenter>[] => [
+  { key: 'code',        header: t('Code'),     sortable: true },
+  { key: 'name',        header: t('Name'),     sortable: true },
+  { key: 'center_type', header: t('Type'),     sortable: true,
     render: (r) => TYPE_LABELS[r.center_type] ?? r.center_type },
-  { key: 'capacity',    header: 'Capacity / Shift',
+  { key: 'capacity',    header: t('Capacity / Shift'),
     render: (r) => r.capacity ? Number(r.capacity).toLocaleString() : '—' },
-  { key: 'status',      header: 'Status',   sortable: true,
+  { key: 'status',      header: t('Status'),   sortable: true,
     render: (r) => <Badge variant={STATUS_VARIANT[r.status] ?? 'blue'}>{r.status}</Badge> },
-  { key: 'notes',       header: 'Notes',
+  { key: 'notes',       header: t('Notes'),
     render: (r) => r.notes ?? '—' },
 ];
 
@@ -54,6 +55,7 @@ const EMPTY: Form = { code: '', name: '', center_type: 'general', capacity: '', 
 
 export default function WorkCentersClient({ workCenters }: Props) {
   const router = useRouter();
+  const { t } = useAppPrefs();
   const [open,    setOpen]    = useState(false);
   const [editing, setEditing] = useState<WorkCenter | null>(null);
   const [form,    setForm]    = useState<Form>(EMPTY);
@@ -115,7 +117,7 @@ export default function WorkCentersClient({ workCenters }: Props) {
     <>
       <DataTable
         data={workCenters}
-        columns={COLUMNS}
+        columns={COLUMNS(t)}
         onRowClick={openEdit}
         toolbar={<Button variant="primary" size="sm" onClick={openCreate}>+ New Work Center</Button>}
       />

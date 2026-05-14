@@ -8,14 +8,15 @@ import Button from '@/components/ui/Button';
 import ComboBox from '@/components/ui/ComboBox';
 import SlideOver from '@/components/ui/SlideOver';
 import { clientFetch } from '@/lib/client-api';
+import { useAppPrefs } from '@/contexts/AppPrefsContext';
 import type { PurchaseOrder, PurchaseOrderLine, Receipt, ReceiptLine, Item, Uom } from '@/lib/types';
 
-const COLUMNS = (supplierMap: Record<string, string>): Column<PurchaseOrder>[] => [
-  { key: 'po_number', header: 'PO #', sortable: true },
-  { key: 'supplier_id', header: 'Supplier', render: (r) => supplierMap[r.supplier_id] ?? '—' },
-  { key: 'status', header: 'Status',
+const COLUMNS = (t: (k: string) => string, supplierMap: Record<string, string>): Column<PurchaseOrder>[] => [
+  { key: 'po_number', header: t('PO #'), sortable: true },
+  { key: 'supplier_id', header: t('Supplier'), render: (r) => supplierMap[r.supplier_id] ?? '—' },
+  { key: 'status', header: t('Status'),
     render: (r) => <Badge variant={poStatusVariant(r.status)}>{r.status}</Badge> },
-  { key: 'expected_date', header: 'Expected', render: (r) => r.expected_date ?? '—', sortable: true },
+  { key: 'expected_date', header: t('Expected'), render: (r) => r.expected_date ?? '—', sortable: true },
 ];
 
 interface ReceiptLineForm {
@@ -33,12 +34,12 @@ function qcVariant(status: string): 'gray' | 'green' | 'red' {
   return 'gray';
 }
 
-const RECEIPT_COLUMNS = (poMap: Record<string, string>): Column<Receipt>[] => [
-  { key: 'receipt_number',    header: 'GRN #',      sortable: true },
-  { key: 'purchase_order_id', header: 'PO',          render: (r) => poMap[r.purchase_order_id] ?? '—' },
-  { key: 'received_by',       header: 'Received By', render: (r) => r.received_by ?? '—' },
-  { key: 'notes',             header: 'Notes',       render: (r) => r.notes ?? '—' },
-  { key: 'received_at',       header: 'Date',        sortable: true,
+const RECEIPT_COLUMNS = (t: (k: string) => string, poMap: Record<string, string>): Column<Receipt>[] => [
+  { key: 'receipt_number',    header: t('GRN #'),      sortable: true },
+  { key: 'purchase_order_id', header: t('PO'),          render: (r) => poMap[r.purchase_order_id] ?? '—' },
+  { key: 'received_by',       header: t('Received By'), render: (r) => r.received_by ?? '—' },
+  { key: 'notes',             header: t('Notes'),       render: (r) => r.notes ?? '—' },
+  { key: 'received_at',       header: t('Date'),        sortable: true,
     render: (r) => new Date(r.received_at).toLocaleDateString() },
 ];
 
@@ -58,6 +59,7 @@ export default function ReceivingClient({
   uoms:        Uom[];
 }) {
   const router = useRouter();
+  const { t } = useAppPrefs();
   const [tab, setTab]   = useState<'open' | 'history'>('open');
 
   // GRN form
@@ -175,14 +177,14 @@ export default function ReceivingClient({
     <>
       <div className="flex items-center gap-2 mb-3">
         <div className="flex gap-0.5 bg-neutral-100 rounded-xl p-1">
-          {([['open', 'Open POs'], ['history', 'Receipt History']] as const).map(([t, label]) => (
-            <button key={t} onClick={() => setTab(t)}
+          {([['open', 'Open POs'], ['history', 'Receipt History']] as const).map(([tabKey, label]) => (
+            <button key={tabKey} onClick={() => setTab(tabKey)}
               className={`px-4 py-1.5 rounded-[10px] text-sm font-medium transition-all ${
-                tab === t
+                tab === tabKey
                   ? 'bg-white text-neutral-900 shadow-sm ring-[0.5px] ring-neutral-900/[0.06]'
                   : 'text-neutral-500 hover:text-neutral-700'
               }`}>
-              {label}
+              {t(label)}
             </button>
           ))}
         </div>
@@ -191,7 +193,7 @@ export default function ReceivingClient({
       <div className="bg-white border-[0.5px] border-neutral-200 rounded-xl overflow-hidden">
         {tab === 'open' ? (
           <DataTable
-            columns={COLUMNS(supplierMap)}
+            columns={COLUMNS(t, supplierMap)}
             toolbar={<Button onClick={() => openForPo('')}>+ Record Receipt</Button>}
             data={openPos}
             onRowClick={(row) => router.push(`/purchase-orders/${row.id}`)}
@@ -202,7 +204,7 @@ export default function ReceivingClient({
           />
         ) : (
           <DataTable
-            columns={RECEIPT_COLUMNS(poMap)}
+            columns={RECEIPT_COLUMNS(t, poMap)}
             data={receipts}
             onRowClick={(row) => openQcPanel(row)}
             actions={(row) => [

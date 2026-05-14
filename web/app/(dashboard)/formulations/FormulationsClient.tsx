@@ -9,14 +9,16 @@ import DataTable, { Column } from '@/components/ui/DataTable';
 import SlideOver from '@/components/ui/SlideOver';
 import { clientFetch } from '@/lib/client-api';
 import { deleteFormulation } from '@/lib/mutations';
+import { useAppPrefs } from '@/contexts/AppPrefsContext';
 import type { Formulation, FormulationProduct } from '@/lib/types';
 
 const COLUMNS = (
+  t: (k: string) => string,
   productMap: Record<string, FormulationProduct>,
 ): Column<Formulation>[] => [
   {
     key: 'product',
-    header: 'SKU',
+    header: t('SKU'),
     render: (row) => (
       <span className="font-mono text-xs text-neutral-500">
         {row.product_detail?.sku ?? productMap[row.product]?.sku ?? '—'}
@@ -25,25 +27,25 @@ const COLUMNS = (
   },
   {
     key: 'product_name',
-    header: 'Product',
+    header: t('Product'),
     render: (row) =>
       row.product_detail?.name ?? productMap[row.product]?.name ?? row.product,
     sortable: true,
   },
   {
     key: 'version',
-    header: 'Ver.',
+    header: t('Ver.'),
     sortable: true,
     render: (row) => <span className="font-mono text-xs">v{row.version}</span>,
   },
   {
     key: 'lines',
-    header: 'Ingredients',
+    header: t('Ingredients'),
     render: (row) => row.lines?.length ?? 0,
   },
   {
     key: 'total_pct',
-    header: 'Total %',
+    header: t('Total %'),
     render: (row) => {
       const total = (row.lines ?? []).reduce(
         (s, l) => s + parseFloat(l.percentage || '0'),
@@ -61,7 +63,7 @@ const COLUMNS = (
   },
   {
     key: 'is_active',
-    header: 'Status',
+    header: t('Status'),
     render: (row) => (
       <Badge variant={row.is_active ? 'green' : 'amber'}>
         {row.is_active ? 'Active' : 'Draft'}
@@ -80,6 +82,7 @@ export default function FormulationsClient({
   productMap: Record<string, FormulationProduct>;
 }) {
   const router = useRouter();
+  const { t } = useAppPrefs();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ product: '', version: 1, batch_qty: '100', batch_unit: 'g' });
   const [loading, setLoading] = useState(false);
@@ -116,7 +119,7 @@ export default function FormulationsClient({
     <>
       <div className="bg-white border-[0.5px] border-neutral-200 rounded-xl overflow-hidden">
         <DataTable
-          columns={COLUMNS(productMap)}
+          columns={COLUMNS(t, productMap)}
           toolbar={<Button onClick={() => setOpen(true)}>+ New Formulation</Button>}
           data={formulations}
           onRowClick={(row) => router.push(`/formulations/${row.id}`)}

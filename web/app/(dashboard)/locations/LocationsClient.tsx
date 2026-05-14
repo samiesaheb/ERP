@@ -8,6 +8,7 @@ import ComboBox from '@/components/ui/ComboBox';
 import DataTable, { Column } from '@/components/ui/DataTable';
 import SlideOver from '@/components/ui/SlideOver';
 import { clientFetch } from '@/lib/client-api';
+import { useAppPrefs } from '@/contexts/AppPrefsContext';
 import type { WarehouseLocation } from '@/lib/types';
 
 const LOCATION_TYPES = [
@@ -24,24 +25,24 @@ const TYPE_VARIANT: Record<string, 'blue' | 'green' | 'amber' | 'gray'> = {
   virtual: 'gray',
 };
 
-const COLUMNS: Column<WarehouseLocation>[] = [
-  { key: 'code',  header: 'Code', sortable: true },
-  { key: 'zone',  header: 'Zone',  render: (r) => r.zone  ?? '—' },
-  { key: 'aisle', header: 'Aisle', render: (r) => r.aisle ?? '—' },
+const COLUMNS = (t: (k: string) => string): Column<WarehouseLocation>[] => [
+  { key: 'code',  header: t('Code'), sortable: true },
+  { key: 'zone',  header: t('Zone'),  render: (r) => r.zone  ?? '—' },
+  { key: 'aisle', header: t('Aisle'), render: (r) => r.aisle ?? '—' },
   {
     key: 'section',
-    header: 'Section / Shelf',
+    header: t('Section / Shelf'),
     render: (r) => [r.section, r.shelf_level].filter(Boolean).join(' › ') || '—',
   },
   {
     key: 'travel_sequence',
-    header: 'Pick Seq.',
+    header: t('Pick Seq.'),
     className: 'tabular-nums',
     render: (r) => r.travel_sequence != null ? String(r.travel_sequence) : '—',
   },
   {
     key: 'location_type',
-    header: 'Type',
+    header: t('Type'),
     render: (r) => (
       <Badge variant={TYPE_VARIANT[r.location_type] ?? 'gray'}>
         {r.location_type}
@@ -50,19 +51,19 @@ const COLUMNS: Column<WarehouseLocation>[] = [
   },
   {
     key: 'is_virtual',
-    header: 'Virtual',
+    header: t('Virtual'),
     render: (r) => r.is_virtual ? <Badge variant="gray">Virtual</Badge> : null,
   },
   {
     key: 'is_active',
-    header: 'Status',
+    header: t('Status'),
     render: (r) => (
       <Badge variant={r.is_active ? 'green' : 'gray'}>
         {r.is_active ? 'Active' : 'Inactive'}
       </Badge>
     ),
   },
-  { key: 'notes', header: 'Notes', render: (r) => (
+  { key: 'notes', header: t('Notes'), render: (r) => (
     <span className="text-xs text-neutral-500 truncate max-w-[200px] block">{r.notes ?? '—'}</span>
   )},
 ];
@@ -84,6 +85,7 @@ type FormState = typeof EMPTY_FORM;
 
 export default function LocationsClient({ locations: initial }: { locations: WarehouseLocation[] }) {
   const router = useRouter();
+  const { t } = useAppPrefs();
   const [locations, setLocations] = useState(initial);
 
   const [open,     setOpen]     = useState(false);
@@ -166,7 +168,7 @@ export default function LocationsClient({ locations: initial }: { locations: War
           </p>
         </div>
         <DataTable
-          columns={COLUMNS}
+          columns={COLUMNS(t)}
           toolbar={<Button onClick={openCreate}>+ New Location</Button>}
           data={locations}
           onRowClick={(row) => openEdit(row)}

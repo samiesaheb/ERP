@@ -7,6 +7,7 @@ import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
 import SlideOver from '@/components/ui/SlideOver';
 import { clientFetch } from '@/lib/client-api';
+import { useAppPrefs } from '@/contexts/AppPrefsContext';
 import type { AccessRequest } from '@/lib/types';
 
 interface Props {
@@ -21,20 +22,21 @@ const STATUS_VARIANT: Record<string, 'amber' | 'green' | 'red'> = {
 };
 
 function makeColumns(
+  t: (k: string) => string,
   userMap: Record<string, string>,
   onReview: (r: AccessRequest) => void,
 ): Column<AccessRequest>[] {
   return [
-    { key: 'user_id',    header: 'Requested By', sortable: true,
+    { key: 'user_id',    header: t('Requested By'), sortable: true,
       render: (r) => userMap[r.user_id] ?? r.user_id.slice(0, 8) },
-    { key: 'permission', header: 'Permission',   sortable: true },
-    { key: 'reason',     header: 'Reason',
+    { key: 'permission', header: t('Permission'),   sortable: true },
+    { key: 'reason',     header: t('Reason'),
       render: (r) => r.reason ?? '—' },
-    { key: 'status',     header: 'Status',       sortable: true,
+    { key: 'status',     header: t('Status'),       sortable: true,
       render: (r) => <Badge variant={STATUS_VARIANT[r.status] ?? 'blue'}>{r.status}</Badge> },
-    { key: 'reviewed_by', header: 'Reviewed By',
+    { key: 'reviewed_by', header: t('Reviewed By'),
       render: (r) => r.reviewed_by ? (userMap[r.reviewed_by] ?? r.reviewed_by.slice(0, 8)) : '—' },
-    { key: 'created_at', header: 'Requested',    sortable: true,
+    { key: 'created_at', header: t('Requested'),    sortable: true,
       render: (r) => new Date(r.created_at).toLocaleDateString() },
     { key: 'id',         header: '',
       render: (r) => r.status === 'pending'
@@ -45,6 +47,7 @@ function makeColumns(
 
 export default function AccessRequestsClient({ requests, userMap }: Props) {
   const router   = useRouter();
+  const { t } = useAppPrefs();
   const [reviewing, setReviewing] = useState<AccessRequest | null>(null);
   const [loading,   setLoading]   = useState(false);
   const [error,     setError]     = useState('');
@@ -93,7 +96,7 @@ export default function AccessRequestsClient({ requests, userMap }: Props) {
     <>
       <DataTable
         data={requests}
-        columns={makeColumns(userMap, setReviewing)}
+        columns={makeColumns(t, userMap, setReviewing)}
         onRowClick={(row) => setReviewing(row)}
         toolbar={
           <Button variant="primary" size="sm" onClick={() => setNewOpen(true)}>

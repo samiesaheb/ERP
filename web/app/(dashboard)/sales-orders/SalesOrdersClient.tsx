@@ -9,6 +9,7 @@ import ComboBox from '@/components/ui/ComboBox';
 import SlideOver from '@/components/ui/SlideOver';
 import { clientFetch } from '@/lib/client-api';
 import { updateSalesOrderStatus } from '@/lib/mutations';
+import { useAppPrefs } from '@/contexts/AppPrefsContext';
 import type { SalesOrder, Customer, Country, Item, Uom } from '@/lib/types';
 
 interface Props {
@@ -20,35 +21,35 @@ interface Props {
   uoms:        Uom[];
 }
 
-const COLUMNS = (customerMap: Record<string, string>): Column<SalesOrder>[] => [
-  { key: 'order_number', header: 'SO #', sortable: true },
+const COLUMNS = (t: (k: string) => string, customerMap: Record<string, string>): Column<SalesOrder>[] => [
+  { key: 'order_number', header: t('SO #'), sortable: true },
   {
     key: 'customer_id',
-    header: 'Customer',
+    header: t('Customer'),
     render: (r) => customerMap[r.customer_id] ?? r.customer_id,
     sortable: true,
   },
   {
     key: 'total_pieces',
-    header: 'Pieces',
+    header: t('Pieces'),
     render: (r) => Number(r.total_pieces).toLocaleString(),
     sortable: true,
     className: 'tabular-nums',
   },
   {
     key: 'status',
-    header: 'Status',
+    header: t('Status'),
     render: (r) => <Badge variant={soStatusVariant(r.status)}>{r.status}</Badge>,
     sortable: true,
   },
   {
     key: 'artwork_status',
-    header: 'Artwork',
+    header: t('Artwork'),
     render: (r) => <Badge variant={r.artwork_status === 'approved' ? 'green' : 'amber'}>{r.artwork_status}</Badge>,
   },
   {
     key: 'fda_required',
-    header: 'FDA',
+    header: t('FDA'),
     render: (r) =>
       r.fda_required ? (
         <Badge variant={r.fda_status === 'approved' ? 'green' : 'amber'}>
@@ -60,13 +61,13 @@ const COLUMNS = (customerMap: Record<string, string>): Column<SalesOrder>[] => [
   },
   {
     key: 'required_date',
-    header: 'Required By',
+    header: t('Required By'),
     render: (r) => r.required_date ? new Date(r.required_date).toLocaleDateString() : '—',
     sortable: true,
   },
   {
     key: 'created_at',
-    header: 'Created',
+    header: t('Created'),
     render: (r) => new Date(r.created_at).toLocaleDateString(),
     sortable: true,
   },
@@ -125,6 +126,7 @@ const BLANK_FDA: FdaForm         = { item_id: '', notes: '' };
 export default function SalesOrdersClient({ orders, customerMap, customers, countries, items, uoms }: Props) {
   const router       = useRouter();
   const searchParams = useSearchParams();
+  const { t } = useAppPrefs();
   const [open, setOpen]       = useState(false);
   const [tab, setTab]         = useState<Tab>('details');
   const [details, setDetails] = useState<DetailsForm>(BLANK_DETAILS);
@@ -255,7 +257,7 @@ export default function SalesOrdersClient({ orders, customerMap, customers, coun
     <>
       <div className="bg-white border-[0.5px] border-neutral-200 rounded-xl overflow-hidden">
         <DataTable
-          columns={COLUMNS(customerMap)}
+          columns={COLUMNS(t, customerMap)}
           toolbar={<Button onClick={() => setOpen(true)}>+ New Order</Button>}
           data={orders}
           onRowClick={(row) => router.push(`/sales-orders/${row.id}`)}

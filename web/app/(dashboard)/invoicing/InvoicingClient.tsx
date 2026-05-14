@@ -9,22 +9,24 @@ import ComboBox from '@/components/ui/ComboBox';
 import SlideOver from '@/components/ui/SlideOver';
 import { clientFetch } from '@/lib/client-api';
 import { updateInvoiceStatus } from '@/lib/mutations';
+import { useAppPrefs } from '@/contexts/AppPrefsContext';
 import type { Invoice, Customer, SalesOrder, Shipment } from '@/lib/types';
 
 const COLUMNS = (
+  t: (k: string) => string,
   customerMap: Record<string, string>,
   soMap: Record<string, string>
 ): Column<Invoice>[] => [
-  { key: 'invoice_number', header: 'Invoice #', sortable: true },
-  { key: 'sales_order_id', header: 'SO', render: (r) => soMap[r.sales_order_id] ?? '—' },
-  { key: 'customer_id', header: 'Customer', render: (r) => customerMap[r.customer_id] ?? '—' },
-  { key: 'total', header: 'Total',
+  { key: 'invoice_number', header: t('Invoice #'), sortable: true },
+  { key: 'sales_order_id', header: t('SO'), render: (r) => soMap[r.sales_order_id] ?? '—' },
+  { key: 'customer_id', header: t('Customer'), render: (r) => customerMap[r.customer_id] ?? '—' },
+  { key: 'total', header: t('Total'),
     render: (r) => r.total ? `${r.currency} ${Number(r.total).toLocaleString()}` : '—',
     sortable: true, className: 'tabular-nums' },
-  { key: 'due_date', header: 'Due Date', render: (r) => r.due_date ?? '—', sortable: true },
-  { key: 'status', header: 'Status',
+  { key: 'due_date', header: t('Due Date'), render: (r) => r.due_date ?? '—', sortable: true },
+  { key: 'status', header: t('Status'),
     render: (r) => <Badge variant={invoiceStatusVariant(r.status)}>{r.status}</Badge>, sortable: true },
-  { key: 'created_at', header: 'Created', sortable: true,
+  { key: 'created_at', header: t('Created'), sortable: true,
     render: (r) => new Date(r.created_at).toLocaleDateString() },
 ];
 
@@ -39,6 +41,7 @@ export default function InvoicingClient({
   shipments:   Shipment[];
 }) {
   const router = useRouter();
+  const { t } = useAppPrefs();
   const searchParams = useSearchParams();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({
@@ -89,7 +92,7 @@ export default function InvoicingClient({
     <>
       <div className="bg-white border-[0.5px] border-neutral-200 rounded-xl overflow-hidden">
         <DataTable
-          columns={COLUMNS(customerMap, soMap)}
+          columns={COLUMNS(t, customerMap, soMap)}
           toolbar={<Button onClick={() => setOpen(true)}>+ New Invoice</Button>}
           data={invoices}
           onRowClick={(row) => router.push(`/invoicing/${row.id}`)}

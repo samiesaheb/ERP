@@ -9,6 +9,7 @@ import ComboBox from '@/components/ui/ComboBox';
 import SlideOver from '@/components/ui/SlideOver';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import { clientFetch } from '@/lib/client-api';
+import { useAppPrefs } from '@/contexts/AppPrefsContext';
 import type {
   Item,
   ManufacturingOrder,
@@ -36,33 +37,33 @@ function formatNumber(value: string | null | undefined) {
   return Number(value).toLocaleString();
 }
 
-function columns(router: ReturnType<typeof useRouter>): Column<PlanRow>[] {
+function columns(t: (k: string) => string, router: ReturnType<typeof useRouter>): Column<PlanRow>[] {
   return [
-    { key: 'plan_date', header: 'Plan Date', render: (row) => formatDate(row.plan_date), sortable: true },
-    { key: 'mo_number', header: 'MO #', sortable: true },
+    { key: 'plan_date', header: t('Plan Date'), render: (row) => formatDate(row.plan_date), sortable: true },
+    { key: 'mo_number', header: t('MO #'), sortable: true },
     {
       key: 'mo_status',
-      header: 'MO Status',
+      header: t('MO Status'),
       render: (row) => <Badge variant={moStatusVariant(row.mo_status)}>{row.mo_status}</Badge>,
       sortable: true,
     },
     {
       key: 'sales_order_number',
-      header: 'Sales Order',
+      header: t('Sales Order'),
       render: (row) => row.sales_order_number ?? '—',
       sortable: true,
     },
-    { key: 'item_label', header: 'Finished Good', sortable: true },
+    { key: 'item_label', header: t('Finished Good'), sortable: true },
     {
       key: 'planned_qty',
-      header: 'Planned Qty',
+      header: t('Planned Qty'),
       render: (row) => `${formatNumber(row.planned_qty)}${row.uom_code ? ` ${row.uom_code}` : ''}`,
       className: 'tabular-nums whitespace-nowrap',
       sortable: true,
     },
     {
       key: 'po_number',
-      header: 'Linked PO',
+      header: t('Linked PO'),
       render: (row) => {
         if (!row.po_number) return '—';
         return <Badge variant={poStatusVariant('confirmed')}>{row.po_number}</Badge>;
@@ -71,12 +72,12 @@ function columns(router: ReturnType<typeof useRouter>): Column<PlanRow>[] {
     },
     {
       key: 'notes',
-      header: 'Notes',
+      header: t('Notes'),
       render: (row) => row.notes ?? '—',
     },
     {
       key: 'created_at',
-      header: 'Created',
+      header: t('Created'),
       render: (row) => formatDate(row.created_at),
       sortable: true,
     },
@@ -100,6 +101,7 @@ export default function MrpClient({
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { t } = useAppPrefs();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -217,7 +219,7 @@ export default function MrpClient({
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <Card>
           <CardHeader>
-            <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">Total Plans</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">{t('Total Plans')}</p>
           </CardHeader>
           <CardBody>
             <p className="text-2xl font-semibold text-neutral-900">{plans.length}</p>
@@ -226,7 +228,7 @@ export default function MrpClient({
         </Card>
         <Card>
           <CardHeader>
-            <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">Planned Volume</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">{t('Planned Volume')}</p>
           </CardHeader>
           <CardBody>
             <p className="text-2xl font-semibold text-neutral-900">{totalPlannedQty.toLocaleString()}</p>
@@ -235,7 +237,7 @@ export default function MrpClient({
         </Card>
         <Card>
           <CardHeader>
-            <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">Due In 7 Days</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">{t('Due In 7 Days')}</p>
           </CardHeader>
           <CardBody>
             <p className="text-2xl font-semibold text-neutral-900">{upcomingPlans}</p>
@@ -244,7 +246,7 @@ export default function MrpClient({
         </Card>
         <Card>
           <CardHeader>
-            <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">Open MOs</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">{t('Open MOs')}</p>
           </CardHeader>
           <CardBody>
             <p className="text-2xl font-semibold text-neutral-900">{activeMos.length}</p>
@@ -255,7 +257,7 @@ export default function MrpClient({
 
       <div className="bg-white border-[0.5px] border-neutral-200 rounded-xl overflow-hidden">
         <DataTable
-          columns={columns(router)}
+          columns={columns(t, router)}
           toolbar={<Button onClick={() => setOpen(true)}>+ New Plan</Button>}
           data={tableRows}
           onRowClick={(row) => router.push(`/manufacturing-orders/${row.manufacturing_order_id}`)}

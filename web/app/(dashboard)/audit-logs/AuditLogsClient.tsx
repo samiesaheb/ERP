@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import Badge from '@/components/ui/Badge';
+import { useAppPrefs } from '@/contexts/AppPrefsContext';
 import type { AuditLog } from '@/lib/types';
 
 // ---------------------------------------------------------------------------
@@ -69,6 +70,7 @@ const ALL_TABLES = Array.from(
 ).sort();
 
 export default function AuditLogsClient({ logs }: { logs: AuditLog[] }) {
+  const { t } = useAppPrefs();
   const [tableFilter,  setTableFilter]  = useState('');
   const [actionFilter, setActionFilter] = useState('');
   const [search,       setSearch]       = useState('');
@@ -157,12 +159,12 @@ export default function AuditLogsClient({ logs }: { logs: AuditLog[] }) {
         <table className="w-full text-sm">
           <thead className="bg-neutral-50 border-b border-neutral-200">
             <tr>
-              <th className="text-left px-4 py-2.5 text-xs font-semibold text-neutral-500 uppercase tracking-wide w-44">Timestamp</th>
-              <th className="text-left px-4 py-2.5 text-xs font-semibold text-neutral-500 uppercase tracking-wide w-20">Action</th>
-              <th className="text-left px-4 py-2.5 text-xs font-semibold text-neutral-500 uppercase tracking-wide">Table</th>
-              <th className="text-left px-4 py-2.5 text-xs font-semibold text-neutral-500 uppercase tracking-wide">Record</th>
-              <th className="text-left px-4 py-2.5 text-xs font-semibold text-neutral-500 uppercase tracking-wide">User</th>
-              <th className="text-left px-4 py-2.5 text-xs font-semibold text-neutral-500 uppercase tracking-wide">Changes</th>
+              <th className="text-left px-4 py-2.5 text-xs font-semibold text-neutral-500 uppercase tracking-wide w-44">{t('Timestamp')}</th>
+              <th className="text-left px-4 py-2.5 text-xs font-semibold text-neutral-500 uppercase tracking-wide w-20">{t('Action')}</th>
+              <th className="text-left px-4 py-2.5 text-xs font-semibold text-neutral-500 uppercase tracking-wide">{t('Table')}</th>
+              <th className="text-left px-4 py-2.5 text-xs font-semibold text-neutral-500 uppercase tracking-wide">{t('Record')}</th>
+              <th className="text-left px-4 py-2.5 text-xs font-semibold text-neutral-500 uppercase tracking-wide">{t('User')}</th>
+              <th className="text-left px-4 py-2.5 text-xs font-semibold text-neutral-500 uppercase tracking-wide">{t('Changes')}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-neutral-100">

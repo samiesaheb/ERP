@@ -9,6 +9,7 @@ import ComboBox from '@/components/ui/ComboBox';
 import SlideOver from '@/components/ui/SlideOver';
 import { clientFetch } from '@/lib/client-api';
 import { updateArtworkStatus, updateFdaStatus } from '@/lib/mutations';
+import { useAppPrefs } from '@/contexts/AppPrefsContext';
 import type { Artwork, FdaRegistration, SalesOrder, Item } from '@/lib/types';
 
 // ---------------------------------------------------------------------------
@@ -17,13 +18,13 @@ import type { Artwork, FdaRegistration, SalesOrder, Item } from '@/lib/types';
 
 type ArtworkRow = Artwork & { so_number: string; item_label: string };
 
-const ARTWORK_COLUMNS: Column<ArtworkRow>[] = [
-  { key: 'so_number',  header: 'Sales Order', sortable: true },
-  { key: 'item_label', header: 'Item' },
-  { key: 'version',    header: 'Ver', render: (r) => `v${r.version}` },
+const ARTWORK_COLUMNS = (t: (k: string) => string): Column<ArtworkRow>[] => [
+  { key: 'so_number',  header: t('Sales Order'), sortable: true },
+  { key: 'item_label', header: t('Item') },
+  { key: 'version',    header: t('Ver'), render: (r) => `v${r.version}` },
   {
     key: 'status',
-    header: 'Status',
+    header: t('Status'),
     sortable: true,
     render: (r) => (
       <Badge
@@ -40,17 +41,17 @@ const ARTWORK_COLUMNS: Column<ArtworkRow>[] = [
   },
   {
     key: 'submitted_at',
-    header: 'Submitted',
+    header: t('Submitted'),
     render: (r) => r.submitted_at ? new Date(r.submitted_at).toLocaleDateString() : '—',
   },
   {
     key: 'approved_at',
-    header: 'Approved',
+    header: t('Approved'),
     render: (r) => r.approved_at ? new Date(r.approved_at).toLocaleDateString() : '—',
   },
   {
     key: 'created_at',
-    header: 'Created',
+    header: t('Created'),
     sortable: true,
     render: (r) => new Date(r.created_at).toLocaleDateString(),
   },
@@ -62,14 +63,14 @@ const ARTWORK_COLUMNS: Column<ArtworkRow>[] = [
 
 type FdaRow = FdaRegistration & { so_number: string; item_label: string };
 
-const FDA_COLUMNS: Column<FdaRow>[] = [
-  { key: 'so_number',           header: 'Sales Order', sortable: true },
-  { key: 'item_label',          header: 'Item' },
-  { key: 'registration_number', header: 'Reg #',
+const FDA_COLUMNS = (t: (k: string) => string): Column<FdaRow>[] => [
+  { key: 'so_number',           header: t('Sales Order'), sortable: true },
+  { key: 'item_label',          header: t('Item') },
+  { key: 'registration_number', header: t('Reg #'),
     render: (r) => r.registration_number ?? '—' },
   {
     key: 'status',
-    header: 'Status',
+    header: t('Status'),
     sortable: true,
     render: (r) => (
       <Badge
@@ -84,9 +85,9 @@ const FDA_COLUMNS: Column<FdaRow>[] = [
       </Badge>
     ),
   },
-  { key: 'expiry_date', header: 'Expires',
+  { key: 'expiry_date', header: t('Expires'),
     render: (r) => r.expiry_date ?? '—' },
-  { key: 'created_at', header: 'Created', sortable: true,
+  { key: 'created_at', header: t('Created'), sortable: true,
     render: (r) => new Date(r.created_at).toLocaleDateString() },
 ];
 
@@ -103,6 +104,7 @@ interface Props {
 
 export default function ArtworkClient({ artworks, fdaRegistrations, salesOrders, items }: Props) {
   const router = useRouter();
+  const { t } = useAppPrefs();
   const [tab, setTab] = useState<'artwork' | 'fda'>('artwork');
 
   // Artwork form
@@ -193,17 +195,17 @@ export default function ArtworkClient({ artworks, fdaRegistrations, salesOrders,
     <>
       {/* Tab bar */}
       <div className="flex gap-0.5 bg-neutral-100 rounded-xl p-1 w-fit mb-4">
-        {(['artwork', 'fda'] as const).map((t) => (
+        {(['artwork', 'fda'] as const).map((tabKey) => (
           <button
-            key={t}
-            onClick={() => setTab(t)}
+            key={tabKey}
+            onClick={() => setTab(tabKey)}
             className={`px-4 py-1.5 rounded-[10px] text-sm font-medium transition-all ${
-              tab === t
+              tab === tabKey
                 ? 'bg-white text-neutral-900 shadow-sm ring-[0.5px] ring-neutral-900/[0.06]'
                 : 'text-neutral-500 hover:text-neutral-700'
             }`}
           >
-            {t === 'artwork' ? 'Artworks' : 'FDA Registrations'}
+            {tabKey === 'artwork' ? t('Artworks') : t('FDA Registrations')}
           </button>
         ))}
       </div>
@@ -213,7 +215,7 @@ export default function ArtworkClient({ artworks, fdaRegistrations, salesOrders,
         <>
           <div className="bg-white border-[0.5px] border-neutral-200 rounded-xl overflow-hidden">
             <DataTable
-              columns={ARTWORK_COLUMNS}
+              columns={ARTWORK_COLUMNS(t)}
               toolbar={<Button onClick={() => setArtOpen(true)}>+ New Artwork</Button>}
               data={artworkRows}
               searchable
@@ -309,7 +311,7 @@ export default function ArtworkClient({ artworks, fdaRegistrations, salesOrders,
         <>
           <div className="bg-white border-[0.5px] border-neutral-200 rounded-xl overflow-hidden">
             <DataTable
-              columns={FDA_COLUMNS}
+              columns={FDA_COLUMNS(t)}
               toolbar={<Button onClick={() => setFdaOpen(true)}>+ New FDA Registration</Button>}
               data={fdaRows}
               searchable

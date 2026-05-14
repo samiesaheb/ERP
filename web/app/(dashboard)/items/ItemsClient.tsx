@@ -9,6 +9,7 @@ import ComboBox from '@/components/ui/ComboBox';
 import SlideOver from '@/components/ui/SlideOver';
 import { clientFetch } from '@/lib/client-api';
 import { updateItem } from '@/lib/mutations';
+import { useAppPrefs } from '@/contexts/AppPrefsContext';
 import type { Item, Uom } from '@/lib/types';
 
 const ITEM_TYPE_LABELS: Record<string, string> = {
@@ -23,12 +24,12 @@ const ITEM_TYPE_VARIANTS: Record<string, 'green' | 'blue' | 'amber'> = {
   PackMat: 'amber',
 };
 
-const COLUMNS = (uomMap: Record<string, string>): Column<Item>[] => [
-  { key: 'item_code', header: 'Code', sortable: true },
-  { key: 'description', header: 'Description', sortable: true },
+const COLUMNS = (t: (k: string) => string, uomMap: Record<string, string>): Column<Item>[] => [
+  { key: 'item_code', header: t('Code'), sortable: true },
+  { key: 'description', header: t('Description'), sortable: true },
   {
     key: 'item_type',
-    header: 'Type',
+    header: t('Type'),
     render: (r) => (
       <Badge variant={ITEM_TYPE_VARIANTS[r.item_type] ?? 'gray'}>
         {ITEM_TYPE_LABELS[r.item_type] ?? r.item_type}
@@ -36,24 +37,24 @@ const COLUMNS = (uomMap: Record<string, string>): Column<Item>[] => [
     ),
     sortable: true,
   },
-  { key: 'uom_id', header: 'UOM', render: (r) => uomMap[r.uom_id] ?? '—' },
+  { key: 'uom_id', header: t('UOM'), render: (r) => uomMap[r.uom_id] ?? '—' },
   {
     key: 'fda_required',
-    header: 'FDA',
+    header: t('FDA'),
     render: (r) => (
       <Badge variant={r.fda_required ? 'amber' : 'gray'}>{r.fda_required ? 'Required' : '—'}</Badge>
     ),
   },
   {
     key: 'is_active',
-    header: 'Active',
+    header: t('Active'),
     render: (r) => (
       <Badge variant={r.is_active ? 'green' : 'gray'}>{r.is_active ? 'Active' : 'Inactive'}</Badge>
     ),
   },
   {
     key: 'created_at',
-    header: 'Created',
+    header: t('Created'),
     sortable: true,
     render: (r) => new Date(r.created_at).toLocaleDateString(),
   },
@@ -85,6 +86,7 @@ export default function ItemsClient({
   uoms: Uom[];
 }) {
   const router = useRouter();
+  const { t } = useAppPrefs();
   const [open, setOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Item | null>(null);
   const [form, setForm] = useState<Form>(EMPTY);
@@ -141,7 +143,7 @@ export default function ItemsClient({
     <>
       <div className="bg-white border-[0.5px] border-neutral-200 rounded-xl overflow-hidden">
         <DataTable
-          columns={COLUMNS(uomMap)}
+          columns={COLUMNS(t, uomMap)}
           toolbar={<Button onClick={openCreate}>+ New Item</Button>}
           data={items}
           onRowClick={(row) => openEdit(row)}

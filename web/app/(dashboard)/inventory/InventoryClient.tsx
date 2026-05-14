@@ -8,6 +8,7 @@ import ComboBox from '@/components/ui/ComboBox';
 import DataTable, { Column } from '@/components/ui/DataTable';
 import SlideOver from '@/components/ui/SlideOver';
 import { clientFetch } from '@/lib/client-api';
+import { useAppPrefs } from '@/contexts/AppPrefsContext';
 import type { InventoryWithItem, InventoryTransaction, Item, Uom } from '@/lib/types';
 
 const TXN_TYPES = [
@@ -28,27 +29,27 @@ const TXN_VARIANT: Record<string, 'green' | 'red' | 'blue' | 'amber' | 'gray'> =
   conversion: 'blue',
 };
 
-const STOCK_COLUMNS: Column<InventoryWithItem>[] = [
-  { key: 'item_code',    header: 'Code',      sortable: true },
-  { key: 'description', header: 'Description', sortable: true },
-  { key: 'location',    header: 'Location',   render: (r) => r.location   ?? '—' },
-  { key: 'lot_number',  header: 'Lot',        render: (r) => r.lot_number ?? '—' },
+const makeStockColumns = (t: (k: string) => string): Column<InventoryWithItem>[] => [
+  { key: 'item_code',    header: t('Code'),      sortable: true },
+  { key: 'description', header: t('Description'), sortable: true },
+  { key: 'location',    header: t('Location'),   render: (r) => r.location   ?? '—' },
+  { key: 'lot_number',  header: t('Lot'),        render: (r) => r.lot_number ?? '—' },
   {
     key: 'qty_available',
-    header: 'On Hand',
+    header: t('On Hand'),
     sortable: true,
     className: 'tabular-nums font-medium',
     render: (r) => Number(r.qty_available).toLocaleString(),
   },
   {
     key: 'qty_reserved',
-    header: 'Reserved',
+    header: t('Reserved'),
     className: 'tabular-nums',
     render: (r) => Number(r.qty_reserved).toLocaleString(),
   },
   {
     key: 'reorder_point',
-    header: 'ATP',
+    header: t('ATP'),
     className: 'tabular-nums',
     render: (r) => {
       const atp = Number(r.qty_available) - Number(r.qty_reserved);
@@ -61,7 +62,7 @@ const STOCK_COLUMNS: Column<InventoryWithItem>[] = [
   },
   {
     key: 'reorder_alert',
-    header: 'Alert',
+    header: t('Alert'),
     render: (r) => {
       if (r.reorder_alert) return <Badge variant="red">Reorder</Badge>;
       if (r.reorder_point) return <Badge variant="green">OK</Badge>;
@@ -70,7 +71,7 @@ const STOCK_COLUMNS: Column<InventoryWithItem>[] = [
   },
   {
     key: 'last_counted_at',
-    header: 'Last Count',
+    header: t('Last Count'),
     render: (r) =>
       r.last_counted_at
         ? <span className="text-xs text-neutral-500">{new Date(r.last_counted_at).toLocaleDateString()}</span>
@@ -78,7 +79,7 @@ const STOCK_COLUMNS: Column<InventoryWithItem>[] = [
   },
   {
     key: 'last_updated',
-    header: 'Updated',
+    header: t('Updated'),
     sortable: true,
     render: (r) => new Date(r.last_updated).toLocaleDateString(),
   },
@@ -112,6 +113,7 @@ export default function InventoryClient({
   uoms:         Uom[];
 }) {
   const router = useRouter();
+  const { t } = useAppPrefs();
   const [tab, setTab]   = useState<'stock' | 'history'>('stock');
 
   // Transaction slide-over
@@ -193,18 +195,18 @@ export default function InventoryClient({
   const txnColumns: Column<InventoryTransaction>[] = [
     {
       key: 'created_at',
-      header: 'Date',
+      header: t('Date'),
       sortable: true,
       render: (r) => new Date(r.created_at).toLocaleString(),
     },
     {
       key: 'item_id',
-      header: 'Item',
+      header: t('Item'),
       render: (r) => itemMap[r.item_id] ?? r.item_id,
     },
     {
       key: 'transaction_type',
-      header: 'Type',
+      header: t('Type'),
       sortable: true,
       render: (r) => (
         <Badge variant={TXN_VARIANT[r.transaction_type] ?? 'gray'}>
@@ -214,13 +216,13 @@ export default function InventoryClient({
     },
     {
       key: 'qty',
-      header: 'Qty',
+      header: t('Qty'),
       className: 'tabular-nums font-medium',
       render: (r) => `${Number(r.qty).toLocaleString()} ${r.uom_id ? (uomMap[r.uom_id] ?? '') : ''}`,
     },
-    { key: 'lot_number',     header: 'Lot',      render: (r) => r.lot_number    ?? '—' },
-    { key: 'reference_type', header: 'Ref Type', render: (r) => r.reference_type ?? '—' },
-    { key: 'notes',          header: 'Notes',    render: (r) => r.notes          ?? '—' },
+    { key: 'lot_number',     header: t('Lot'),      render: (r) => r.lot_number    ?? '—' },
+    { key: 'reference_type', header: t('Ref Type'), render: (r) => r.reference_type ?? '—' },
+    { key: 'notes',          header: t('Notes'),    render: (r) => r.notes          ?? '—' },
   ];
 
   return (
@@ -228,17 +230,17 @@ export default function InventoryClient({
       {/* Tab bar */}
       <div className="flex items-center gap-2 mb-3">
         <div className="flex gap-0.5 bg-neutral-100 rounded-xl p-1">
-          {(['stock', 'history'] as const).map((t) => (
+          {(['stock', 'history'] as const).map((tabKey) => (
             <button
-              key={t}
-              onClick={() => setTab(t)}
+              key={tabKey}
+              onClick={() => setTab(tabKey)}
               className={`px-4 py-1.5 rounded-[10px] text-sm font-medium transition-all ${
-                tab === t
+                tab === tabKey
                   ? 'bg-white text-neutral-900 shadow-sm ring-[0.5px] ring-neutral-900/[0.06]'
                   : 'text-neutral-500 hover:text-neutral-700'
               }`}
             >
-              {t === 'stock' ? 'Stock Levels' : 'Transaction History'}
+              {tabKey === 'stock' ? t('Stock Levels') : t('Transaction History')}
             </button>
           ))}
         </div>
@@ -247,7 +249,7 @@ export default function InventoryClient({
       <div className="bg-white border-[0.5px] border-neutral-200 rounded-xl overflow-hidden">
         {tab === 'stock' ? (
           <DataTable
-            columns={STOCK_COLUMNS}
+            columns={makeStockColumns(t)}
             toolbar={<Button onClick={() => openTransaction()}>+ Stock Transaction</Button>}
             data={inventory}
             actions={(row) => [

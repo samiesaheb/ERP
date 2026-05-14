@@ -10,36 +10,37 @@ import DataTable, { Column } from '@/components/ui/DataTable';
 import SlideOver from '@/components/ui/SlideOver';
 import { clientFetch } from '@/lib/client-api';
 import { deleteBom } from '@/lib/mutations';
+import { useAppPrefs } from '@/contexts/AppPrefsContext';
 import type { Bom, Item } from '@/lib/types';
 
-const COLUMNS = (itemMap: Record<string, string>): Column<Bom>[] => [
+const COLUMNS = (t: (k: string) => string, itemMap: Record<string, string>): Column<Bom>[] => [
   {
     key: 'finished_good_id',
-    header: 'Finished Good',
+    header: t('Finished Good'),
     render: (row) => itemMap[row.finished_good_id] ?? row.finished_good_id,
     sortable: true,
   },
   {
     key: 'description',
-    header: 'Description',
+    header: t('Description'),
     render: (row) => row.description ?? '—',
   },
   {
     key: 'version',
-    header: 'Version',
+    header: t('Version'),
     sortable: true,
     render: (row) => `v${row.version}`,
   },
   {
     key: 'is_active',
-    header: 'Status',
+    header: t('Status'),
     render: (row) => (
       <Badge variant={row.is_active ? 'green' : 'amber'}>{row.is_active ? 'Active' : 'Draft'}</Badge>
     ),
   },
   {
     key: 'created_at',
-    header: 'Created',
+    header: t('Created'),
     sortable: true,
     render: (row) => new Date(row.created_at).toLocaleDateString(),
   },
@@ -55,6 +56,7 @@ export default function BomClient({
   itemMap: Record<string, string>;
 }) {
   const router = useRouter();
+  const { t } = useAppPrefs();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ finished_good_id: '', description: '', version: 1 });
   const [loading, setLoading] = useState(false);
@@ -83,7 +85,7 @@ export default function BomClient({
     <>
       <div className="bg-white border-[0.5px] border-neutral-200 rounded-xl overflow-hidden">
         <DataTable
-          columns={COLUMNS(itemMap)}
+          columns={COLUMNS(t, itemMap)}
           toolbar={<Button onClick={() => setOpen(true)}>+ New BOM</Button>}
           data={boms}
           onRowClick={(row) => router.push(`/bom/${row.id}`)}

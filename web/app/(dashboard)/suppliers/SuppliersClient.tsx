@@ -8,35 +8,36 @@ import ComboBox from '@/components/ui/ComboBox';
 import DataTable, { Column } from '@/components/ui/DataTable';
 import SlideOver from '@/components/ui/SlideOver';
 import { clientFetch } from '@/lib/client-api';
+import { useAppPrefs } from '@/contexts/AppPrefsContext';
 import type { Country, Supplier } from '@/lib/types';
 
-const COLUMNS = (countryMap: Record<string, string>): Column<Supplier>[] => [
-  { key: 'name', header: 'Name', sortable: true },
+const COLUMNS = (t: (k: string) => string, countryMap: Record<string, string>): Column<Supplier>[] => [
+  { key: 'name', header: t('Name'), sortable: true },
   {
     key: 'country_id',
-    header: 'Country',
+    header: t('Country'),
     sortable: true,
     render: (row) => countryMap[row.country_id] ?? '—',
   },
   {
     key: 'supplier_type',
-    header: 'Type',
+    header: t('Type'),
     render: (row) => (
       <Badge variant={row.supplier_type === 'international' ? 'blue' : 'green'}>
         {row.supplier_type}
       </Badge>
     ),
   },
-  { key: 'email', header: 'Email', render: (row) => row.email ?? '—' },
-  { key: 'phone', header: 'Phone', render: (row) => row.phone ?? '—' },
+  { key: 'email', header: t('Email'), render: (row) => row.email ?? '—' },
+  { key: 'phone', header: t('Phone'), render: (row) => row.phone ?? '—' },
   {
     key: 'payment_terms',
-    header: 'Payment Terms',
+    header: t('Payment Terms'),
     render: (row) => row.payment_terms ?? '—',
   },
   {
     key: 'created_at',
-    header: 'Created',
+    header: t('Created'),
     sortable: true,
     render: (row) => new Date(row.created_at).toLocaleDateString(),
   },
@@ -72,6 +73,7 @@ export default function SuppliersClient({
   countryMap: Record<string, string>;
 }) {
   const router = useRouter();
+  const { t } = useAppPrefs();
   const [open,            setOpen]            = useState(false);
   const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null);
   const [form,            setForm]            = useState<Form>(EMPTY);
@@ -136,7 +138,7 @@ export default function SuppliersClient({
     <>
       <div className="bg-white border-[0.5px] border-neutral-200 rounded-xl overflow-hidden">
         <DataTable
-          columns={COLUMNS(countryMap)}
+          columns={COLUMNS(t, countryMap)}
           toolbar={<Button onClick={openCreate}>+ New Supplier</Button>}
           data={suppliers}
           onRowClick={(row) => openEdit(row)}

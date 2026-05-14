@@ -9,16 +9,17 @@ import ComboBox from '@/components/ui/ComboBox';
 import SlideOver from '@/components/ui/SlideOver';
 import { clientFetch } from '@/lib/client-api';
 import { updatePurchaseOrderStatus } from '@/lib/mutations';
+import { useAppPrefs } from '@/contexts/AppPrefsContext';
 import type { PurchaseOrder, Supplier, Item, Uom, ManufacturingOrder } from '@/lib/types';
 
-const COLUMNS = (supplierMap: Record<string, string>): Column<PurchaseOrder>[] => [
-  { key: 'po_number', header: 'PO #', sortable: true },
-  { key: 'supplier_id', header: 'Supplier', render: (r) => supplierMap[r.supplier_id] ?? '—' },
-  { key: 'status', header: 'Status',
+const COLUMNS = (t: (k: string) => string, supplierMap: Record<string, string>): Column<PurchaseOrder>[] => [
+  { key: 'po_number', header: t('PO #'), sortable: true },
+  { key: 'supplier_id', header: t('Supplier'), render: (r) => supplierMap[r.supplier_id] ?? '—' },
+  { key: 'status', header: t('Status'),
     render: (r) => <Badge variant={poStatusVariant(r.status)}>{r.status}</Badge>, sortable: true },
-  { key: 'order_date', header: 'Order Date', render: (r) => r.order_date ?? '—', sortable: true },
-  { key: 'expected_date', header: 'Expected', render: (r) => r.expected_date ?? '—', sortable: true },
-  { key: 'created_at', header: 'Created', sortable: true,
+  { key: 'order_date', header: t('Order Date'), render: (r) => r.order_date ?? '—', sortable: true },
+  { key: 'expected_date', header: t('Expected'), render: (r) => r.expected_date ?? '—', sortable: true },
+  { key: 'created_at', header: t('Created'), sortable: true,
     render: (r) => new Date(r.created_at).toLocaleDateString() },
 ];
 
@@ -53,6 +54,7 @@ export default function PurchaseOrdersClient({
   manufacturingOrders:  ManufacturingOrder[];
 }) {
   const router = useRouter();
+  const { t } = useAppPrefs();
   const searchParams = useSearchParams();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
@@ -124,7 +126,7 @@ export default function PurchaseOrdersClient({
     <>
       <div className="bg-white border-[0.5px] border-neutral-200 rounded-xl overflow-hidden">
         <DataTable
-          columns={COLUMNS(supplierMap)}
+          columns={COLUMNS(t, supplierMap)}
           toolbar={<Button onClick={() => setOpen(true)}>+ New PO</Button>}
           data={orders}
           onRowClick={(row) => router.push(`/purchase-orders/${row.id}`)}
