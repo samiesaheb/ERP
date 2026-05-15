@@ -37,6 +37,7 @@ const en: Dict = {
   Users: 'Users',
   'Access Requests': 'Access Requests',
   'Audit Trail': 'Audit Trail',
+  'Login Attempts': 'Login Attempts',
   // ── Shifts ──────────────────────────────────────────────────────────
   'Morning shift': 'Morning shift',
   'Afternoon shift': 'Afternoon shift',
@@ -184,6 +185,7 @@ const th: Dict = {
   Users: 'ผู้ใช้งาน',
   'Access Requests': 'คำขอสิทธิ์',
   'Audit Trail': 'บันทึกการใช้งาน',
+  'Login Attempts': 'บันทึกการเข้าสู่ระบบ',
   // ── Shifts ──────────────────────────────────────────────────────────
   'Morning shift': 'กะเช้า',
   'Afternoon shift': 'กะบ่าย',

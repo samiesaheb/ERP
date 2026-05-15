@@ -16,6 +16,7 @@ import type {
   Supplier, Uom,
   User,
   AuditLog,
+  LoginAttempt,
   WarehouseLocation,
   WorkCenter, RoutingStep, QcTest, DowntimeEvent, AccessRequest,
 } from './types';
@@ -215,6 +216,17 @@ export const getAuditLogs = (params?: { table_name?: string; action?: string; re
     Object.fromEntries(Object.entries(params ?? {}).filter(([, v]) => v !== undefined).map(([k, v]) => [k, String(v)]))
   ).toString();
   return apiFetch<AuditLog[]>(`/api/v1/audit-logs${q ? `?${q}` : ''}`);
+};
+
+// ---------------------------------------------------------------------------
+// Login Attempts
+// ---------------------------------------------------------------------------
+
+export const getLoginAttempts = (params?: { limit?: number; offset?: number }) => {
+  const q = new URLSearchParams(
+    Object.fromEntries(Object.entries(params ?? {}).filter(([, v]) => v !== undefined).map(([k, v]) => [k, String(v)]))
+  ).toString();
+  return apiFetch<LoginAttempt[]>(`/api/v1/login-attempts${q ? `?${q}` : ''}`);
 };
 
 // ---------------------------------------------------------------------------

@@ -1,0 +1,71 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT la.id, la.email, la.user_id,\n               CASE WHEN la.user_id IS NOT NULL THEN u.full_name END AS user_name,\n               la.success, la.failure_reason, la.ip_address, la.user_agent, la.attempted_at\n        FROM login_attempts la\n        LEFT JOIN users u ON u.id = la.user_id\n        ORDER BY la.attempted_at DESC\n        LIMIT $1 OFFSET $2\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "email",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "user_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 3,
+        "name": "user_name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "success",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 5,
+        "name": "failure_reason",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "ip_address",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 7,
+        "name": "user_agent",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 8,
+        "name": "attempted_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      true,
+      true,
+      false,
+      true,
+      true,
+      true,
+      false
+    ]
+  },
+  "hash": "f02e67c964b6970d804b5a426c392e318fd49b5f673659873ab299cafd2ad10d"
+}

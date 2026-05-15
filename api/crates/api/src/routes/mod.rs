@@ -136,6 +136,9 @@ pub fn build_router(state: AppState) -> Router {
         // Audit Trail
         .route("/api/v1/audit-logs", get(audit::list_audit_logs))
 
+        // Login Attempts
+        .route("/api/v1/login-attempts", get(auth::list_login_attempts))
+
         // Work Centers
         .route("/api/v1/work-centers",
             get(shop_floor::list_work_centers).post(shop_floor::create_work_center))

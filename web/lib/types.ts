@@ -581,6 +581,22 @@ export interface Formulation {
 }
 
 // ---------------------------------------------------------------------------
+// Login Attempts
+// ---------------------------------------------------------------------------
+
+export interface LoginAttempt {
+  id: string;
+  email: string;
+  user_id: string | null;
+  user_name: string | null;
+  success: boolean;
+  failure_reason: string | null;
+  ip_address: string | null;
+  user_agent: string | null;
+  attempted_at: string;
+}
+
+// ---------------------------------------------------------------------------
 // Audit
 // ---------------------------------------------------------------------------
 

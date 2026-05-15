@@ -1,4 +1,4 @@
-use axum::{extract::State, Json};
+use axum::{extract::{Query, State}, http::HeaderMap, Json};
 use chrono::{NaiveTime, Utc, Datelike, Timelike};
 use jsonwebtoken::{encode, EncodingKey, Header};
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -8,7 +8,7 @@ use crate::{
     middleware::rbac::{require_role, ADMIN},
     state::AppState,
 };
-use domain::{Claims, CreateUser, LoginRequest, LoginResponse, UpdateUser, User};
+use domain::{Claims, CreateUser, LoginAttempt, LoginAttemptQuery, LoginRequest, LoginResponse, UpdateUser, User};
 use axum::extract::Path;
 use axum::http::StatusCode;
 use uuid::Uuid;
@@ -19,6 +19,37 @@ use uuid::Uuid;
 
 fn parse_time(s: &str) -> Option<NaiveTime> {
     NaiveTime::parse_from_str(s, "%H:%M").ok()
+}
+
+// ---------------------------------------------------------------------------
+// Helper — record a login attempt (fire-and-forget; never fails the caller)
+// ---------------------------------------------------------------------------
+
+async fn log_login_attempt(
+    db:             &sqlx::PgPool,
+    email:          &str,
+    user_id:        Option<Uuid>,
+    success:        bool,
+    failure_reason: Option<&str>,
+    ip_address:     Option<&str>,
+    user_agent:     Option<&str>,
+) {
+    let result = sqlx::query!(
+        "INSERT INTO login_attempts (email, user_id, success, failure_reason, ip_address, user_agent)
+        VALUES ($1, $2, $3, $4, $5, $6)",
+        email,
+        user_id,
+        success,
+        failure_reason,
+        ip_address,
+        user_agent,
+    )
+    .execute(db)
+    .await;
+
+    if let Err(e) = result {
+        tracing::error!("Failed to record login attempt: {e}");
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -40,9 +71,22 @@ struct LoginRow {
 
 pub async fn login(
     State(state): State<AppState>,
+    headers: HeaderMap,
     Json(body): Json<LoginRequest>,
 ) -> Result<Json<LoginResponse>> {
-    let user: LoginRow = sqlx::query_as(
+    // Extract IP (respect X-Forwarded-For from Railway's proxy, fall back to X-Real-IP)
+    let ip = headers
+        .get("x-forwarded-for")
+        .and_then(|v| v.to_str().ok())
+        .map(|s| s.split(',').next().unwrap_or(s).trim().to_string())
+        .or_else(|| headers.get("x-real-ip").and_then(|v| v.to_str().ok()).map(str::to_string));
+
+    let ua = headers
+        .get(axum::http::header::USER_AGENT)
+        .and_then(|v| v.to_str().ok())
+        .map(str::to_string);
+
+    let user_opt: Option<LoginRow> = sqlx::query_as(
         "SELECT id, email, password_hash, full_name, role,
                 allowed_days, access_time_start, access_time_end
          FROM users
@@ -50,12 +94,20 @@ pub async fn login(
     )
     .bind(&body.email)
     .fetch_optional(&state.db)
-    .await?
-    .ok_or_else(|| AppError::Unauthorized("Invalid credentials".to_string()))?;
+    .await?;
+
+    let user = match user_opt {
+        None => {
+            log_login_attempt(&state.db, &body.email, None, false, Some("invalid_credentials"), ip.as_deref(), ua.as_deref()).await;
+            return Err(AppError::Unauthorized("Invalid credentials".to_string()));
+        }
+        Some(u) => u,
+    };
 
     // Verify password
     let valid = bcrypt::verify(&body.password, &user.password_hash).unwrap_or(false);
     if !valid {
+        log_login_attempt(&state.db, &body.email, Some(user.id), false, Some("invalid_credentials"), ip.as_deref(), ua.as_deref()).await;
         return Err(AppError::Unauthorized("Invalid credentials".to_string()));
     }
 
@@ -76,6 +128,7 @@ pub async fn login(
             };
             let allowed: Vec<&str> = days.split(',').map(|d| d.trim()).collect();
             if !allowed.contains(&today) {
+                log_login_attempt(&state.db, &body.email, Some(user.id), false, Some("access_day"), ip.as_deref(), ua.as_deref()).await;
                 return Err(AppError::Unauthorized(
                     "Access not permitted on this day".to_string(),
                 ));
@@ -89,16 +142,18 @@ pub async fn login(
         let in_window = if start <= end {
             current >= start && current <= end
         } else {
-            // overnight window, e.g. 22:00–06:00
             current >= start || current <= end
         };
         if !in_window {
+            log_login_attempt(&state.db, &body.email, Some(user.id), false, Some("access_window"), ip.as_deref(), ua.as_deref()).await;
             return Err(AppError::Unauthorized(
                 "Access not permitted at this time".to_string(),
             ));
         }
     }
     // ──────────────────────────────────────────────────────────────────────
+
+    log_login_attempt(&state.db, &body.email, Some(user.id), true, None, ip.as_deref(), ua.as_deref()).await;
 
     let now = SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -295,6 +350,39 @@ pub async fn update_user(
     };
 
     Ok(Json(row))
+}
+
+// ---------------------------------------------------------------------------
+// GET /api/v1/login-attempts
+// ---------------------------------------------------------------------------
+
+pub async fn list_login_attempts(
+    State(state): State<AppState>,
+    axum::Extension(claims): axum::Extension<Claims>,
+    Query(q): Query<LoginAttemptQuery>,
+) -> Result<Json<Vec<LoginAttempt>>> {
+    require_role(&claims, ADMIN)?;
+    let limit  = q.limit.unwrap_or(200).min(1000);
+    let offset = q.offset.unwrap_or(0);
+
+    let rows = sqlx::query_as!(
+        LoginAttempt,
+        r#"
+        SELECT la.id, la.email, la.user_id,
+               CASE WHEN la.user_id IS NOT NULL THEN u.full_name END AS user_name,
+               la.success, la.failure_reason, la.ip_address, la.user_agent, la.attempted_at
+        FROM login_attempts la
+        LEFT JOIN users u ON u.id = la.user_id
+        ORDER BY la.attempted_at DESC
+        LIMIT $1 OFFSET $2
+        "#,
+        limit,
+        offset,
+    )
+    .fetch_all(&state.db)
+    .await?;
+
+    Ok(Json(rows))
 }
 
 // ---------------------------------------------------------------------------

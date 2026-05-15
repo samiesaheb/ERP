@@ -62,6 +62,27 @@ pub struct CreateUser {
 
 fn default_role() -> String { "admin".to_string() }
 
+/// A single login attempt record.
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
+pub struct LoginAttempt {
+    pub id:             Uuid,
+    pub email:          String,
+    pub user_id:        Option<Uuid>,
+    pub user_name:      Option<String>,
+    pub success:        bool,
+    pub failure_reason: Option<String>,
+    pub ip_address:     Option<String>,
+    pub user_agent:     Option<String>,
+    pub attempted_at:   DateTime<Utc>,
+}
+
+/// Query params for GET /api/v1/login-attempts
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LoginAttemptQuery {
+    pub limit:  Option<i64>,
+    pub offset: Option<i64>,
+}
+
 /// PUT /api/v1/users/:id
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UpdateUser {

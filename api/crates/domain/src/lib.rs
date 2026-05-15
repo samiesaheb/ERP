@@ -19,7 +19,7 @@ pub mod shop_floor;
 // ---------------------------------------------------------------------------
 
 pub use audit::{AuditLog, AuditLogQuery};
-pub use auth::{Claims, LoginRequest, LoginResponse, User, CreateUser, UpdateUser};
+pub use auth::{Claims, LoginRequest, LoginResponse, User, CreateUser, UpdateUser, LoginAttempt, LoginAttemptQuery};
 
 pub use artwork::{
     Artwork, CreateArtwork, UpdateArtwork,
