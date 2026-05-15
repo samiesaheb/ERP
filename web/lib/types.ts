@@ -576,6 +576,7 @@ export interface Formulation {
   note: string;
   batch_qty: string;
   batch_unit: string;
+  procedures: string;
   lines: FormulationLine[];
 }
 

@@ -29,6 +29,7 @@ pub struct FormulationRow {
     pub note:       String,
     pub batch_qty:  Decimal,
     pub batch_unit: String,
+    pub procedures: String,
 }
 
 #[derive(Debug, Clone, sqlx::FromRow)]
@@ -79,6 +80,7 @@ pub struct FormulationOut {
     pub note:           String,
     pub batch_qty:      Decimal,
     pub batch_unit:     String,
+    pub procedures:     String,
     pub lines:          Vec<FormulationLineOut>,
 }
 
@@ -116,6 +118,8 @@ pub struct CreateFormulation {
     pub batch_qty:  Option<Decimal>,
     pub batch_unit: Option<String>,
     #[serde(default)]
+    pub procedures: String,
+    #[serde(default)]
     pub lines:      Vec<CreateFormulationLine>,
 }
 
@@ -125,5 +129,6 @@ pub struct PatchFormulation {
     pub note:       Option<String>,
     pub batch_qty:  Option<Decimal>,
     pub batch_unit: Option<String>,
+    pub procedures: Option<String>,
     pub lines:      Option<Vec<CreateFormulationLine>>,
 }

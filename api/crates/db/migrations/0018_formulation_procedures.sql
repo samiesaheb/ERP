@@ -1,0 +1,2 @@
+ALTER TABLE formulations
+    ADD COLUMN IF NOT EXISTS procedures TEXT NOT NULL DEFAULT '';

@@ -298,9 +298,14 @@ export default function ArtworkClient({ artworks, fdaRegistrations, salesOrders,
                   {artError}
                 </p>
               )}
-              <Button onClick={handleSaveArtwork} disabled={artSaving} className="w-full">
-                {artSaving ? 'Creating…' : 'Create Artwork'}
-              </Button>
+              <div className="flex gap-2">
+                <Button onClick={handleSaveArtwork} disabled={artSaving} className="flex-1">
+                  {artSaving ? 'Creating…' : 'Create Artwork'}
+                </Button>
+                <Button type="button" variant="secondary" onClick={() => setArtOpen(false)}>
+                  Cancel
+                </Button>
+              </div>
             </div>
           </SlideOver>
         </>

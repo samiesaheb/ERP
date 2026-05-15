@@ -22,7 +22,7 @@ use domain::{
 async fn fetch_formulation(state: &AppState, id: Uuid) -> Result<FormulationOut> {
     let row = sqlx::query_as!(
         FormulationRow,
-        "SELECT id, item_id, version, is_active, note, batch_qty, batch_unit FROM formulations WHERE id = $1",
+        "SELECT id, item_id, version, is_active, note, batch_qty, batch_unit, procedures FROM formulations WHERE id = $1",
         id
     )
     .fetch_optional(&state.db)
@@ -62,6 +62,7 @@ async fn fetch_formulation(state: &AppState, id: Uuid) -> Result<FormulationOut>
         note: row.note,
         batch_qty: row.batch_qty,
         batch_unit: row.batch_unit,
+        procedures: row.procedures,
         lines: lines
             .into_iter()
             .map(|l| FormulationLineOut {
@@ -89,7 +90,7 @@ pub async fn list_formulations(
 ) -> Result<Json<Vec<FormulationOut>>> {
     let rows = sqlx::query_as!(
         FormulationRow,
-        "SELECT id, item_id, version, is_active, note, batch_qty, batch_unit
+        "SELECT id, item_id, version, is_active, note, batch_qty, batch_unit, procedures
          FROM formulations
          ORDER BY item_id, version"
     )
@@ -159,6 +160,7 @@ pub async fn list_formulations(
             note: r.note,
             batch_qty: r.batch_qty,
             batch_unit: r.batch_unit,
+            procedures: r.procedures,
         })
         .collect();
 
@@ -180,8 +182,8 @@ pub async fn create_formulation(
     let batch_qty = body.batch_qty.unwrap_or_else(|| rust_decimal::Decimal::from(100));
     let batch_unit = body.batch_unit.clone().unwrap_or_else(|| "g".to_string());
     sqlx::query!(
-        "INSERT INTO formulations (id, item_id, version, is_active, note, batch_qty, batch_unit)
-         VALUES ($1, $2, $3, $4, $5, $6, $7)",
+        "INSERT INTO formulations (id, item_id, version, is_active, note, batch_qty, batch_unit, procedures)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
         id,
         body.product,
         body.version,
@@ -189,6 +191,7 @@ pub async fn create_formulation(
         body.note,
         batch_qty,
         batch_unit,
+        body.procedures,
     )
     .execute(&state.db)
     .await?;
@@ -229,18 +232,20 @@ pub async fn patch_formulation(
         return Err(AppError::NotFound(format!("Formulation {id} not found")));
     }
 
-    if body.is_active.is_some() || body.note.is_some() || body.batch_qty.is_some() || body.batch_unit.is_some() {
+    if body.is_active.is_some() || body.note.is_some() || body.batch_qty.is_some() || body.batch_unit.is_some() || body.procedures.is_some() {
         sqlx::query!(
             "UPDATE formulations
              SET is_active  = COALESCE($1, is_active),
                  note       = COALESCE($2, note),
                  batch_qty  = COALESCE($3, batch_qty),
-                 batch_unit = COALESCE($4, batch_unit)
-             WHERE id = $5",
+                 batch_unit = COALESCE($4, batch_unit),
+                 procedures = COALESCE($5, procedures)
+             WHERE id = $6",
             body.is_active,
             body.note,
             body.batch_qty,
             body.batch_unit,
+            body.procedures,
             id,
         )
         .execute(&state.db)

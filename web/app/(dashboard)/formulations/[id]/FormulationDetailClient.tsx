@@ -36,6 +36,8 @@ export default function FormulationDetailClient({
   const [lines, setLines] = useState<FormulationLine[]>(formulation.lines ?? []);
   const [note, setNote] = useState(formulation.note ?? '');
   const [noteDirty, setNoteDirty] = useState(false);
+  const [procedures, setProcedures] = useState(formulation.procedures ?? '');
+  const [proceduresDirty, setProceduresDirty] = useState(false);
   const [isActive, setIsActive] = useState(formulation.is_active);
   const [batchQty, setBatchQty] = useState(formulation.batch_qty ?? '100');
   const [batchUnit, setBatchUnit] = useState(formulation.batch_unit ?? 'g');
@@ -50,10 +52,12 @@ export default function FormulationDetailClient({
   useEffect(() => {
     setLines(formulation.lines ?? []);
     setNote(formulation.note ?? '');
+    setProcedures(formulation.procedures ?? '');
     setIsActive(formulation.is_active);
     setBatchQty(formulation.batch_qty ?? '100');
     setBatchUnit(formulation.batch_unit ?? 'g');
     setNoteDirty(false);
+    setProceduresDirty(false);
     setBatchDirty(false);
   }, [formulation]);
 
@@ -149,7 +153,7 @@ export default function FormulationDetailClient({
       )}
 
       {/* Batch qty + Note + Activation row */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader>
             <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wide">
@@ -225,6 +229,37 @@ export default function FormulationDetailClient({
                 }}
               >
                 {saving ? 'Saving…' : 'Save Note'}
+              </Button>
+            )}
+          </CardBody>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wide">
+              Cooking Procedures
+            </p>
+          </CardHeader>
+          <CardBody>
+            <textarea
+              rows={3}
+              value={procedures}
+              onChange={(e) => {
+                setProcedures(e.target.value);
+                setProceduresDirty(true);
+              }}
+              placeholder="Step-by-step cooking instructions…"
+              className="w-full text-sm border-[0.5px] border-neutral-300 rounded px-3 py-2 resize-none"
+            />
+            {proceduresDirty && (
+              <Button
+                className="mt-2"
+                disabled={saving}
+                onClick={() => {
+                  save({ procedures }).then(() => setProceduresDirty(false));
+                }}
+              >
+                {saving ? 'Saving…' : 'Save Procedures'}
               </Button>
             )}
           </CardBody>

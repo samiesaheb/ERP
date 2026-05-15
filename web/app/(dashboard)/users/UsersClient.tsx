@@ -263,16 +263,15 @@ export default function UsersClient({ users: initial }: { users: User[] }) {
     },
   ];
 
-  const inputCls = 'w-full border border-neutral-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-neutral-400 bg-white';
+  const inputCls = 'w-full border-[0.5px] border-neutral-300 rounded px-3 py-2 text-sm';
 
   return (
     <>
-      <div className="p-6 space-y-4">
-        <div>
-          <h1 className="text-xl font-semibold text-neutral-900">Users</h1>
-          <p className="text-sm text-neutral-500 mt-0.5">{users.length} user{users.length !== 1 ? 's' : ''}</p>
+      <div className="space-y-4">
+        <p className="text-sm text-neutral-500">{users.length} user{users.length !== 1 ? 's' : ''}</p>
+        <div className="bg-white border-[0.5px] border-neutral-200 rounded-xl overflow-hidden">
+          <DataTable columns={columns} toolbar={<Button onClick={openCreate}>+ New User</Button>} data={users} onRowClick={(row) => openEdit(row)} />
         </div>
-        <DataTable columns={columns} toolbar={<Button onClick={openCreate}>+ New User</Button>} data={users} onRowClick={(row) => openEdit(row)} />
       </div>
 
       <SlideOver
@@ -352,10 +351,10 @@ export default function UsersClient({ users: initial }: { users: User[] }) {
                       key={day}
                       type="button"
                       onClick={() => toggleDay(day)}
-                      className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all border ${
+                      className={`px-2.5 py-1 rounded text-xs font-medium transition-all border-[0.5px] ${
                         selected
                           ? 'bg-neutral-900 text-white border-neutral-900'
-                          : 'bg-white text-neutral-500 border-neutral-200 hover:border-neutral-400'
+                          : 'bg-white text-neutral-500 border-neutral-300 hover:border-neutral-500'
                       }`}
                     >
                       {day}
@@ -376,14 +375,14 @@ export default function UsersClient({ users: initial }: { users: User[] }) {
                   type="time"
                   value={form.access_time_start}
                   onChange={(e) => setForm((f) => ({ ...f, access_time_start: e.target.value }))}
-                  className="flex-1 border border-neutral-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-neutral-400"
+                  className="flex-1 border-[0.5px] border-neutral-300 rounded px-3 py-2 text-sm"
                 />
                 <span className="text-xs text-neutral-400 shrink-0">to</span>
                 <input
                   type="time"
                   value={form.access_time_end}
                   onChange={(e) => setForm((f) => ({ ...f, access_time_end: e.target.value }))}
-                  className="flex-1 border border-neutral-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-neutral-400"
+                  className="flex-1 border-[0.5px] border-neutral-300 rounded px-3 py-2 text-sm"
                 />
               </div>
               {(!form.access_time_start && !form.access_time_end) && (

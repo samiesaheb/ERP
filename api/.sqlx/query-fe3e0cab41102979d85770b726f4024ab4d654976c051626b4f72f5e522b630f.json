@@ -1,0 +1,19 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE formulations\n             SET is_active  = COALESCE($1, is_active),\n                 note       = COALESCE($2, note),\n                 batch_qty  = COALESCE($3, batch_qty),\n                 batch_unit = COALESCE($4, batch_unit),\n                 procedures = COALESCE($5, procedures)\n             WHERE id = $6",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Bool",
+        "Text",
+        "Numeric",
+        "Varchar",
+        "Text",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "fe3e0cab41102979d85770b726f4024ab4d654976c051626b4f72f5e522b630f"
+}
