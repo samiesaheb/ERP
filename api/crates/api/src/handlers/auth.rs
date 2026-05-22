@@ -1,6 +1,7 @@
-use axum::{extract::{Query, State}, http::HeaderMap, Json};
+use axum::{extract::{Query, State}, http::{HeaderMap, StatusCode}, response::Redirect, Json};
 use chrono::{NaiveTime, Utc, Datelike, Timelike};
 use jsonwebtoken::{encode, EncodingKey, Header};
+use serde::Deserialize;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::{
@@ -8,9 +9,11 @@ use crate::{
     middleware::rbac::{require_role, ADMIN},
     state::AppState,
 };
-use domain::{Claims, CreateUser, LoginAttempt, LoginAttemptQuery, LoginRequest, LoginResponse, UpdateUser, User};
+use domain::{
+    Claims, CreateUser, LoginAttempt, LoginAttemptQuery, LoginRequest, LoginResponse,
+    SelectCompany, SelectCompanyResponse, UpdateUser, User, UserCompanyInfo,
+};
 use axum::extract::Path;
-use axum::http::StatusCode;
 use uuid::Uuid;
 
 // ---------------------------------------------------------------------------
@@ -61,7 +64,7 @@ async fn log_login_attempt(
 struct LoginRow {
     id:                Uuid,
     email:             String,
-    password_hash:     String,
+    password_hash:     Option<String>,
     full_name:         String,
     role:              String,
     allowed_days:      Option<String>,
@@ -104,8 +107,10 @@ pub async fn login(
         Some(u) => u,
     };
 
-    // Verify password
-    let valid = bcrypt::verify(&body.password, &user.password_hash).unwrap_or(false);
+    // Verify password — OAuth-only users have no hash; treat as invalid credentials
+    let valid = user.password_hash.as_deref()
+        .map(|hash| bcrypt::verify(&body.password, hash).unwrap_or(false))
+        .unwrap_or(false);
     if !valid {
         log_login_attempt(&state.db, &body.email, Some(user.id), false, Some("invalid_credentials"), ip.as_deref(), ua.as_deref()).await;
         return Err(AppError::Unauthorized("Invalid credentials".to_string()));
@@ -155,18 +160,34 @@ pub async fn login(
 
     log_login_attempt(&state.db, &body.email, Some(user.id), true, None, ip.as_deref(), ua.as_deref()).await;
 
+    let companies: Vec<UserCompanyInfo> = sqlx::query_as(
+        "SELECT uc.company_id, c.name AS company_name, c.code AS company_code,
+                uc.role, uc.is_primary
+         FROM user_companies uc
+         JOIN companies c ON c.id = uc.company_id
+         WHERE uc.user_id = $1 AND c.is_active = TRUE
+         ORDER BY uc.is_primary DESC, c.name",
+    )
+    .bind(user.id)
+    .fetch_all(&state.db)
+    .await
+    .unwrap_or_default();
+
     let now = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .map_err(|e| AppError::Internal(e.to_string()))?
         .as_secs();
 
     let claims = Claims {
-        sub:       user.id.to_string(),
-        email:     user.email.clone(),
-        full_name: user.full_name.clone(),
-        role:      user.role.clone(),
-        iat:       now,
-        exp:       now + 60 * 60 * 24,
+        sub:          user.id.to_string(),
+        email:        user.email.clone(),
+        full_name:    user.full_name.clone(),
+        role:         user.role.clone(),
+        company_id:   None,
+        company_name: None,
+        company_code: None,
+        iat:          now,
+        exp:          now + 60 * 60 * 24,
     };
 
     let token = encode(
@@ -181,6 +202,7 @@ pub async fn login(
         email:     user.email,
         full_name: user.full_name,
         role:      user.role,
+        companies,
     }))
 }
 
@@ -405,4 +427,304 @@ pub async fn delete_user(
         .execute(&state.db)
         .await?;
     Ok(StatusCode::NO_CONTENT)
+}
+
+// ---------------------------------------------------------------------------
+// GET /auth/google  — initiate OAuth flow
+// ---------------------------------------------------------------------------
+
+pub async fn google_login(
+    State(state): State<AppState>,
+) -> Result<Redirect> {
+    let client_id = state.google_client_id.as_deref()
+        .ok_or_else(|| AppError::Internal("Google OAuth not configured".into()))?;
+    let redirect_uri = state.google_redirect_uri.as_deref()
+        .ok_or_else(|| AppError::Internal("Google OAuth not configured".into()))?;
+
+    let url = format!(
+        "https://accounts.google.com/o/oauth2/v2/auth\
+         ?client_id={client_id}\
+         &redirect_uri={redirect_uri}\
+         &response_type=code\
+         &scope=openid%20email%20profile\
+         &access_type=online",
+        client_id    = urlencoding::encode(client_id),
+        redirect_uri = urlencoding::encode(redirect_uri),
+    );
+
+    Ok(Redirect::to(&url))
+}
+
+// ---------------------------------------------------------------------------
+// GET /auth/google/callback  — exchange code, find/create user, issue JWT
+// ---------------------------------------------------------------------------
+
+#[derive(Deserialize)]
+pub struct OAuthCallbackQuery {
+    pub code:  Option<String>,
+    pub error: Option<String>,
+}
+
+#[derive(Deserialize)]
+struct TokenResponse {
+    access_token: String,
+}
+
+#[derive(Deserialize)]
+struct GoogleUserInfo {
+    email:      String,
+    name:       Option<String>,
+    given_name: Option<String>,
+}
+
+pub async fn google_callback(
+    State(state): State<AppState>,
+    Query(q): Query<OAuthCallbackQuery>,
+) -> Result<Redirect> {
+    if let Some(err) = q.error {
+        return Err(AppError::Unauthorized(format!("Google OAuth error: {err}")));
+    }
+
+    let code = q.code.ok_or_else(|| AppError::BadRequest("Missing code".into()))?;
+
+    let client_id     = state.google_client_id.as_deref()
+        .ok_or_else(|| AppError::Internal("Google OAuth not configured".into()))?;
+    let client_secret = state.google_client_secret.as_deref()
+        .ok_or_else(|| AppError::Internal("Google OAuth not configured".into()))?;
+    let redirect_uri  = state.google_redirect_uri.as_deref()
+        .ok_or_else(|| AppError::Internal("Google OAuth not configured".into()))?;
+
+    // Exchange code for access token
+    let http = reqwest::Client::new();
+    let token_resp: TokenResponse = http
+        .post("https://oauth2.googleapis.com/token")
+        .form(&[
+            ("code",          code.as_str()),
+            ("client_id",     client_id),
+            ("client_secret", client_secret),
+            ("redirect_uri",  redirect_uri),
+            ("grant_type",    "authorization_code"),
+        ])
+        .send()
+        .await
+        .map_err(|e| AppError::Internal(e.to_string()))?
+        .json()
+        .await
+        .map_err(|e| AppError::Internal(format!("Token parse error: {e}")))?;
+
+    // Fetch user info
+    let user_info: GoogleUserInfo = http
+        .get("https://www.googleapis.com/oauth2/v2/userinfo")
+        .bearer_auth(&token_resp.access_token)
+        .send()
+        .await
+        .map_err(|e| AppError::Internal(e.to_string()))?
+        .json()
+        .await
+        .map_err(|e| AppError::Internal(format!("Userinfo parse error: {e}")))?;
+
+    let email = user_info.email.to_lowercase();
+    let full_name = user_info.name
+        .or(user_info.given_name)
+        .unwrap_or_else(|| email.split('@').next().unwrap_or("User").to_string());
+
+    // Find existing active user or auto-create
+    let user: LoginRow = {
+        let existing: Option<LoginRow> = sqlx::query_as(
+            "SELECT id, email, password_hash, full_name, role,
+                    allowed_days, access_time_start, access_time_end
+             FROM users WHERE email = $1 AND is_active = TRUE",
+        )
+        .bind(&email)
+        .fetch_optional(&state.db)
+        .await?;
+
+        if let Some(u) = existing {
+            u
+        } else {
+            let id = Uuid::new_v4();
+            sqlx::query_as(
+                "INSERT INTO users (id, email, full_name, role)
+                 VALUES ($1, $2, $3, 'viewer')
+                 RETURNING id, email, password_hash, full_name, role,
+                           allowed_days, access_time_start, access_time_end",
+            )
+            .bind(id)
+            .bind(&email)
+            .bind(&full_name)
+            .fetch_one(&state.db)
+            .await?
+        }
+    };
+
+    // Access window check (same as password login)
+    let now_utc = Utc::now();
+
+    if let Some(ref days) = user.allowed_days {
+        if !days.trim().is_empty() {
+            let today = match now_utc.weekday() {
+                chrono::Weekday::Mon => "Mon",
+                chrono::Weekday::Tue => "Tue",
+                chrono::Weekday::Wed => "Wed",
+                chrono::Weekday::Thu => "Thu",
+                chrono::Weekday::Fri => "Fri",
+                chrono::Weekday::Sat => "Sat",
+                chrono::Weekday::Sun => "Sun",
+            };
+            let allowed: Vec<&str> = days.split(',').map(|d| d.trim()).collect();
+            if !allowed.contains(&today) {
+                log_login_attempt(&state.db, &email, Some(user.id), false, Some("access_day"), None, None).await;
+                return Err(AppError::Unauthorized("Access not permitted on this day".into()));
+            }
+        }
+    }
+
+    if let (Some(start), Some(end)) = (user.access_time_start, user.access_time_end) {
+        let current = now_utc.time().with_nanosecond(0).unwrap_or(now_utc.time());
+        let in_window = if start <= end { current >= start && current <= end } else { current >= start || current <= end };
+        if !in_window {
+            log_login_attempt(&state.db, &email, Some(user.id), false, Some("access_window"), None, None).await;
+            return Err(AppError::Unauthorized("Access not permitted at this time".into()));
+        }
+    }
+
+    log_login_attempt(&state.db, &email, Some(user.id), true, None, None, None).await;
+
+    let now = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map_err(|e| AppError::Internal(e.to_string()))?
+        .as_secs();
+
+    let claims = Claims {
+        sub:          user.id.to_string(),
+        email:        user.email.clone(),
+        full_name:    user.full_name.clone(),
+        role:         user.role.clone(),
+        company_id:   None,
+        company_name: None,
+        company_code: None,
+        iat:          now,
+        exp:          now + 60 * 60 * 24,
+    };
+
+    let token = encode(
+        &Header::default(),
+        &claims,
+        &EncodingKey::from_secret(state.jwt_secret.as_bytes()),
+    )?;
+
+    let redirect_to = format!(
+        "{}/api/auth/oauth/complete?token={}",
+        state.frontend_url,
+        urlencoding::encode(&token),
+    );
+
+    Ok(Redirect::to(&redirect_to))
+}
+
+// ---------------------------------------------------------------------------
+// GET /api/v1/users/me/companies
+// ---------------------------------------------------------------------------
+
+pub async fn get_my_companies(
+    State(state): State<AppState>,
+    axum::Extension(claims): axum::Extension<Claims>,
+) -> Result<Json<Vec<UserCompanyInfo>>> {
+    let user_id: Uuid = claims.sub.parse()
+        .map_err(|_| AppError::Unauthorized("Bad token".into()))?;
+
+    let rows: Vec<UserCompanyInfo> = sqlx::query_as(
+        "SELECT uc.company_id, c.name AS company_name, c.code AS company_code,
+                uc.role, uc.is_primary
+         FROM user_companies uc
+         JOIN companies c ON c.id = uc.company_id
+         WHERE uc.user_id = $1 AND c.is_active = TRUE
+         ORDER BY uc.is_primary DESC, c.name",
+    )
+    .bind(user_id)
+    .fetch_all(&state.db)
+    .await?;
+
+    Ok(Json(rows))
+}
+
+// ---------------------------------------------------------------------------
+// POST /auth/select-company
+// ---------------------------------------------------------------------------
+
+pub async fn select_company(
+    State(state): State<AppState>,
+    axum::Extension(claims): axum::Extension<Claims>,
+    Json(body): Json<SelectCompany>,
+) -> Result<Json<SelectCompanyResponse>> {
+    let user_id: Uuid = claims.sub.parse()
+        .map_err(|_| AppError::Unauthorized("Bad token".into()))?;
+
+    // Try membership lookup first
+    let member_row: Option<UserCompanyInfo> = sqlx::query_as(
+        "SELECT uc.company_id, c.name AS company_name, c.code AS company_code,
+                uc.role, uc.is_primary
+         FROM user_companies uc
+         JOIN companies c ON c.id = uc.company_id
+         WHERE uc.user_id = $1 AND uc.company_id = $2 AND c.is_active = TRUE",
+    )
+    .bind(user_id)
+    .bind(body.company_id)
+    .fetch_optional(&state.db)
+    .await?;
+
+    // Admins can switch to any active company even without an explicit membership row
+    let company = if let Some(row) = member_row {
+        row
+    } else if claims.role == "admin" {
+        #[derive(sqlx::FromRow)]
+        struct CompanyRow { id: Uuid, name: String, code: String }
+        let c: Option<CompanyRow> = sqlx::query_as(
+            "SELECT id, name, code FROM companies WHERE id = $1 AND is_active = TRUE",
+        )
+        .bind(body.company_id)
+        .fetch_optional(&state.db)
+        .await?;
+        let c = c.ok_or_else(|| AppError::NotFound("Company not found".into()))?;
+        UserCompanyInfo {
+            company_id:   c.id,
+            company_name: c.name,
+            company_code: c.code,
+            role:         claims.role.clone(),
+            is_primary:   false,
+        }
+    } else {
+        return Err(AppError::Forbidden("Not a member of this company".into()));
+    };
+
+    let now = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map_err(|e| AppError::Internal(e.to_string()))?
+        .as_secs();
+
+    let new_claims = Claims {
+        sub:          claims.sub,
+        email:        claims.email,
+        full_name:    claims.full_name,
+        role:         company.role.clone(),
+        company_id:   Some(company.company_id.to_string()),
+        company_name: Some(company.company_name.clone()),
+        company_code: Some(company.company_code.clone()),
+        iat:          now,
+        exp:          now + 60 * 60 * 24,
+    };
+
+    let token = encode(
+        &Header::default(),
+        &new_claims,
+        &EncodingKey::from_secret(state.jwt_secret.as_bytes()),
+    )?;
+
+    Ok(Json(SelectCompanyResponse {
+        token,
+        company_id:   company.company_id,
+        company_name: company.company_name,
+        company_code: company.company_code,
+        role:         company.role,
+    }))
 }

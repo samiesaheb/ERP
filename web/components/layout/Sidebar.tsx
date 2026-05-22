@@ -60,6 +60,7 @@ const ICONS: Record<string, React.ReactElement> = {
   '/production':           <Icon path="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />,
   '/invoicing':            <Icon path="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />,
   '/shipments':            <Icon path="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />,
+  '/companies':            <Icon path="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />,
   '/customers':            <Icon path="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />,
   '/payments':             <Icon path="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />,
   '/users':                <Icon path="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z" />,
@@ -95,6 +96,7 @@ const NAV: NavGroup[] = [
   {
     title: 'Masters',
     items: [
+      { label: 'Companies',        href: '/companies' },
       { label: 'Items',            href: '/items' },
       { label: 'Bill of Materials',href: '/bom' },
       { label: 'Formulations',     href: '/formulations' },
@@ -142,7 +144,7 @@ export default function Sidebar() {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const [role, setRole] = useState<string | null>(null);
-  const { t, lang, setLang, currency, setCurrency } = useAppPrefs();
+  const { t, lang, setLang, currency, setCurrency, darkMode, setDarkMode } = useAppPrefs();
 
   useEffect(() => {
     setRole(getRoleFromCookie());
@@ -162,24 +164,26 @@ export default function Sidebar() {
 
   const toggleCls = (active: boolean) =>
     `text-[10px] px-1.5 py-0.5 rounded font-medium transition-colors ${
-      active ? 'bg-neutral-900 text-white' : 'text-neutral-400 hover:text-neutral-700'
+      active
+        ? 'bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-900'
+        : 'text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200'
     }`;
 
   return (
     <aside
-      className={`${collapsed ? 'w-12' : 'w-56'} shrink-0 border-r-[0.5px] border-neutral-200 bg-neutral-50 h-screen sticky top-0 flex flex-col transition-[width] duration-200`}
+      className={`${collapsed ? 'w-12' : 'w-56'} shrink-0 border-r-[0.5px] border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-950 h-screen sticky top-0 flex flex-col transition-[width] duration-200`}
     >
       {/* Brand */}
-      <div className="px-3 py-5 border-b-[0.5px] border-neutral-200 flex items-center justify-between min-h-[60px]">
+      <div className="px-3 py-5 border-b-[0.5px] border-neutral-200 dark:border-neutral-800 flex items-center justify-between min-h-[60px]">
         {!collapsed && (
           <div>
-            <span className="text-sm font-bold text-neutral-900 tracking-tight">SkyHigh MES</span>
+            <span className="text-sm font-bold text-neutral-900 dark:text-neutral-100 tracking-tight">SkyHigh MES</span>
             <p className="text-[10px] text-neutral-400 mt-0.5 uppercase tracking-wider">Manufacturing</p>
           </div>
         )}
         <button
           onClick={toggle}
-          className={`p-1 rounded hover:bg-neutral-200 text-neutral-400 hover:text-neutral-700 transition-colors ${collapsed ? 'mx-auto' : ''}`}
+          className={`p-1 rounded hover:bg-neutral-200 dark:hover:bg-neutral-800 text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-300 transition-colors ${collapsed ? 'mx-auto' : ''}`}
           title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
           <ChevronIcon collapsed={collapsed} />
@@ -210,11 +214,11 @@ export default function Sidebar() {
                       collapsed ? 'justify-center' : ''
                     } ${
                       active
-                        ? 'bg-neutral-900 text-white font-medium'
-                        : 'text-neutral-500 hover:bg-neutral-200 hover:text-neutral-900'
+                        ? 'bg-neutral-900 text-white font-medium dark:bg-neutral-100 dark:text-neutral-900'
+                        : 'text-neutral-500 hover:bg-neutral-200 hover:text-neutral-900 dark:hover:bg-neutral-800 dark:hover:text-neutral-100'
                     }`}
                   >
-                    <span className={active ? 'text-white' : 'text-neutral-400'}>
+                    <span className={active ? 'text-white dark:text-neutral-900' : 'text-neutral-400'}>
                       {ICONS[item.href]}
                     </span>
                     {!collapsed && t(item.label)}
@@ -227,20 +231,54 @@ export default function Sidebar() {
       </nav>
 
       {/* Footer */}
-      {!collapsed && (
-        <div className="border-t-[0.5px] border-neutral-200 px-3 py-3 space-y-2">
-          <div className="flex items-center gap-1">
-            <button onClick={() => setLang('en')} className={toggleCls(lang === 'en')}>EN</button>
-            <span className="text-neutral-300 text-[10px]">/</span>
-            <button onClick={() => setLang('th')} className={toggleCls(lang === 'th')}>TH</button>
-            <span className="flex-1" />
-            <button onClick={() => setCurrency('THB')} className={toggleCls(currency === 'THB')}>฿</button>
-            <span className="text-neutral-300 text-[10px]">/</span>
-            <button onClick={() => setCurrency('USD')} className={toggleCls(currency === 'USD')}>$</button>
-          </div>
-          <p className="text-[11px] text-neutral-400">Cosmetics OEM · v0.1</p>
-        </div>
-      )}
+      <div className={`border-t-[0.5px] border-neutral-200 dark:border-neutral-800 px-3 py-3 ${collapsed ? 'flex justify-center' : 'space-y-2'}`}>
+        {!collapsed ? (
+          <>
+            <div className="flex items-center gap-1">
+              <button onClick={() => setLang('en')} className={toggleCls(lang === 'en')}>EN</button>
+              <span className="text-neutral-300 dark:text-neutral-700 text-[10px]">/</span>
+              <button onClick={() => setLang('th')} className={toggleCls(lang === 'th')}>TH</button>
+              <span className="flex-1" />
+              <button onClick={() => setCurrency('THB')} className={toggleCls(currency === 'THB')}>฿</button>
+              <span className="text-neutral-300 dark:text-neutral-700 text-[10px]">/</span>
+              <button onClick={() => setCurrency('USD')} className={toggleCls(currency === 'USD')}>$</button>
+              <span className="text-neutral-300 dark:text-neutral-700 text-[10px] mx-0.5">·</span>
+              <button
+                onClick={() => setDarkMode(!darkMode)}
+                className="p-0.5 text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors"
+                title={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+              >
+                {darkMode ? (
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="5" /><line x1="12" y1="1" x2="12" y2="3" /><line x1="12" y1="21" x2="12" y2="23" /><line x1="4.22" y1="4.22" x2="5.64" y2="5.64" /><line x1="18.36" y1="18.36" x2="19.78" y2="19.78" /><line x1="1" y1="12" x2="3" y2="12" /><line x1="21" y1="12" x2="23" y2="12" /><line x1="4.22" y1="19.78" x2="5.64" y2="18.36" /><line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+                  </svg>
+                ) : (
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+                  </svg>
+                )}
+              </button>
+            </div>
+            <p className="text-[11px] text-neutral-400">Cosmetics OEM · v0.1</p>
+          </>
+        ) : (
+          <button
+            onClick={() => setDarkMode(!darkMode)}
+            className="p-1 text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors"
+            title={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+          >
+            {darkMode ? (
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="5" /><line x1="12" y1="1" x2="12" y2="3" /><line x1="12" y1="21" x2="12" y2="23" /><line x1="4.22" y1="4.22" x2="5.64" y2="5.64" /><line x1="18.36" y1="18.36" x2="19.78" y2="19.78" /><line x1="1" y1="12" x2="3" y2="12" /><line x1="21" y1="12" x2="23" y2="12" /><line x1="4.22" y1="19.78" x2="5.64" y2="18.36" /><line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+              </svg>
+            ) : (
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+              </svg>
+            )}
+          </button>
+        )}
+      </div>
     </aside>
   );
 }

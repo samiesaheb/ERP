@@ -1,0 +1,19 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO inventory (id, company_id, item_id, qty_available, qty_reserved, uom_id, lot_number, location)\n           VALUES (gen_random_uuid(), $1, $2, GREATEST(0::numeric, $3), 0, $4, $5, $6)\n           ON CONFLICT (item_id, company_id)\n           DO UPDATE SET qty_available = GREATEST(0::numeric, inventory.qty_available + $3),\n                         lot_number    = COALESCE($5, inventory.lot_number),\n                         location      = COALESCE($6, inventory.location),\n                         last_updated  = NOW()",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Numeric",
+        "Uuid",
+        "Text",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "48c7a4932fbb8e574d54ba4e639942efd84bf0c478e964b1e10b890c175a5092"
+}

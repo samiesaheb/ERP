@@ -1,0 +1,17 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO user_companies (user_id, company_id, role, is_primary)\n         VALUES ($1, $2, $3, $4)\n         ON CONFLICT (user_id, company_id) DO UPDATE SET role = $3, is_primary = $4",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Bool"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "628a11a6fe61b8ad7f569f89ffd2f9a00e76b67765da1927e2676e713ebdb914"
+}

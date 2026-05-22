@@ -7,6 +7,7 @@ use uuid::Uuid;
 
 use crate::{
     error::{AppError, Result},
+    handlers::company_id_from_claims,
     middleware::rbac::{require_role, ADMIN, ADMIN_PLANNER, PRODUCTION_ROLES},
     state::AppState,
 };
@@ -25,12 +26,14 @@ use domain::{
 
 pub async fn list_work_centers(
     State(state): State<AppState>,
+    axum::Extension(claims): axum::Extension<Claims>,
 ) -> Result<Json<Vec<WorkCenter>>> {
-    let rows = sqlx::query_as!(
-        WorkCenter,
+    let cid = company_id_from_claims(&claims)?;
+    let rows = sqlx::query_as::<_, WorkCenter>(
         "SELECT id, code, name, center_type, capacity, status, notes, created_at
-         FROM work_centers ORDER BY code"
+         FROM work_centers WHERE company_id = $1 ORDER BY code",
     )
+    .bind(cid)
     .fetch_all(&state.db)
     .await?;
     Ok(Json(rows))
@@ -42,19 +45,20 @@ pub async fn create_work_center(
     Json(body): Json<CreateWorkCenter>,
 ) -> Result<(StatusCode, Json<WorkCenter>)> {
     require_role(&claims, ADMIN_PLANNER)?;
+    let cid = company_id_from_claims(&claims)?;
     let id = Uuid::new_v4();
-    let row = sqlx::query_as!(
-        WorkCenter,
-        "INSERT INTO work_centers (id, code, name, center_type, capacity, notes)
-         VALUES ($1, $2, $3, $4, $5, $6)
+    let row = sqlx::query_as::<_, WorkCenter>(
+        "INSERT INTO work_centers (id, company_id, code, name, center_type, capacity, notes)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)
          RETURNING id, code, name, center_type, capacity, status, notes, created_at",
-        id,
-        body.code,
-        body.name,
-        body.center_type,
-        body.capacity,
-        body.notes,
     )
+    .bind(id)
+    .bind(cid)
+    .bind(&body.code)
+    .bind(&body.name)
+    .bind(&body.center_type)
+    .bind(body.capacity)
+    .bind(&body.notes)
     .fetch_one(&state.db)
     .await?;
     Ok((StatusCode::CREATED, Json(row)))
@@ -91,7 +95,7 @@ pub async fn update_work_center(
 }
 
 // ---------------------------------------------------------------------------
-// Routing Steps
+// Routing Steps — child of BOM, no company_id column
 // ---------------------------------------------------------------------------
 
 pub async fn list_routing_steps(
@@ -148,7 +152,7 @@ pub async fn delete_routing_step(
 }
 
 // ---------------------------------------------------------------------------
-// QC Tests
+// QC Tests — child of batch, no company_id column
 // ---------------------------------------------------------------------------
 
 pub async fn list_qc_tests(
@@ -227,7 +231,7 @@ pub async fn update_qc_test(
 }
 
 // ---------------------------------------------------------------------------
-// Downtime Events
+// Downtime Events — child of batch, no company_id column
 // ---------------------------------------------------------------------------
 
 pub async fn list_downtime_events(
@@ -309,22 +313,23 @@ pub async fn list_access_requests(
     State(state): State<AppState>,
     axum::Extension(claims): axum::Extension<Claims>,
 ) -> Result<Json<Vec<AccessRequest>>> {
+    let cid = company_id_from_claims(&claims)?;
     let rows = if claims.role == "admin" {
-        sqlx::query_as!(
-            AccessRequest,
+        sqlx::query_as::<_, AccessRequest>(
             "SELECT id, user_id, permission, reason, status, reviewed_by, reviewed_at, created_at
-             FROM access_requests ORDER BY created_at DESC"
+             FROM access_requests WHERE company_id = $1 ORDER BY created_at DESC",
         )
+        .bind(cid)
         .fetch_all(&state.db)
         .await?
     } else {
         let uid: Uuid = claims.sub.parse().map_err(|_| AppError::NotFound("Invalid user id".into()))?;
-        sqlx::query_as!(
-            AccessRequest,
+        sqlx::query_as::<_, AccessRequest>(
             "SELECT id, user_id, permission, reason, status, reviewed_by, reviewed_at, created_at
-             FROM access_requests WHERE user_id = $1 ORDER BY created_at DESC",
-            uid
+             FROM access_requests WHERE company_id = $1 AND user_id = $2 ORDER BY created_at DESC",
         )
+        .bind(cid)
+        .bind(uid)
         .fetch_all(&state.db)
         .await?
     };
@@ -336,18 +341,19 @@ pub async fn create_access_request(
     axum::Extension(claims): axum::Extension<Claims>,
     Json(body): Json<CreateAccessRequest>,
 ) -> Result<(StatusCode, Json<AccessRequest>)> {
+    let cid = company_id_from_claims(&claims)?;
     let id = Uuid::new_v4();
     let uid: Uuid = claims.sub.parse().map_err(|_| AppError::NotFound("Invalid user id".into()))?;
-    let row = sqlx::query_as!(
-        AccessRequest,
-        "INSERT INTO access_requests (id, user_id, permission, reason)
-         VALUES ($1, $2, $3, $4)
+    let row = sqlx::query_as::<_, AccessRequest>(
+        "INSERT INTO access_requests (id, company_id, user_id, permission, reason)
+         VALUES ($1, $2, $3, $4, $5)
          RETURNING id, user_id, permission, reason, status, reviewed_by, reviewed_at, created_at",
-        id,
-        uid,
-        body.permission,
-        body.reason,
     )
+    .bind(id)
+    .bind(cid)
+    .bind(uid)
+    .bind(&body.permission)
+    .bind(&body.reason)
     .fetch_one(&state.db)
     .await?;
     Ok((StatusCode::CREATED, Json(row)))

@@ -2,12 +2,14 @@ use axum::{extract::{Path, State}, http::StatusCode, Json};
 use rust_decimal::Decimal;
 use uuid::Uuid;
 
-use crate::{error::Result, state::AppState};
-use domain::{CycleCount, CreateInventoryTransaction, InventoryTransaction, InventoryWithItem};
+use crate::{error::Result, handlers::company_id_from_claims, state::AppState};
+use domain::{Claims, CycleCount, CreateInventoryTransaction, InventoryTransaction, InventoryWithItem};
 
 pub async fn list_inventory(
     State(state): State<AppState>,
+    axum::Extension(claims): axum::Extension<Claims>,
 ) -> Result<Json<Vec<InventoryWithItem>>> {
+    let cid = company_id_from_claims(&claims)?;
     let rows = sqlx::query!(
         r#"SELECT i.id, i.item_id,
                   it.item_code,
@@ -22,7 +24,9 @@ pub async fn list_inventory(
                   it.reorder_point
            FROM inventory i
            JOIN items it ON it.id = i.item_id
-           ORDER BY it.item_code"#
+           WHERE i.company_id = $1
+           ORDER BY it.item_code"#,
+        cid
     )
     .fetch_all(&state.db)
     .await?;
@@ -55,23 +59,26 @@ pub async fn list_inventory(
 
 pub async fn transact_inventory(
     State(state): State<AppState>,
+    axum::Extension(claims): axum::Extension<Claims>,
     Json(body): Json<CreateInventoryTransaction>,
 ) -> Result<(StatusCode, Json<InventoryTransaction>)> {
+    let cid = company_id_from_claims(&claims)?;
     let delta: Decimal = match body.transaction_type.as_str() {
         "receipt" | "return" => body.qty,
         "issue" | "loss" | "conversion" => -body.qty,
-        _ => body.qty, // adjustment: signed qty
+        _ => body.qty,
     };
 
     let uom_id = body.uom_id.unwrap_or_else(Uuid::new_v4);
     sqlx::query!(
-        r#"INSERT INTO inventory (id, item_id, qty_available, qty_reserved, uom_id, lot_number, location)
-           VALUES (gen_random_uuid(), $1, GREATEST(0::numeric, $2), 0, $3, $4, $5)
-           ON CONFLICT (item_id)
-           DO UPDATE SET qty_available = GREATEST(0::numeric, inventory.qty_available + $2),
-                         lot_number    = COALESCE($4, inventory.lot_number),
-                         location      = COALESCE($5, inventory.location),
+        r#"INSERT INTO inventory (id, company_id, item_id, qty_available, qty_reserved, uom_id, lot_number, location)
+           VALUES (gen_random_uuid(), $1, $2, GREATEST(0::numeric, $3), 0, $4, $5, $6)
+           ON CONFLICT (item_id, company_id)
+           DO UPDATE SET qty_available = GREATEST(0::numeric, inventory.qty_available + $3),
+                         lot_number    = COALESCE($5, inventory.lot_number),
+                         location      = COALESCE($6, inventory.location),
                          last_updated  = NOW()"#,
+        cid,
         body.item_id,
         delta,
         uom_id,
@@ -119,33 +126,32 @@ pub async fn list_inventory_transactions(
     Ok(Json(rows))
 }
 
-/// POST /api/v1/inventory/:item_id/cycle-count
-/// Records a physical count: creates an adjustment transaction for the delta
-/// and stamps last_counted_at on the inventory row.
 pub async fn cycle_count(
     State(state): State<AppState>,
+    axum::Extension(claims): axum::Extension<Claims>,
     Path(item_id): Path<Uuid>,
     Json(body): Json<CycleCount>,
 ) -> Result<Json<InventoryTransaction>> {
-    // Read current balance
+    let cid = company_id_from_claims(&claims)?;
     let current = sqlx::query!(
-        "SELECT qty_available, uom_id FROM inventory WHERE item_id = $1",
-        item_id
+        "SELECT qty_available, uom_id FROM inventory WHERE item_id = $1 AND company_id = $2",
+        item_id,
+        cid,
     )
     .fetch_one(&state.db)
     .await?;
 
     let delta = body.counted_qty - current.qty_available;
 
-    // Update the balance and stamp the count timestamp
     sqlx::query!(
         r#"UPDATE inventory
-           SET qty_available  = $2,
+           SET qty_available   = $2,
                last_counted_at = NOW(),
                last_updated    = NOW()
-           WHERE item_id = $1"#,
+           WHERE item_id = $1 AND company_id = $3"#,
         item_id,
         body.counted_qty,
+        cid,
     )
     .execute(&state.db)
     .await?;

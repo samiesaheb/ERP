@@ -8,8 +8,8 @@ interface TopbarProps {
 
 export default function Topbar({ title, action }: TopbarProps) {
   return (
-    <div className="flex items-center justify-between px-6 py-4 border-b-[0.5px] border-neutral-200 bg-white">
-      <h1 className="text-base font-semibold text-neutral-900">{title}</h1>
+    <div className="flex items-center justify-between px-6 py-4 border-b-[0.5px] border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950">
+      <h1 className="text-base font-semibold text-neutral-900 dark:text-neutral-100">{title}</h1>
       <div className="flex items-center gap-3">
         <GlobalSearch />
         {action && <div>{action}</div>}

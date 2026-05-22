@@ -8,10 +8,11 @@ use uuid::Uuid;
 
 use crate::{
     error::{AppError, Result},
+    handlers::company_id_from_claims,
     state::AppState,
 };
 use domain::{
-    CreateFormulation, CreateIngredient, FormulationLineOut, FormulationOut, FormulationRow,
+    Claims, CreateFormulation, CreateIngredient, FormulationLineOut, FormulationOut, FormulationRow,
     Ingredient, IngredientDetail, PatchFormulation, ProductDetail, ProductOut,
 };
 
@@ -87,13 +88,14 @@ async fn fetch_formulation(state: &AppState, id: Uuid) -> Result<FormulationOut>
 
 pub async fn list_formulations(
     State(state): State<AppState>,
+    axum::Extension(claims): axum::Extension<Claims>,
 ) -> Result<Json<Vec<FormulationOut>>> {
-    let rows = sqlx::query_as!(
-        FormulationRow,
+    let cid = company_id_from_claims(&claims)?;
+    let rows = sqlx::query_as::<_, FormulationRow>(
         "SELECT id, item_id, version, is_active, note, batch_qty, batch_unit, procedures
-         FROM formulations
-         ORDER BY item_id, version"
+         FROM formulations WHERE company_id = $1 ORDER BY item_id, version",
     )
+    .bind(cid)
     .fetch_all(&state.db)
     .await?;
 
@@ -176,15 +178,18 @@ pub async fn get_formulation(
 
 pub async fn create_formulation(
     State(state): State<AppState>,
+    axum::Extension(claims): axum::Extension<Claims>,
     Json(body): Json<CreateFormulation>,
 ) -> Result<(StatusCode, Json<FormulationOut>)> {
+    let cid = company_id_from_claims(&claims)?;
     let id = Uuid::new_v4();
     let batch_qty = body.batch_qty.unwrap_or_else(|| rust_decimal::Decimal::from(100));
     let batch_unit = body.batch_unit.clone().unwrap_or_else(|| "g".to_string());
     sqlx::query!(
-        "INSERT INTO formulations (id, item_id, version, is_active, note, batch_qty, batch_unit, procedures)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
+        "INSERT INTO formulations (id, company_id, item_id, version, is_active, note, batch_qty, batch_unit, procedures)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)",
         id,
+        cid,
         body.product,
         body.version,
         body.is_active,
@@ -219,7 +224,6 @@ pub async fn patch_formulation(
     Path(id): Path<Uuid>,
     Json(body): Json<PatchFormulation>,
 ) -> Result<Json<FormulationOut>> {
-    // Verify exists
     let exists = sqlx::query_scalar!(
         "SELECT EXISTS(SELECT 1 FROM formulations WHERE id = $1)",
         id
@@ -295,11 +299,13 @@ pub async fn delete_formulation(
 
 pub async fn list_ingredients(
     State(state): State<AppState>,
+    axum::Extension(claims): axum::Extension<Claims>,
 ) -> Result<Json<Vec<Ingredient>>> {
-    let rows = sqlx::query_as!(
-        Ingredient,
-        "SELECT id, code, inci_name, is_active FROM ingredients WHERE is_active = TRUE ORDER BY code"
+    let cid = company_id_from_claims(&claims)?;
+    let rows = sqlx::query_as::<_, Ingredient>(
+        "SELECT id, code, inci_name, is_active FROM ingredients WHERE company_id = $1 AND is_active = TRUE ORDER BY code",
     )
+    .bind(cid)
     .fetch_all(&state.db)
     .await?;
     Ok(Json(rows))
@@ -307,17 +313,19 @@ pub async fn list_ingredients(
 
 pub async fn create_ingredient(
     State(state): State<AppState>,
+    axum::Extension(claims): axum::Extension<Claims>,
     Json(body): Json<CreateIngredient>,
 ) -> Result<(StatusCode, Json<Ingredient>)> {
+    let cid = company_id_from_claims(&claims)?;
     let id = Uuid::new_v4();
-    let row = sqlx::query_as!(
-        Ingredient,
-        "INSERT INTO ingredients (id, code, inci_name) VALUES ($1, $2, $3)
+    let row = sqlx::query_as::<_, Ingredient>(
+        "INSERT INTO ingredients (id, company_id, code, inci_name) VALUES ($1, $2, $3, $4)
          RETURNING id, code, inci_name, is_active",
-        id,
-        body.code,
-        body.inci_name,
     )
+    .bind(id)
+    .bind(cid)
+    .bind(&body.code)
+    .bind(&body.inci_name)
     .fetch_one(&state.db)
     .await?;
     Ok((StatusCode::CREATED, Json(row)))
@@ -329,9 +337,12 @@ pub async fn create_ingredient(
 
 pub async fn list_products(
     State(state): State<AppState>,
+    axum::Extension(claims): axum::Extension<Claims>,
 ) -> Result<Json<Vec<ProductOut>>> {
+    let cid = company_id_from_claims(&claims)?;
     let rows = sqlx::query!(
-        "SELECT id, item_code, description, item_type FROM items WHERE is_active = TRUE ORDER BY item_code"
+        "SELECT id, item_code, description, item_type FROM items WHERE company_id = $1 AND is_active = TRUE ORDER BY item_code",
+        cid
     )
     .fetch_all(&state.db)
     .await?;

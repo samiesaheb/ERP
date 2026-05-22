@@ -5,7 +5,7 @@ use axum::{
 };
 
 use crate::{
-    handlers::{audit, artwork, auth, bom, dashboard, finance, formulation, inventory, locations, masters, procurement, production, sales, search, shipments, shop_floor},
+    handlers::{audit, artwork, auth, bom, company, dashboard, finance, formulation, inventory, locations, masters, procurement, production, sales, search, shipments, shop_floor, tax, warehouses},
     middleware::auth::require_auth,
     state::AppState,
 };
@@ -13,13 +13,19 @@ use crate::{
 pub fn build_router(state: AppState) -> Router {
     let public = Router::new()
         .route("/health", get(health))
-        .route("/auth/login", post(auth::login));
+        .route("/auth/login", post(auth::login))
+        .route("/auth/google", get(auth::google_login))
+        .route("/auth/google/callback", get(auth::google_callback));
 
     let protected = Router::new()
+        // Auth (requires valid JWT)
+        .route("/auth/select-company", post(auth::select_company))
+
         // Users
-        .route("/api/v1/users/me", get(auth::get_me))
-        .route("/api/v1/users",    get(auth::list_users).post(auth::create_user))
-        .route("/api/v1/users/:id", put(auth::update_user).delete(auth::delete_user))
+        .route("/api/v1/users/me",          get(auth::get_me))
+        .route("/api/v1/users/me/companies", get(auth::get_my_companies))
+        .route("/api/v1/users",             get(auth::list_users).post(auth::create_user))
+        .route("/api/v1/users/:id",         put(auth::update_user).delete(auth::delete_user))
 
         // Dashboard
         .route("/api/v1/dashboard/kpis", get(dashboard::get_dashboard))
@@ -168,6 +174,44 @@ pub fn build_router(state: AppState) -> Router {
             get(shop_floor::list_access_requests).post(shop_floor::create_access_request))
         .route("/api/v1/access-requests/:id",
             put(shop_floor::update_access_request))
+
+        // Companies
+        .route("/api/v1/companies",
+            get(company::list_companies).post(company::create_company))
+        .route("/api/v1/companies/:id",
+            put(company::update_company))
+        .route("/api/v1/companies/:id/users",
+            get(company::list_company_users).post(company::add_user_to_company))
+        .route("/api/v1/companies/:company_id/users/:user_id",
+            delete(company::remove_user_from_company))
+
+        // Company Groups
+        .route("/api/v1/company-groups",
+            get(company::list_company_groups).post(company::create_company_group))
+        .route("/api/v1/company-groups/:id",
+            put(company::update_company_group))
+        .route("/api/v1/company-group-members",
+            get(company::list_group_members))
+        .route("/api/v1/company-groups/:id/members",
+            post(company::add_company_to_group))
+        .route("/api/v1/company-groups/:group_id/members/:company_id",
+            delete(company::remove_company_from_group))
+
+        // Tax Rates
+        .route("/api/v1/tax-rates",
+            get(tax::list_tax_rates).post(tax::create_tax_rate))
+        .route("/api/v1/tax-rates/:id",
+            get(tax::get_tax_rate).put(tax::update_tax_rate))
+
+        // Warehouses
+        .route("/api/v1/warehouses",
+            get(warehouses::list_warehouses).post(warehouses::create_warehouse))
+        .route("/api/v1/warehouses/:id",
+            get(warehouses::get_warehouse).put(warehouses::update_warehouse))
+        .route("/api/v1/warehouses/:warehouse_id/zones",
+            get(warehouses::list_zones).post(warehouses::create_zone))
+        .route("/api/v1/warehouses/:warehouse_id/zones/:zone_id",
+            put(warehouses::update_zone))
 
         // Finance
         .route("/api/v1/invoices",

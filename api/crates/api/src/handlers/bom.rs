@@ -10,16 +10,21 @@ use uuid::Uuid;
 
 use crate::{
     error::{AppError, Result},
+    handlers::company_id_from_claims,
     state::AppState,
 };
-use domain::{Bom, BomExplosionLine, BomExplosionResult, BomLine, CreateBom, CreateBomLine};
+use domain::{Claims, Bom, BomExplosionLine, BomExplosionResult, BomLine, CreateBom, CreateBomLine};
 
-pub async fn list_boms(State(state): State<AppState>) -> Result<Json<Vec<Bom>>> {
-    let rows = sqlx::query_as!(
-        Bom,
+pub async fn list_boms(
+    State(state): State<AppState>,
+    axum::Extension(claims): axum::Extension<Claims>,
+) -> Result<Json<Vec<Bom>>> {
+    let cid = company_id_from_claims(&claims)?;
+    let rows = sqlx::query_as::<_, Bom>(
         "SELECT id, finished_good_id, description, version, is_active, created_at
-         FROM boms ORDER BY version DESC"
+         FROM boms WHERE company_id = $1 ORDER BY version DESC",
     )
+    .bind(cid)
     .fetch_all(&state.db)
     .await?;
     Ok(Json(rows))
@@ -43,19 +48,21 @@ pub async fn get_bom(
 
 pub async fn create_bom(
     State(state): State<AppState>,
+    axum::Extension(claims): axum::Extension<Claims>,
     Json(body): Json<CreateBom>,
 ) -> Result<(StatusCode, Json<Bom>)> {
+    let cid = company_id_from_claims(&claims)?;
     let id = Uuid::new_v4();
-    let row = sqlx::query_as!(
-        Bom,
-        "INSERT INTO boms (id, finished_good_id, description, version, is_active)
-         VALUES ($1, $2, $3, $4, TRUE)
+    let row = sqlx::query_as::<_, Bom>(
+        "INSERT INTO boms (id, company_id, finished_good_id, description, version, is_active)
+         VALUES ($1, $2, $3, $4, $5, TRUE)
          RETURNING id, finished_good_id, description, version, is_active, created_at",
-        id,
-        body.finished_good_id,
-        body.description,
-        body.version,
     )
+    .bind(id)
+    .bind(cid)
+    .bind(body.finished_good_id)
+    .bind(&body.description)
+    .bind(body.version)
     .fetch_one(&state.db)
     .await?;
     Ok((StatusCode::CREATED, Json(row)))
@@ -135,9 +142,11 @@ pub struct ExplodeQuery {
 
 pub async fn explode_bom(
     State(state): State<AppState>,
+    axum::Extension(claims): axum::Extension<Claims>,
     Path(id): Path<Uuid>,
     Query(q): Query<ExplodeQuery>,
 ) -> Result<Json<BomExplosionResult>> {
+    let cid = company_id_from_claims(&claims)?;
     let bom = sqlx::query_as!(
         Bom,
         "SELECT id, finished_good_id, description, version, is_active, created_at
@@ -150,7 +159,6 @@ pub async fn explode_bom(
 
     let target_qty = q.target_qty.unwrap_or(Decimal::ONE);
 
-    // Pre-fetch all BOM lines
     let all_lines = sqlx::query!(
         "SELECT id, bom_id, component_item_id, qty_required, uom_id FROM bom_lines"
     )
@@ -162,10 +170,12 @@ pub async fn explode_bom(
         lines_by_bom.entry(line.bom_id).or_default().push(line);
     }
 
-    // Active BOM per finished_good_id
-    let sub_boms = sqlx::query!("SELECT id, finished_good_id FROM boms WHERE is_active = TRUE")
-        .fetch_all(&state.db)
-        .await?;
+    let sub_boms = sqlx::query!(
+        "SELECT id, finished_good_id FROM boms WHERE company_id = $1 AND is_active = TRUE",
+        cid
+    )
+    .fetch_all(&state.db)
+    .await?;
     let sub_bom_map: HashMap<Uuid, Uuid> = sub_boms
         .iter()
         .map(|r| (r.finished_good_id, r.id))
@@ -228,7 +238,8 @@ pub async fn explode_bom(
         uom_data.iter().map(|r| (r.component_item_id, r.uom_code.clone())).collect();
 
     let inv_data = sqlx::query!(
-        "SELECT item_id, qty_available, qty_reserved FROM inventory WHERE item_id = ANY($1)",
+        "SELECT item_id, qty_available, qty_reserved FROM inventory WHERE company_id = $1 AND item_id = ANY($2)",
+        cid,
         &item_ids
     )
     .fetch_all(&state.db)

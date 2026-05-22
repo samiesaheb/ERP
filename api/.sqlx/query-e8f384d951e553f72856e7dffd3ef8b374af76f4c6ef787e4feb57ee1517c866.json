@@ -1,0 +1,35 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT item_id, qty_available, qty_reserved FROM inventory WHERE company_id = $1 AND item_id = ANY($2)",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "item_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "qty_available",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 2,
+        "name": "qty_reserved",
+        "type_info": "Numeric"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "UuidArray"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "e8f384d951e553f72856e7dffd3ef8b374af76f4c6ef787e4feb57ee1517c866"
+}

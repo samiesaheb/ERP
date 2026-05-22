@@ -20,7 +20,7 @@ const DOT: Record<string, string> = {
 
 export default function KpiCard({ label, value, sub, accent, menuItems }: KpiCardProps) {
   return (
-    <div className="bg-white px-5 py-5 flex flex-col justify-between min-h-[110px] h-full">
+    <div className="bg-white dark:bg-neutral-900 px-5 py-5 flex flex-col justify-between min-h-[110px] h-full">
       <div className="flex items-center gap-1.5 min-w-0">
         {menuItems && menuItems.length > 0 && (
           <DropdownMenu items={menuItems} align="left" triggerClassName="-ml-1 -mt-1 shrink-0" />
@@ -31,7 +31,7 @@ export default function KpiCard({ label, value, sub, accent, menuItems }: KpiCar
         </p>
       </div>
       <div>
-        <p className="text-3xl font-bold text-neutral-900 tabular-nums leading-none">
+        <p className="text-3xl font-bold text-neutral-900 dark:text-neutral-100 tabular-nums leading-none">
           {value}
         </p>
         {sub && <p className="mt-1 text-xs text-neutral-400">{sub}</p>}

@@ -8,6 +8,7 @@ use uuid::Uuid;
 
 use crate::{
     error::{AppError, Result},
+    handlers::company_id_from_claims,
     middleware::rbac::{require_role, ADMIN_PLANNER, ADMIN_PLANNER_SUPERVISOR, PRODUCTION_ROLES},
     state::AppState,
 };
@@ -24,29 +25,31 @@ pub struct MoQuery {
 
 pub async fn list_manufacturing_orders(
     State(state): State<AppState>,
+    axum::Extension(claims): axum::Extension<Claims>,
     Query(q): Query<MoQuery>,
 ) -> Result<Json<Vec<ManufacturingOrder>>> {
+    let cid = company_id_from_claims(&claims)?;
     let rows = match q.status.as_deref() {
         Some(s) => {
-            sqlx::query_as!(
-                ManufacturingOrder,
+            sqlx::query_as::<_, ManufacturingOrder>(
                 "SELECT id, mo_number, sales_order_id, item_id, bom_id, status,
                         qty_planned, qty_produced, uom_id, planned_start, planned_end,
                         actual_start, actual_end, notes, created_at
-                 FROM manufacturing_orders WHERE status = $1 ORDER BY created_at DESC",
-                s
+                 FROM manufacturing_orders WHERE company_id = $1 AND status = $2 ORDER BY created_at DESC",
             )
+            .bind(cid)
+            .bind(s)
             .fetch_all(&state.db)
             .await?
         }
         None => {
-            sqlx::query_as!(
-                ManufacturingOrder,
+            sqlx::query_as::<_, ManufacturingOrder>(
                 "SELECT id, mo_number, sales_order_id, item_id, bom_id, status,
                         qty_planned, qty_produced, uom_id, planned_start, planned_end,
                         actual_start, actual_end, notes, created_at
-                 FROM manufacturing_orders ORDER BY created_at DESC"
+                 FROM manufacturing_orders WHERE company_id = $1 ORDER BY created_at DESC",
             )
+            .bind(cid)
             .fetch_all(&state.db)
             .await?
         }
@@ -78,33 +81,35 @@ pub async fn create_manufacturing_order(
     Json(body): Json<CreateManufacturingOrder>,
 ) -> Result<(StatusCode, Json<ManufacturingOrder>)> {
     require_role(&claims, ADMIN_PLANNER)?;
-    let count = sqlx::query_scalar!("SELECT COUNT(*) FROM manufacturing_orders")
+    let cid = company_id_from_claims(&claims)?;
+    let count: i64 = sqlx::query_scalar::<_, Option<i64>>("SELECT COUNT(*) FROM manufacturing_orders WHERE company_id = $1")
+        .bind(cid)
         .fetch_one(&state.db)
         .await?
         .unwrap_or(0);
     let mo_number = format!("MO-{}-{:04}", chrono::Utc::now().format("%Y"), count + 1);
     let id = Uuid::new_v4();
 
-    let row = sqlx::query_as!(
-        ManufacturingOrder,
+    let row = sqlx::query_as::<_, ManufacturingOrder>(
         "INSERT INTO manufacturing_orders
-             (id, mo_number, sales_order_id, item_id, bom_id, qty_planned, uom_id,
+             (id, company_id, mo_number, sales_order_id, item_id, bom_id, qty_planned, uom_id,
               planned_start, planned_end, notes)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
          RETURNING id, mo_number, sales_order_id, item_id, bom_id, status,
                    qty_planned, qty_produced, uom_id, planned_start, planned_end,
                    actual_start, actual_end, notes, created_at",
-        id,
-        mo_number,
-        body.sales_order_id,
-        body.item_id,
-        body.bom_id,
-        body.qty_planned,
-        body.uom_id,
-        body.planned_start,
-        body.planned_end,
-        body.notes,
     )
+    .bind(id)
+    .bind(cid)
+    .bind(&mo_number)
+    .bind(body.sales_order_id)
+    .bind(body.item_id)
+    .bind(body.bom_id)
+    .bind(body.qty_planned)
+    .bind(body.uom_id)
+    .bind(body.planned_start)
+    .bind(body.planned_end)
+    .bind(&body.notes)
     .fetch_one(&state.db)
     .await?;
 
@@ -208,17 +213,19 @@ pub async fn update_manufacturing_order(
 
 pub async fn list_production_batches(
     State(state): State<AppState>,
+    axum::Extension(claims): axum::Extension<Claims>,
 ) -> Result<Json<Vec<ProductionBatch>>> {
-    let rows = sqlx::query_as!(
-        ProductionBatch,
+    let cid = company_id_from_claims(&claims)?;
+    let rows = sqlx::query_as::<_, ProductionBatch>(
         "SELECT id, batch_number, manufacturing_order_id, bom_id, status,
                 qty_bulk_produced, qty_filled, qty_packed, uom_id,
                 bulk_start, bulk_end, fill_start, fill_end, pack_start, pack_end,
                 notes, created_at
          FROM production_batches
-         WHERE status != 'completed'
-         ORDER BY created_at DESC"
+         WHERE company_id = $1 AND status != 'completed'
+         ORDER BY created_at DESC",
     )
+    .bind(cid)
     .fetch_all(&state.db)
     .await?;
     Ok(Json(rows))
@@ -248,6 +255,7 @@ pub async fn create_production_batch(
     Path(mo_id): Path<Uuid>,
 ) -> Result<(StatusCode, Json<ProductionBatch>)> {
     require_role(&claims, ADMIN_PLANNER_SUPERVISOR)?;
+    let cid = company_id_from_claims(&claims)?;
     let mo = sqlx::query!(
         "SELECT mo_number, bom_id, uom_id FROM manufacturing_orders WHERE id = $1",
         mo_id
@@ -256,10 +264,10 @@ pub async fn create_production_batch(
     .await?
     .ok_or_else(|| AppError::NotFound(format!("Manufacturing order {mo_id} not found")))?;
 
-    let count = sqlx::query_scalar!(
+    let count: i64 = sqlx::query_scalar::<_, Option<i64>>(
         "SELECT COUNT(*) FROM production_batches WHERE manufacturing_order_id = $1",
-        mo_id
     )
+    .bind(mo_id)
     .fetch_one(&state.db)
     .await?
     .unwrap_or(0);
@@ -267,20 +275,20 @@ pub async fn create_production_batch(
     let batch_number = format!("BATCH-{}-{:03}", mo.mo_number, count + 1);
     let id = Uuid::new_v4();
 
-    let row = sqlx::query_as!(
-        ProductionBatch,
-        "INSERT INTO production_batches (id, batch_number, manufacturing_order_id, bom_id, uom_id)
-         VALUES ($1, $2, $3, $4, $5)
+    let row = sqlx::query_as::<_, ProductionBatch>(
+        "INSERT INTO production_batches (id, company_id, batch_number, manufacturing_order_id, bom_id, uom_id)
+         VALUES ($1, $2, $3, $4, $5, $6)
          RETURNING id, batch_number, manufacturing_order_id, bom_id, status,
                    qty_bulk_produced, qty_filled, qty_packed, uom_id,
                    bulk_start, bulk_end, fill_start, fill_end, pack_start, pack_end,
                    notes, created_at",
-        id,
-        batch_number,
-        mo_id,
-        mo.bom_id,
-        mo.uom_id,
     )
+    .bind(id)
+    .bind(cid)
+    .bind(&batch_number)
+    .bind(mo_id)
+    .bind(mo.bom_id)
+    .bind(mo.uom_id)
     .fetch_one(&state.db)
     .await?;
     Ok((StatusCode::CREATED, Json(row)))
@@ -317,7 +325,6 @@ pub async fn update_production_batch(
     let new_qty_packed = body.qty_packed.or(existing.qty_packed);
     let new_notes = body.notes.or(existing.notes);
 
-    // Auto-set timestamps based on stage transitions
     let bulk_start = if new_status == "bulk_production" && existing.bulk_start.is_none() {
         Some(now)
     } else {
@@ -387,7 +394,7 @@ pub async fn update_production_batch(
 }
 
 // ---------------------------------------------------------------------------
-// Batch Component Issues
+// Batch Component Issues — child table, scoped by batch
 // ---------------------------------------------------------------------------
 
 pub async fn list_batch_issues(
@@ -407,9 +414,11 @@ pub async fn list_batch_issues(
 
 pub async fn create_batch_issue(
     State(state): State<AppState>,
+    axum::Extension(claims): axum::Extension<Claims>,
     Path(batch_id): Path<Uuid>,
     Json(body): Json<CreateBatchComponentIssue>,
 ) -> Result<(StatusCode, Json<BatchComponentIssue>)> {
+    let cid = company_id_from_claims(&claims)?;
     let id = Uuid::new_v4();
     let row = sqlx::query_as!(
         BatchComponentIssue,
@@ -426,12 +435,12 @@ pub async fn create_batch_issue(
     .fetch_one(&state.db)
     .await?;
 
-    // Deduct from inventory
     sqlx::query!(
         "UPDATE inventory SET qty_available = GREATEST(0, qty_available - $1)
-         WHERE item_id = $2",
+         WHERE item_id = $2 AND company_id = $3",
         body.qty_issued,
         body.item_id,
+        cid,
     )
     .execute(&state.db)
     .await?;
@@ -445,13 +454,15 @@ pub async fn create_batch_issue(
 
 pub async fn list_production_plans(
     State(state): State<AppState>,
+    axum::Extension(claims): axum::Extension<Claims>,
 ) -> Result<Json<Vec<ProductionPlan>>> {
-    let rows = sqlx::query_as!(
-        ProductionPlan,
+    let cid = company_id_from_claims(&claims)?;
+    let rows = sqlx::query_as::<_, ProductionPlan>(
         "SELECT id, plan_date, manufacturing_order_id, purchase_order_id,
                 planned_qty, notes, created_by, created_at
-         FROM production_plans ORDER BY plan_date DESC",
+         FROM production_plans WHERE company_id = $1 ORDER BY plan_date DESC",
     )
+    .bind(cid)
     .fetch_all(&state.db)
     .await?;
     Ok(Json(rows))
@@ -459,23 +470,25 @@ pub async fn list_production_plans(
 
 pub async fn create_production_plan(
     State(state): State<AppState>,
+    axum::Extension(claims): axum::Extension<Claims>,
     Json(body): Json<CreateProductionPlan>,
 ) -> Result<(StatusCode, Json<ProductionPlan>)> {
+    let cid = company_id_from_claims(&claims)?;
     let id = Uuid::new_v4();
-    let row = sqlx::query_as!(
-        ProductionPlan,
+    let row = sqlx::query_as::<_, ProductionPlan>(
         "INSERT INTO production_plans
-             (id, plan_date, manufacturing_order_id, purchase_order_id, planned_qty, notes)
-         VALUES ($1, $2, $3, $4, $5, $6)
+             (id, company_id, plan_date, manufacturing_order_id, purchase_order_id, planned_qty, notes)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)
          RETURNING id, plan_date, manufacturing_order_id, purchase_order_id,
                    planned_qty, notes, created_by, created_at",
-        id,
-        body.plan_date,
-        body.manufacturing_order_id,
-        body.purchase_order_id,
-        body.planned_qty,
-        body.notes,
     )
+    .bind(id)
+    .bind(cid)
+    .bind(body.plan_date)
+    .bind(body.manufacturing_order_id)
+    .bind(body.purchase_order_id)
+    .bind(body.planned_qty)
+    .bind(&body.notes)
     .fetch_one(&state.db)
     .await?;
     Ok((StatusCode::CREATED, Json(row)))

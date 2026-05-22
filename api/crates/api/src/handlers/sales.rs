@@ -8,6 +8,7 @@ use uuid::Uuid;
 
 use crate::{
     error::{AppError, Result},
+    handlers::company_id_from_claims,
     middleware::rbac::{require_role, SALES_ROLES},
     state::AppState,
 };
@@ -21,51 +22,54 @@ pub struct SoQuery {
 
 pub async fn list_sales_orders(
     State(state): State<AppState>,
+    axum::Extension(claims): axum::Extension<Claims>,
     Query(q): Query<SoQuery>,
 ) -> Result<Json<Vec<SalesOrder>>> {
+    let cid = company_id_from_claims(&claims)?;
     let rows = match (q.status.as_deref(), q.customer_id) {
-        (Some(s), Some(cid)) => {
-            sqlx::query_as!(
-                SalesOrder,
+        (Some(s), Some(cust)) => {
+            sqlx::query_as::<_, SalesOrder>(
                 "SELECT id, order_number, customer_id, country_id, status, artwork_status,
                         fda_required, fda_status, total_pieces, order_date, required_date, notes, created_at
                  FROM sales_orders
-                 WHERE status = $1 AND customer_id = $2
+                 WHERE company_id = $1 AND status = $2 AND customer_id = $3
                  ORDER BY created_at DESC",
-                s, cid
             )
+            .bind(cid)
+            .bind(s)
+            .bind(cust)
             .fetch_all(&state.db)
             .await?
         }
         (Some(s), None) => {
-            sqlx::query_as!(
-                SalesOrder,
+            sqlx::query_as::<_, SalesOrder>(
                 "SELECT id, order_number, customer_id, country_id, status, artwork_status,
                         fda_required, fda_status, total_pieces, order_date, required_date, notes, created_at
-                 FROM sales_orders WHERE status = $1 ORDER BY created_at DESC",
-                s
+                 FROM sales_orders WHERE company_id = $1 AND status = $2 ORDER BY created_at DESC",
             )
+            .bind(cid)
+            .bind(s)
             .fetch_all(&state.db)
             .await?
         }
-        (None, Some(cid)) => {
-            sqlx::query_as!(
-                SalesOrder,
+        (None, Some(cust)) => {
+            sqlx::query_as::<_, SalesOrder>(
                 "SELECT id, order_number, customer_id, country_id, status, artwork_status,
                         fda_required, fda_status, total_pieces, order_date, required_date, notes, created_at
-                 FROM sales_orders WHERE customer_id = $1 ORDER BY created_at DESC",
-                cid
+                 FROM sales_orders WHERE company_id = $1 AND customer_id = $2 ORDER BY created_at DESC",
             )
+            .bind(cid)
+            .bind(cust)
             .fetch_all(&state.db)
             .await?
         }
         (None, None) => {
-            sqlx::query_as!(
-                SalesOrder,
+            sqlx::query_as::<_, SalesOrder>(
                 "SELECT id, order_number, customer_id, country_id, status, artwork_status,
                         fda_required, fda_status, total_pieces, order_date, required_date, notes, created_at
-                 FROM sales_orders ORDER BY created_at DESC"
+                 FROM sales_orders WHERE company_id = $1 ORDER BY created_at DESC",
             )
+            .bind(cid)
             .fetch_all(&state.db)
             .await?
         }
@@ -96,8 +100,10 @@ pub async fn create_sales_order(
     Json(body): Json<CreateSalesOrder>,
 ) -> Result<(StatusCode, Json<SalesOrder>)> {
     require_role(&claims, SALES_ROLES)?;
+    let cid = company_id_from_claims(&claims)?;
     let id = Uuid::new_v4();
-    let count = sqlx::query_scalar!("SELECT COUNT(*) FROM sales_orders")
+    let count: i64 = sqlx::query_scalar::<_, Option<i64>>("SELECT COUNT(*) FROM sales_orders WHERE company_id = $1")
+        .bind(cid)
         .fetch_one(&state.db)
         .await?
         .unwrap_or(0);
@@ -109,25 +115,25 @@ pub async fn create_sales_order(
         None
     };
 
-    let row = sqlx::query_as!(
-        SalesOrder,
+    let row = sqlx::query_as::<_, SalesOrder>(
         "INSERT INTO sales_orders
-             (id, order_number, customer_id, country_id, fda_required, fda_status,
+             (id, company_id, order_number, customer_id, country_id, fda_required, fda_status,
               total_pieces, order_date, required_date, notes)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
          RETURNING id, order_number, customer_id, country_id, status, artwork_status,
                    fda_required, fda_status, total_pieces, order_date, required_date, notes, created_at",
-        id,
-        order_number,
-        body.customer_id,
-        body.country_id,
-        body.fda_required,
-        fda_status,
-        body.total_pieces,
-        body.order_date,
-        body.required_date,
-        body.notes,
     )
+    .bind(id)
+    .bind(cid)
+    .bind(&order_number)
+    .bind(body.customer_id)
+    .bind(body.country_id)
+    .bind(body.fda_required)
+    .bind(fda_status)
+    .bind(body.total_pieces)
+    .bind(body.order_date)
+    .bind(body.required_date)
+    .bind(&body.notes)
     .fetch_one(&state.db)
     .await?;
     Ok((StatusCode::CREATED, Json(row)))
@@ -201,7 +207,7 @@ pub async fn update_sales_order(
 }
 
 // ---------------------------------------------------------------------------
-// Sales Order Lines
+// Sales Order Lines — child table, scoped by SO id
 // ---------------------------------------------------------------------------
 
 pub async fn list_so_lines(

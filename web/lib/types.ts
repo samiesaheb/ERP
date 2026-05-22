@@ -459,12 +459,21 @@ export interface DashboardData {
 // Auth
 // ---------------------------------------------------------------------------
 
+export interface UserCompanyInfo {
+  company_id:   string;
+  company_name: string;
+  company_code: string;
+  role:         string;
+  is_primary:   boolean;
+}
+
 export interface LoginResponse {
-  token: string;
-  user_id: string;
-  email: string;
+  token:     string;
+  user_id:   string;
+  email:     string;
   full_name: string;
-  role: string;
+  role:      string;
+  companies: UserCompanyInfo[];
 }
 
 export interface User {
@@ -578,6 +587,46 @@ export interface Formulation {
   batch_unit: string;
   procedures: string;
   lines: FormulationLine[];
+}
+
+// ---------------------------------------------------------------------------
+// Companies
+// ---------------------------------------------------------------------------
+
+export interface Company {
+  id: string;
+  code: string;
+  name: string;
+  country_id: string | null;
+  address: string | null;
+  base_currency: string;
+  fiscal_year_start_month: number;
+  registration_number: string | null;
+  tax_id: string | null;
+  logo_url: string | null;
+  parent_company_id: string | null;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface CompanyGroup {
+  id: string;
+  name: string;
+  description: string | null;
+  created_at: string;
+}
+
+export interface CompanyGroupMember {
+  group_id: string;
+  company_id: string;
+}
+
+export interface UserCompany {
+  user_id: string;
+  company_id: string;
+  role: string;
+  is_primary: boolean;
+  created_at: string;
 }
 
 // ---------------------------------------------------------------------------

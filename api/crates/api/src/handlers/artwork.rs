@@ -7,10 +7,11 @@ use uuid::Uuid;
 
 use crate::{
     error::{AppError, Result},
+    handlers::company_id_from_claims,
     state::AppState,
 };
 use domain::{
-    Artwork, CreateArtwork, UpdateArtwork,
+    Claims, Artwork, CreateArtwork, UpdateArtwork,
     FdaDocument, FdaRegistration, CreateFdaDocument, CreateFdaRegistration, UpdateFdaRegistration,
 };
 
@@ -20,13 +21,15 @@ use domain::{
 
 pub async fn list_artworks(
     State(state): State<AppState>,
+    axum::Extension(claims): axum::Extension<Claims>,
 ) -> Result<Json<Vec<Artwork>>> {
-    let rows = sqlx::query_as!(
-        Artwork,
+    let cid = company_id_from_claims(&claims)?;
+    let rows = sqlx::query_as::<_, Artwork>(
         "SELECT id, sales_order_id, item_id, version, status, file_url,
                 submitted_at, approved_at, notes, created_at
-         FROM artworks ORDER BY created_at DESC"
+         FROM artworks WHERE company_id = $1 ORDER BY created_at DESC",
     )
+    .bind(cid)
     .fetch_all(&state.db)
     .await?;
     Ok(Json(rows))
@@ -34,15 +37,17 @@ pub async fn list_artworks(
 
 pub async fn list_artworks_by_so(
     State(state): State<AppState>,
+    axum::Extension(claims): axum::Extension<Claims>,
     Path(so_id): Path<Uuid>,
 ) -> Result<Json<Vec<Artwork>>> {
-    let rows = sqlx::query_as!(
-        Artwork,
+    let cid = company_id_from_claims(&claims)?;
+    let rows = sqlx::query_as::<_, Artwork>(
         "SELECT id, sales_order_id, item_id, version, status, file_url,
                 submitted_at, approved_at, notes, created_at
-         FROM artworks WHERE sales_order_id = $1 ORDER BY version DESC",
-        so_id
+         FROM artworks WHERE company_id = $1 AND sales_order_id = $2 ORDER BY version DESC",
     )
+    .bind(cid)
+    .bind(so_id)
     .fetch_all(&state.db)
     .await?;
     Ok(Json(rows))
@@ -50,23 +55,25 @@ pub async fn list_artworks_by_so(
 
 pub async fn create_artwork(
     State(state): State<AppState>,
+    axum::Extension(claims): axum::Extension<Claims>,
     Json(body): Json<CreateArtwork>,
 ) -> Result<(StatusCode, Json<Artwork>)> {
+    let cid = company_id_from_claims(&claims)?;
     let id = Uuid::new_v4();
     let version = body.version.unwrap_or(1);
-    let row = sqlx::query_as!(
-        Artwork,
-        "INSERT INTO artworks (id, sales_order_id, item_id, version, file_url, notes)
-         VALUES ($1, $2, $3, $4, $5, $6)
+    let row = sqlx::query_as::<_, Artwork>(
+        "INSERT INTO artworks (id, company_id, sales_order_id, item_id, version, file_url, notes)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)
          RETURNING id, sales_order_id, item_id, version, status, file_url,
                    submitted_at, approved_at, notes, created_at",
-        id,
-        body.sales_order_id,
-        body.item_id,
-        version,
-        body.file_url,
-        body.notes,
     )
+    .bind(id)
+    .bind(cid)
+    .bind(body.sales_order_id)
+    .bind(body.item_id)
+    .bind(version)
+    .bind(&body.file_url)
+    .bind(&body.notes)
     .fetch_one(&state.db)
     .await?;
     Ok((StatusCode::CREATED, Json(row)))
@@ -128,13 +135,15 @@ pub async fn update_artwork(
 
 pub async fn list_fda_registrations(
     State(state): State<AppState>,
+    axum::Extension(claims): axum::Extension<Claims>,
 ) -> Result<Json<Vec<FdaRegistration>>> {
-    let rows = sqlx::query_as!(
-        FdaRegistration,
+    let cid = company_id_from_claims(&claims)?;
+    let rows = sqlx::query_as::<_, FdaRegistration>(
         "SELECT id, sales_order_id, item_id, registration_number, status,
                 submitted_at, approved_at, expiry_date, notes, created_at
-         FROM fda_registrations ORDER BY created_at DESC"
+         FROM fda_registrations WHERE company_id = $1 ORDER BY created_at DESC",
     )
+    .bind(cid)
     .fetch_all(&state.db)
     .await?;
     Ok(Json(rows))
@@ -142,20 +151,22 @@ pub async fn list_fda_registrations(
 
 pub async fn create_fda_registration(
     State(state): State<AppState>,
+    axum::Extension(claims): axum::Extension<Claims>,
     Json(body): Json<CreateFdaRegistration>,
 ) -> Result<(StatusCode, Json<FdaRegistration>)> {
+    let cid = company_id_from_claims(&claims)?;
     let id = Uuid::new_v4();
-    let row = sqlx::query_as!(
-        FdaRegistration,
-        "INSERT INTO fda_registrations (id, sales_order_id, item_id, notes)
-         VALUES ($1, $2, $3, $4)
+    let row = sqlx::query_as::<_, FdaRegistration>(
+        "INSERT INTO fda_registrations (id, company_id, sales_order_id, item_id, notes)
+         VALUES ($1, $2, $3, $4, $5)
          RETURNING id, sales_order_id, item_id, registration_number, status,
                    submitted_at, approved_at, expiry_date, notes, created_at",
-        id,
-        body.sales_order_id,
-        body.item_id,
-        body.notes,
     )
+    .bind(id)
+    .bind(cid)
+    .bind(body.sales_order_id)
+    .bind(body.item_id)
+    .bind(&body.notes)
     .fetch_one(&state.db)
     .await?;
     Ok((StatusCode::CREATED, Json(row)))
@@ -215,7 +226,7 @@ pub async fn update_fda_registration(
 }
 
 // ---------------------------------------------------------------------------
-// FDA Documents
+// FDA Documents — child table, no company_id
 // ---------------------------------------------------------------------------
 
 pub async fn list_fda_documents(

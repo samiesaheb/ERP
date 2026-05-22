@@ -8,12 +8,13 @@ use uuid::Uuid;
 
 use crate::{
     error::{AppError, Result},
+    handlers::company_id_from_claims,
     middleware::rbac::{require_role, PURCHASING_ROLES, WAREHOUSE_ROLES},
     state::AppState,
 };
 use domain::{
-    Claims, CreatePurchaseOrder, CreatePurchaseOrderLine, CreateReceipt, PurchaseOrder, PurchaseOrderLine,
-    Receipt, ReceiptLine, UpdatePurchaseOrder, UpdateReceiptLine,
+    Claims, CreatePurchaseOrder, CreatePurchaseOrderLine, CreateReceipt, PurchaseOrder,
+    PurchaseOrderLine, Receipt, ReceiptLine, UpdatePurchaseOrder, UpdateReceiptLine,
 };
 
 #[derive(Deserialize)]
@@ -23,27 +24,29 @@ pub struct PoQuery {
 
 pub async fn list_purchase_orders(
     State(state): State<AppState>,
+    axum::Extension(claims): axum::Extension<Claims>,
     Query(q): Query<PoQuery>,
 ) -> Result<Json<Vec<PurchaseOrder>>> {
+    let cid = company_id_from_claims(&claims)?;
     let rows = match q.status.as_deref() {
         Some(s) => {
-            sqlx::query_as!(
-                PurchaseOrder,
+            sqlx::query_as::<_, PurchaseOrder>(
                 "SELECT id, po_number, supplier_id, manufacturing_order_id, status,
                         order_date, expected_date, notes, created_at
-                 FROM purchase_orders WHERE status = $1 ORDER BY created_at DESC",
-                s
+                 FROM purchase_orders WHERE company_id = $1 AND status = $2 ORDER BY created_at DESC",
             )
+            .bind(cid)
+            .bind(s)
             .fetch_all(&state.db)
             .await?
         }
         None => {
-            sqlx::query_as!(
-                PurchaseOrder,
+            sqlx::query_as::<_, PurchaseOrder>(
                 "SELECT id, po_number, supplier_id, manufacturing_order_id, status,
                         order_date, expected_date, notes, created_at
-                 FROM purchase_orders ORDER BY created_at DESC"
+                 FROM purchase_orders WHERE company_id = $1 ORDER BY created_at DESC",
             )
+            .bind(cid)
             .fetch_all(&state.db)
             .await?
         }
@@ -74,28 +77,31 @@ pub async fn create_purchase_order(
     Json(body): Json<CreatePurchaseOrder>,
 ) -> Result<(StatusCode, Json<PurchaseOrder>)> {
     require_role(&claims, PURCHASING_ROLES)?;
-    let count = sqlx::query_scalar!("SELECT COUNT(*) FROM purchase_orders")
+    let cid = company_id_from_claims(&claims)?;
+    let count: i64 = sqlx::query_scalar::<_, Option<i64>>("SELECT COUNT(*) FROM purchase_orders WHERE company_id = $1")
+        .bind(cid)
         .fetch_one(&state.db)
         .await?
         .unwrap_or(0);
     let po_number = format!("PO-{}-{:04}", chrono::Utc::now().format("%Y"), count + 1);
     let po_id = Uuid::new_v4();
 
-    let row = sqlx::query_as!(
-        PurchaseOrder,
+    let row = sqlx::query_as::<_, PurchaseOrder>(
         "INSERT INTO purchase_orders
-             (id, po_number, supplier_id, manufacturing_order_id, order_date, expected_date, notes)
-         VALUES ($1, $2, $3, $4, $5, $6, $7)
+             (id, company_id, po_number, supplier_id, manufacturing_order_id,
+              order_date, expected_date, notes)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
          RETURNING id, po_number, supplier_id, manufacturing_order_id, status,
                    order_date, expected_date, notes, created_at",
-        po_id,
-        po_number,
-        body.supplier_id,
-        body.manufacturing_order_id,
-        body.order_date,
-        body.expected_date,
-        body.notes,
     )
+    .bind(po_id)
+    .bind(cid)
+    .bind(&po_number)
+    .bind(body.supplier_id)
+    .bind(body.manufacturing_order_id)
+    .bind(body.order_date)
+    .bind(body.expected_date)
+    .bind(&body.notes)
     .fetch_one(&state.db)
     .await?;
 
@@ -224,17 +230,19 @@ pub async fn create_po_line(
 }
 
 // ---------------------------------------------------------------------------
-// Receipts (Goods Receiving)
+// Receipts
 // ---------------------------------------------------------------------------
 
 pub async fn list_receipts(
     State(state): State<AppState>,
+    axum::Extension(claims): axum::Extension<Claims>,
 ) -> Result<Json<Vec<Receipt>>> {
-    let rows = sqlx::query_as!(
-        Receipt,
+    let cid = company_id_from_claims(&claims)?;
+    let rows = sqlx::query_as::<_, Receipt>(
         "SELECT id, receipt_number, purchase_order_id, received_by, received_at, notes
-         FROM receipts ORDER BY received_at DESC"
+         FROM receipts WHERE company_id = $1 ORDER BY received_at DESC",
     )
+    .bind(cid)
     .fetch_all(&state.db)
     .await?;
     Ok(Json(rows))
@@ -246,23 +254,25 @@ pub async fn create_receipt(
     Json(body): Json<CreateReceipt>,
 ) -> Result<(StatusCode, Json<Receipt>)> {
     require_role(&claims, WAREHOUSE_ROLES)?;
-    let count = sqlx::query_scalar!("SELECT COUNT(*) FROM receipts")
+    let cid = company_id_from_claims(&claims)?;
+    let count: i64 = sqlx::query_scalar::<_, Option<i64>>("SELECT COUNT(*) FROM receipts WHERE company_id = $1")
+        .bind(cid)
         .fetch_one(&state.db)
         .await?
         .unwrap_or(0);
     let receipt_number = format!("REC-{}-{:04}", chrono::Utc::now().format("%Y"), count + 1);
     let receipt_id = Uuid::new_v4();
 
-    let row = sqlx::query_as!(
-        Receipt,
-        "INSERT INTO receipts (id, receipt_number, purchase_order_id, notes)
-         VALUES ($1, $2, $3, $4)
+    let row = sqlx::query_as::<_, Receipt>(
+        "INSERT INTO receipts (id, company_id, receipt_number, purchase_order_id, notes)
+         VALUES ($1, $2, $3, $4, $5)
          RETURNING id, receipt_number, purchase_order_id, received_by, received_at, notes",
-        receipt_id,
-        receipt_number,
-        body.purchase_order_id,
-        body.notes,
     )
+    .bind(receipt_id)
+    .bind(cid)
+    .bind(&receipt_number)
+    .bind(body.purchase_order_id)
+    .bind(&body.notes)
     .fetch_one(&state.db)
     .await?;
 
@@ -284,7 +294,6 @@ pub async fn create_receipt(
         .execute(&state.db)
         .await?;
 
-        // Update qty_received on PO line
         sqlx::query!(
             "UPDATE purchase_order_lines SET qty_received = qty_received + $1 WHERE id = $2",
             line.qty_received,
@@ -293,13 +302,14 @@ pub async fn create_receipt(
         .execute(&state.db)
         .await?;
 
-        // Upsert inventory balance
+        // Upsert inventory balance (scoped to company)
         sqlx::query!(
-            r#"INSERT INTO inventory (id, item_id, qty_available, qty_reserved, uom_id, lot_number)
-               VALUES (gen_random_uuid(), $1, $2, 0, $3, $4)
-               ON CONFLICT (item_id)
-               DO UPDATE SET qty_available = inventory.qty_available + $2,
+            r#"INSERT INTO inventory (id, company_id, item_id, qty_available, qty_reserved, uom_id, lot_number)
+               VALUES (gen_random_uuid(), $1, $2, $3, 0, $4, $5)
+               ON CONFLICT (item_id, company_id)
+               DO UPDATE SET qty_available = inventory.qty_available + $3,
                              last_updated = NOW()"#,
+            cid,
             line.item_id,
             line.qty_received,
             line.uom_id,
@@ -308,7 +318,6 @@ pub async fn create_receipt(
         .execute(&state.db)
         .await?;
 
-        // Inventory transaction
         sqlx::query!(
             "INSERT INTO inventory_transactions
                  (id, item_id, transaction_type, qty, uom_id, lot_number, reference_type, reference_id)
@@ -323,7 +332,6 @@ pub async fn create_receipt(
         .await?;
     }
 
-    // If all PO lines fully received → mark PO received
     let open_lines = sqlx::query_scalar!(
         "SELECT COUNT(*) FROM purchase_order_lines
          WHERE purchase_order_id = $1 AND qty_received < qty_ordered",

@@ -88,6 +88,8 @@ pub struct CycleCount {
 pub struct WarehouseLocation {
     pub id:              Uuid,
     pub code:            String,
+    pub warehouse_id:    Option<Uuid>,
+    pub zone_id:         Option<Uuid>,
     pub zone:            Option<String>,
     pub aisle:           Option<String>,
     pub section:         Option<String>,
@@ -103,6 +105,8 @@ pub struct WarehouseLocation {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CreateWarehouseLocation {
     pub code:            String,
+    pub warehouse_id:    Option<Uuid>,
+    pub zone_id:         Option<Uuid>,
     pub zone:            Option<String>,
     pub aisle:           Option<String>,
     pub section:         Option<String>,

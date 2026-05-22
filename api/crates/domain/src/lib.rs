@@ -1,6 +1,7 @@
 pub mod audit;
 pub mod auth;
 pub mod artwork;
+pub mod company;
 pub mod bom;
 pub mod formulation;
 pub mod dashboard;
@@ -13,13 +14,26 @@ pub mod sales;
 pub mod search;
 pub mod shipments;
 pub mod shop_floor;
+pub mod tax;
+pub mod warehouse;
 
 // ---------------------------------------------------------------------------
 // Convenience re-exports
 // ---------------------------------------------------------------------------
 
 pub use audit::{AuditLog, AuditLogQuery};
-pub use auth::{Claims, LoginRequest, LoginResponse, User, CreateUser, UpdateUser, LoginAttempt, LoginAttemptQuery};
+pub use auth::{
+    Claims, LoginRequest, LoginResponse, User, CreateUser, UpdateUser,
+    LoginAttempt, LoginAttemptQuery,
+    UserCompanyInfo, SelectCompany, SelectCompanyResponse,
+};
+
+pub use company::{
+    Company, CreateCompany, UpdateCompany,
+    CompanyGroup, CreateCompanyGroup, UpdateCompanyGroup,
+    CompanyGroupMember, AddCompanyToGroup,
+    UserCompany, AddUserToCompany,
+};
 
 pub use artwork::{
     Artwork, CreateArtwork, UpdateArtwork,
@@ -100,4 +114,11 @@ pub use shop_floor::{
     QcTest, CreateQcTest, UpdateQcTest,
     DowntimeEvent, CreateDowntimeEvent, UpdateDowntimeEvent,
     AccessRequest, CreateAccessRequest, UpdateAccessRequest,
+};
+
+pub use tax::{TaxRate, CreateTaxRate, UpdateTaxRate};
+
+pub use warehouse::{
+    Warehouse, CreateWarehouse, UpdateWarehouse,
+    WarehouseZone, CreateWarehouseZone, UpdateWarehouseZone,
 };

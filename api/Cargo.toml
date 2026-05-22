@@ -46,6 +46,10 @@ dotenvy = "0.15"
 # Password hashing
 bcrypt = "0.15"
 
+# HTTP client (Google OAuth token exchange)
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+urlencoding = "2"
+
 [profile.release]
 opt-level = 3
 lto = true

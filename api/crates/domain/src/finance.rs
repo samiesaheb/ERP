@@ -14,6 +14,7 @@ pub struct Invoice {
     pub customer_id:    Uuid,
     pub sales_order_id: Uuid,
     pub shipment_id:    Option<Uuid>,
+    pub tax_rate_id:    Option<Uuid>,
     pub status:         String,          // draft / sent / partially_paid / paid / overdue / cancelled
     pub issue_date:     Option<NaiveDate>,
     pub due_date:       Option<NaiveDate>,
@@ -30,6 +31,7 @@ pub struct CreateInvoice {
     pub sales_order_id: Uuid,
     pub customer_id:    Uuid,
     pub shipment_id:    Option<Uuid>,
+    pub tax_rate_id:    Option<Uuid>,
     pub issue_date:     Option<NaiveDate>,
     pub due_date:       Option<NaiveDate>,
     pub tax:            Option<Decimal>,

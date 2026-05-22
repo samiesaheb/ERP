@@ -1,0 +1,22 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO formulations (id, company_id, item_id, version, is_active, note, batch_qty, batch_unit, procedures)\n         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Int4",
+        "Bool",
+        "Text",
+        "Numeric",
+        "Varchar",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "834727a84176d51dd6231a504a60955f800a18723d252773a02a5ab7ec7b0e9a"
+}

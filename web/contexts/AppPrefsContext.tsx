@@ -9,6 +9,8 @@ interface AppPrefs {
   setLang: (l: Lang) => void;
   currency: Currency;
   setCurrency: (c: Currency) => void;
+  darkMode: boolean;
+  setDarkMode: (d: boolean) => void;
   t: (key: string) => string;
   formatMoney: (thbAmount: string | number) => string;
 }
@@ -18,12 +20,15 @@ const AppPrefsContext = createContext<AppPrefs | null>(null);
 export function AppPrefsProvider({ children }: { children: ReactNode }) {
   const [lang, setLangState] = useState<Lang>('en');
   const [currency, setCurrencyState] = useState<Currency>('THB');
+  const [darkMode, setDarkModeState] = useState(false);
 
   useEffect(() => {
     const l = localStorage.getItem('app-lang') as Lang | null;
     const c = localStorage.getItem('app-currency') as Currency | null;
+    const d = localStorage.getItem('app-dark-mode');
     if (l === 'en' || l === 'th') setLangState(l);
     if (c === 'THB' || c === 'USD') setCurrencyState(c);
+    if (d === 'true') setDarkModeState(true);
   }, []);
 
   function setLang(l: Lang) {
@@ -34,6 +39,16 @@ export function AppPrefsProvider({ children }: { children: ReactNode }) {
   function setCurrency(c: Currency) {
     setCurrencyState(c);
     localStorage.setItem('app-currency', c);
+  }
+
+  function setDarkMode(d: boolean) {
+    setDarkModeState(d);
+    localStorage.setItem('app-dark-mode', String(d));
+    if (d) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
   }
 
   function t(key: string): string {
@@ -50,7 +65,7 @@ export function AppPrefsProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AppPrefsContext.Provider value={{ lang, setLang, currency, setCurrency, t, formatMoney }}>
+    <AppPrefsContext.Provider value={{ lang, setLang, currency, setCurrency, darkMode, setDarkMode, t, formatMoney }}>
       {children}
     </AppPrefsContext.Provider>
   );

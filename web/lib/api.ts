@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import type {
   Artwork, FdaRegistration, FdaDocument,
   Bom, BomExplosionResult, BomLine,
+  Company, CompanyGroup, CompanyGroupMember,
   Country, Customer, CustomerType,
   DashboardData,
   Formulation, FormulationProduct, Ingredient,
@@ -58,6 +59,14 @@ async function apiFetch<T>(
 
   return res.json() as Promise<T>;
 }
+
+// ---------------------------------------------------------------------------
+// Companies
+// ---------------------------------------------------------------------------
+
+export const getCompanies          = () => apiFetch<Company[]>('/api/v1/companies');
+export const getCompanyGroups      = () => apiFetch<CompanyGroup[]>('/api/v1/company-groups');
+export const getCompanyGroupMembers = () => apiFetch<CompanyGroupMember[]>('/api/v1/company-group-members');
 
 // ---------------------------------------------------------------------------
 // Dashboard

@@ -7,6 +7,7 @@ use uuid::Uuid;
 
 use crate::{
     error::{AppError, Result},
+    handlers::company_id_from_claims,
     middleware::rbac::{require_role, WAREHOUSE_ROLES},
     state::AppState,
 };
@@ -15,13 +16,17 @@ use domain::{
     Shipment, ShipmentLine, ShippingDocument, UpdateShipment,
 };
 
-pub async fn list_shipments(State(state): State<AppState>) -> Result<Json<Vec<Shipment>>> {
-    let rows = sqlx::query_as!(
-        Shipment,
+pub async fn list_shipments(
+    State(state): State<AppState>,
+    axum::Extension(claims): axum::Extension<Claims>,
+) -> Result<Json<Vec<Shipment>>> {
+    let cid = company_id_from_claims(&claims)?;
+    let rows = sqlx::query_as::<_, Shipment>(
         "SELECT id, shipment_number, sales_order_id, status, carrier,
                 tracking_number, loaded_at, dispatched_at, delivered_at, notes, created_at
-         FROM shipments ORDER BY created_at DESC"
+         FROM shipments WHERE company_id = $1 ORDER BY created_at DESC",
     )
+    .bind(cid)
     .fetch_all(&state.db)
     .await?;
     Ok(Json(rows))
@@ -50,26 +55,28 @@ pub async fn create_shipment(
     Json(body): Json<CreateShipment>,
 ) -> Result<(StatusCode, Json<Shipment>)> {
     require_role(&claims, WAREHOUSE_ROLES)?;
-    let count = sqlx::query_scalar!("SELECT COUNT(*) FROM shipments")
+    let cid = company_id_from_claims(&claims)?;
+    let count: i64 = sqlx::query_scalar::<_, Option<i64>>("SELECT COUNT(*) FROM shipments WHERE company_id = $1")
+        .bind(cid)
         .fetch_one(&state.db)
         .await?
         .unwrap_or(0);
     let shipment_number = format!("SHP-{}-{:04}", chrono::Utc::now().format("%Y"), count + 1);
     let id = Uuid::new_v4();
 
-    let row = sqlx::query_as!(
-        Shipment,
-        "INSERT INTO shipments (id, shipment_number, sales_order_id, carrier, tracking_number, notes)
-         VALUES ($1, $2, $3, $4, $5, $6)
+    let row = sqlx::query_as::<_, Shipment>(
+        "INSERT INTO shipments (id, company_id, shipment_number, sales_order_id, carrier, tracking_number, notes)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)
          RETURNING id, shipment_number, sales_order_id, status, carrier,
                    tracking_number, loaded_at, dispatched_at, delivered_at, notes, created_at",
-        id,
-        shipment_number,
-        body.sales_order_id,
-        body.carrier,
-        body.tracking_number,
-        body.notes,
     )
+    .bind(id)
+    .bind(cid)
+    .bind(&shipment_number)
+    .bind(body.sales_order_id)
+    .bind(&body.carrier)
+    .bind(&body.tracking_number)
+    .bind(&body.notes)
     .fetch_one(&state.db)
     .await?;
     Ok((StatusCode::CREATED, Json(row)))
@@ -158,7 +165,7 @@ pub async fn update_shipment(
 }
 
 // ---------------------------------------------------------------------------
-// Shipment Lines
+// Shipment Lines — child table, scoped by shipment
 // ---------------------------------------------------------------------------
 
 pub async fn list_shipment_lines(
@@ -200,7 +207,7 @@ pub async fn create_shipment_line(
 }
 
 // ---------------------------------------------------------------------------
-// Shipping Documents
+// Shipping Documents — child table, scoped by shipment
 // ---------------------------------------------------------------------------
 
 pub async fn list_shipping_documents(

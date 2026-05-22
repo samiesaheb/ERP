@@ -1,0 +1,18 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO inventory (id, company_id, item_id, qty_available, qty_reserved, uom_id, lot_number)\n               VALUES (gen_random_uuid(), $1, $2, $3, 0, $4, $5)\n               ON CONFLICT (item_id, company_id)\n               DO UPDATE SET qty_available = inventory.qty_available + $3,\n                             last_updated = NOW()",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Numeric",
+        "Uuid",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "4f8bb49727d536fb96ef106d87e5b50ed5d36363e65eca4e34af257b75a273ad"
+}

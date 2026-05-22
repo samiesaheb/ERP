@@ -18,16 +18,15 @@ export async function POST(req: NextRequest) {
 
   const data = await upstream.json();
 
-  const res = NextResponse.json({ ok: true });
-  // httpOnly: false so clientFetch can read the token for Authorization header.
-  // This is an internal enterprise app — acceptable trade-off.
-  res.cookies.set('token', data.token, {
-    httpOnly: false,
+  const cookieOpts = {
+    httpOnly: false, // intentional: client reads token for Authorization header
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
+    sameSite: 'lax' as const,
     path: '/',
-    maxAge: 60 * 60 * 24, // 24 hours
-  });
+    maxAge: 60 * 60 * 24,
+  };
 
+  const res = NextResponse.json({ ok: true, companies: data.companies ?? [] });
+  res.cookies.set('token', data.token, cookieOpts);
   return res;
 }

@@ -29,12 +29,12 @@ export default function SlideOver({ open, onClose, title, children }: SlideOverP
         onClick={onClose}
       />
       {/* Panel */}
-      <div className="relative w-full max-w-md bg-white shadow-xl flex flex-col h-full border-l-[0.5px] border-neutral-200">
-        <div className="flex items-center justify-between px-5 py-4 border-b-[0.5px] border-neutral-200">
-          <h2 className="text-sm font-semibold text-neutral-900">{title}</h2>
+      <div className="relative w-full max-w-md bg-white dark:bg-neutral-900 shadow-xl flex flex-col h-full border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
+        <div className="flex items-center justify-between px-5 py-4 border-b-[0.5px] border-neutral-200 dark:border-neutral-800">
+          <h2 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">{title}</h2>
           <button
             onClick={onClose}
-            className="text-neutral-400 hover:text-neutral-600 text-lg leading-none"
+            className="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 text-lg leading-none"
           >
             ×
           </button>

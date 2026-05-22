@@ -1,0 +1,88 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT i.id, i.item_id,\n                  it.item_code,\n                  it.description,\n                  i.location,\n                  i.lot_number,\n                  i.qty_available,\n                  i.qty_reserved,\n                  i.uom_id,\n                  i.last_updated,\n                  i.last_counted_at,\n                  it.reorder_point\n           FROM inventory i\n           JOIN items it ON it.id = i.item_id\n           WHERE i.company_id = $1\n           ORDER BY it.item_code",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "item_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "item_code",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "description",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "location",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "lot_number",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "qty_available",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 7,
+        "name": "qty_reserved",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 8,
+        "name": "uom_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 9,
+        "name": "last_updated",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 10,
+        "name": "last_counted_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 11,
+        "name": "reorder_point",
+        "type_info": "Numeric"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true
+    ]
+  },
+  "hash": "129b02c017595cc0c61e97c70b4daabe51d47d12305500b0fd43694a8bbb7e46"
+}

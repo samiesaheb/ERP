@@ -5,12 +5,19 @@ use uuid::Uuid;
 /// JWT claims embedded in every Bearer token.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Claims {
-    pub sub:       String,   // user UUID
-    pub email:     String,
-    pub full_name: String,
-    pub role:      String,
-    pub exp:       u64,      // expiry  (Unix timestamp)
-    pub iat:       u64,      // issued-at (Unix timestamp)
+    pub sub:          String,          // user UUID
+    pub email:        String,
+    pub full_name:    String,
+    pub role:         String,          // system role (or company-scoped role after select)
+    /// Set only after the user selects a company context.
+    #[serde(default)]
+    pub company_id:   Option<String>,
+    #[serde(default)]
+    pub company_name: Option<String>,
+    #[serde(default)]
+    pub company_code: Option<String>,
+    pub exp:          u64,
+    pub iat:          u64,
 }
 
 /// POST /auth/login  — request body
@@ -18,6 +25,16 @@ pub struct Claims {
 pub struct LoginRequest {
     pub email:    String,
     pub password: String,
+}
+
+/// One entry in a user's company list (returned at login and from /me/companies).
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
+pub struct UserCompanyInfo {
+    pub company_id:   Uuid,
+    pub company_name: String,
+    pub company_code: String,
+    pub role:         String,
+    pub is_primary:   bool,
 }
 
 /// POST /auth/login  — response body
@@ -28,6 +45,25 @@ pub struct LoginResponse {
     pub email:     String,
     pub full_name: String,
     pub role:      String,
+    /// Companies the user has access to. Empty means no company memberships
+    /// (legacy users) — they go straight to the dashboard.
+    pub companies: Vec<UserCompanyInfo>,
+}
+
+/// POST /auth/select-company  — request body
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SelectCompany {
+    pub company_id: Uuid,
+}
+
+/// POST /auth/select-company  — response body
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SelectCompanyResponse {
+    pub token:        String,
+    pub company_id:   Uuid,
+    pub company_name: String,
+    pub company_code: String,
+    pub role:         String,
 }
 
 /// A user record returned from the API.

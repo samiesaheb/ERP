@@ -9,6 +9,7 @@ use uuid::Uuid;
 
 use crate::{
     error::{AppError, Result},
+    handlers::company_id_from_claims,
     middleware::rbac::{require_role, FINANCE_ROLES},
     state::AppState,
 };
@@ -24,27 +25,31 @@ pub struct InvoiceQuery {
 
 pub async fn list_invoices(
     State(state): State<AppState>,
+    axum::Extension(claims): axum::Extension<Claims>,
     Query(q): Query<InvoiceQuery>,
 ) -> Result<Json<Vec<Invoice>>> {
+    let cid = company_id_from_claims(&claims)?;
     let rows = match q.status.as_deref() {
         Some(s) => {
-            sqlx::query_as!(
-                Invoice,
+            sqlx::query_as::<_, Invoice>(
                 "SELECT id, invoice_number, sales_order_id, customer_id, shipment_id,
-                        status, issue_date, due_date, subtotal, tax, total, currency, notes, created_at
-                 FROM invoices WHERE status = $1 ORDER BY created_at DESC",
-                s
+                        tax_rate_id, status, issue_date, due_date, subtotal, tax, total,
+                        currency, notes, created_at
+                 FROM invoices WHERE company_id = $1 AND status = $2 ORDER BY created_at DESC",
             )
+            .bind(cid)
+            .bind(s)
             .fetch_all(&state.db)
             .await?
         }
         None => {
-            sqlx::query_as!(
-                Invoice,
+            sqlx::query_as::<_, Invoice>(
                 "SELECT id, invoice_number, sales_order_id, customer_id, shipment_id,
-                        status, issue_date, due_date, subtotal, tax, total, currency, notes, created_at
-                 FROM invoices ORDER BY created_at DESC"
+                        tax_rate_id, status, issue_date, due_date, subtotal, tax, total,
+                        currency, notes, created_at
+                 FROM invoices WHERE company_id = $1 ORDER BY created_at DESC",
             )
+            .bind(cid)
             .fetch_all(&state.db)
             .await?
         }
@@ -58,7 +63,9 @@ pub async fn create_invoice(
     Json(body): Json<CreateInvoice>,
 ) -> Result<(StatusCode, Json<Invoice>)> {
     require_role(&claims, FINANCE_ROLES)?;
-    let count = sqlx::query_scalar!("SELECT COUNT(*) FROM invoices")
+    let cid = company_id_from_claims(&claims)?;
+    let count: i64 = sqlx::query_scalar::<_, Option<i64>>("SELECT COUNT(*) FROM invoices WHERE company_id = $1")
+        .bind(cid)
         .fetch_one(&state.db)
         .await?
         .unwrap_or(0);
@@ -67,31 +74,34 @@ pub async fn create_invoice(
     let tax = body.tax.unwrap_or(Decimal::ZERO);
     let currency = body.currency.unwrap_or_else(|| "USD".to_string());
 
-    let row = sqlx::query_as!(
-        Invoice,
+    let row = sqlx::query_as::<_, Invoice>(
         "INSERT INTO invoices
-             (id, invoice_number, sales_order_id, customer_id, shipment_id, issue_date, due_date, tax, currency, notes)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+             (id, company_id, invoice_number, sales_order_id, customer_id, shipment_id,
+              tax_rate_id, issue_date, due_date, tax, currency, notes)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
          RETURNING id, invoice_number, sales_order_id, customer_id, shipment_id,
-                   status, issue_date, due_date, subtotal, tax, total, currency, notes, created_at",
-        id,
-        invoice_number,
-        body.sales_order_id,
-        body.customer_id,
-        body.shipment_id,
-        body.issue_date,
-        body.due_date,
-        tax,
-        currency,
-        body.notes,
+                   tax_rate_id, status, issue_date, due_date, subtotal, tax, total,
+                   currency, notes, created_at",
     )
+    .bind(id)
+    .bind(cid)
+    .bind(&invoice_number)
+    .bind(body.sales_order_id)
+    .bind(body.customer_id)
+    .bind(body.shipment_id)
+    .bind(body.tax_rate_id)
+    .bind(body.issue_date)
+    .bind(body.due_date)
+    .bind(tax)
+    .bind(&currency)
+    .bind(&body.notes)
     .fetch_one(&state.db)
     .await?;
     Ok((StatusCode::CREATED, Json(row)))
 }
 
 // ---------------------------------------------------------------------------
-// Invoice Lines
+// Invoice Lines — child table, scoped by invoice
 // ---------------------------------------------------------------------------
 
 pub async fn list_invoice_lines(
@@ -134,14 +144,24 @@ pub async fn create_invoice_line(
     .fetch_one(&state.db)
     .await?;
 
-    // Recalculate subtotal and total on invoice
-    sqlx::query!(
+    // Recompute subtotal; if invoice has a named tax rate, derive tax from rate * subtotal
+    sqlx::query(
         "UPDATE invoices
-         SET subtotal = (SELECT COALESCE(SUM(line_total), 0) FROM invoice_lines WHERE invoice_id = $1),
-             total    = (SELECT COALESCE(SUM(line_total), 0) FROM invoice_lines WHERE invoice_id = $1) + tax
-         WHERE id = $1",
-        invoice_id,
+         SET subtotal = lines.s,
+             tax      = CASE
+                          WHEN tax_rate_id IS NOT NULL
+                          THEN lines.s * (SELECT rate FROM tax_rates WHERE id = invoices.tax_rate_id)
+                          ELSE tax
+                        END,
+             total    = lines.s + CASE
+                          WHEN tax_rate_id IS NOT NULL
+                          THEN lines.s * (SELECT rate FROM tax_rates WHERE id = invoices.tax_rate_id)
+                          ELSE tax
+                        END
+         FROM (SELECT COALESCE(SUM(line_total), 0) AS s FROM invoice_lines WHERE invoice_id = $1) AS lines
+         WHERE invoices.id = $1",
     )
+    .bind(invoice_id)
     .execute(&state.db)
     .await?;
 
@@ -152,14 +172,18 @@ pub async fn create_invoice_line(
 // Payments
 // ---------------------------------------------------------------------------
 
-pub async fn list_payments(State(state): State<AppState>) -> Result<Json<Vec<Payment>>> {
-    let rows = sqlx::query_as!(
-        Payment,
+pub async fn list_payments(
+    State(state): State<AppState>,
+    axum::Extension(claims): axum::Extension<Claims>,
+) -> Result<Json<Vec<Payment>>> {
+    let cid = company_id_from_claims(&claims)?;
+    let rows = sqlx::query_as::<_, Payment>(
         "SELECT id, payment_number, payment_type, customer_id, supplier_id,
                 invoice_id, purchase_order_id, amount, currency,
                 payment_date, method, reference, status, notes, created_at
-         FROM payments ORDER BY created_at DESC"
+         FROM payments WHERE company_id = $1 ORDER BY created_at DESC",
     )
+    .bind(cid)
     .fetch_all(&state.db)
     .await?;
     Ok(Json(rows))
@@ -171,7 +195,9 @@ pub async fn create_payment(
     Json(body): Json<CreatePayment>,
 ) -> Result<(StatusCode, Json<Payment>)> {
     require_role(&claims, FINANCE_ROLES)?;
-    let count = sqlx::query_scalar!("SELECT COUNT(*) FROM payments")
+    let cid = company_id_from_claims(&claims)?;
+    let count: i64 = sqlx::query_scalar::<_, Option<i64>>("SELECT COUNT(*) FROM payments WHERE company_id = $1")
+        .bind(cid)
         .fetch_one(&state.db)
         .await?
         .unwrap_or(0);
@@ -179,34 +205,33 @@ pub async fn create_payment(
     let id = Uuid::new_v4();
     let currency = body.currency.unwrap_or_else(|| "USD".to_string());
 
-    let row = sqlx::query_as!(
-        Payment,
+    let row = sqlx::query_as::<_, Payment>(
         "INSERT INTO payments
-             (id, payment_number, payment_type, customer_id, supplier_id,
+             (id, company_id, payment_number, payment_type, customer_id, supplier_id,
               invoice_id, purchase_order_id, amount, currency,
               payment_date, method, reference, notes)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
          RETURNING id, payment_number, payment_type, customer_id, supplier_id,
                    invoice_id, purchase_order_id, amount, currency,
                    payment_date, method, reference, status, notes, created_at",
-        id,
-        payment_number,
-        body.payment_type,
-        body.customer_id,
-        body.supplier_id,
-        body.invoice_id,
-        body.purchase_order_id,
-        body.amount,
-        currency,
-        body.payment_date,
-        body.method,
-        body.reference,
-        body.notes,
     )
+    .bind(id)
+    .bind(cid)
+    .bind(&payment_number)
+    .bind(&body.payment_type)
+    .bind(body.customer_id)
+    .bind(body.supplier_id)
+    .bind(body.invoice_id)
+    .bind(body.purchase_order_id)
+    .bind(body.amount)
+    .bind(&currency)
+    .bind(body.payment_date)
+    .bind(&body.method)
+    .bind(&body.reference)
+    .bind(&body.notes)
     .fetch_one(&state.db)
     .await?;
 
-    // Update invoice status if linked
     if let Some(invoice_id) = body.invoice_id {
         let inv = sqlx::query!(
             "SELECT total FROM invoices WHERE id = $1",
@@ -262,13 +287,13 @@ pub async fn update_invoice(
     Json(body): Json<UpdateInvoice>,
 ) -> Result<Json<Invoice>> {
     require_role(&claims, FINANCE_ROLES)?;
-    let existing = sqlx::query_as!(
-        Invoice,
+    let existing = sqlx::query_as::<_, Invoice>(
         "SELECT id, invoice_number, sales_order_id, customer_id, shipment_id,
-                status, issue_date, due_date, subtotal, tax, total, currency, notes, created_at
+                tax_rate_id, status, issue_date, due_date, subtotal, tax, total,
+                currency, notes, created_at
          FROM invoices WHERE id = $1",
-        id
     )
+    .bind(id)
     .fetch_optional(&state.db)
     .await?
     .ok_or_else(|| AppError::NotFound(format!("Invoice {id} not found")))?;
@@ -283,21 +308,21 @@ pub async fn update_invoice(
     let new_tax = body.tax.unwrap_or(existing.tax);
     let new_notes = body.notes.or(existing.notes);
 
-    let row = sqlx::query_as!(
-        Invoice,
+    let row = sqlx::query_as::<_, Invoice>(
         "UPDATE invoices
          SET status = $2, issue_date = $3, due_date = $4, tax = $5,
              total = COALESCE(subtotal, 0) + $5, notes = $6
          WHERE id = $1
          RETURNING id, invoice_number, sales_order_id, customer_id, shipment_id,
-                   status, issue_date, due_date, subtotal, tax, total, currency, notes, created_at",
-        id,
-        new_status,
-        new_issue_date,
-        new_due_date,
-        new_tax,
-        new_notes,
+                   tax_rate_id, status, issue_date, due_date, subtotal, tax, total,
+                   currency, notes, created_at",
     )
+    .bind(id)
+    .bind(new_status)
+    .bind(new_issue_date)
+    .bind(new_due_date)
+    .bind(new_tax)
+    .bind(new_notes)
     .fetch_one(&state.db)
     .await?;
     Ok(Json(row))
@@ -307,13 +332,13 @@ pub async fn get_invoice(
     State(state): State<AppState>,
     Path(id): Path<Uuid>,
 ) -> Result<Json<Invoice>> {
-    let row = sqlx::query_as!(
-        Invoice,
+    let row = sqlx::query_as::<_, Invoice>(
         "SELECT id, invoice_number, sales_order_id, customer_id, shipment_id,
-                status, issue_date, due_date, subtotal, tax, total, currency, notes, created_at
+                tax_rate_id, status, issue_date, due_date, subtotal, tax, total,
+                currency, notes, created_at
          FROM invoices WHERE id = $1",
-        id
     )
+    .bind(id)
     .fetch_optional(&state.db)
     .await?
     .ok_or_else(|| AppError::NotFound(format!("Invoice {id} not found")))?;

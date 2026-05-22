@@ -6,14 +6,15 @@ use axum::{
 use serde::Deserialize;
 use uuid::Uuid;
 
-use crate::{error::Result, state::AppState};
+use crate::{error::Result, handlers::company_id_from_claims, state::AppState};
 use domain::{
-    Country, CreateCustomer, UpdateCustomer, CreateItem, UpdateItem, CreateItemSupplier, CreateItemUomConversion, CreateSupplier, UpdateSupplier,
+    Claims, Country, CreateCustomer, UpdateCustomer, CreateItem, UpdateItem,
+    CreateItemSupplier, CreateItemUomConversion, CreateSupplier, UpdateSupplier,
     Customer, CustomerType, Item, ItemSupplier, ItemUomConversion, Supplier, Uom,
 };
 
 // ---------------------------------------------------------------------------
-// Customer Types
+// Customer Types — global reference, no company filter
 // ---------------------------------------------------------------------------
 
 pub async fn list_customer_types(
@@ -29,7 +30,7 @@ pub async fn list_customer_types(
 }
 
 // ---------------------------------------------------------------------------
-// Countries
+// Countries — global reference, no company filter
 // ---------------------------------------------------------------------------
 
 pub async fn list_countries(State(state): State<AppState>) -> Result<Json<Vec<Country>>> {
@@ -44,12 +45,16 @@ pub async fn list_countries(State(state): State<AppState>) -> Result<Json<Vec<Co
 // Customers
 // ---------------------------------------------------------------------------
 
-pub async fn list_customers(State(state): State<AppState>) -> Result<Json<Vec<Customer>>> {
-    let rows = sqlx::query_as!(
-        Customer,
+pub async fn list_customers(
+    State(state): State<AppState>,
+    axum::Extension(claims): axum::Extension<Claims>,
+) -> Result<Json<Vec<Customer>>> {
+    let cid = company_id_from_claims(&claims)?;
+    let rows = sqlx::query_as::<_, Customer>(
         "SELECT id, name, customer_type_id, country_id, email, phone, address, created_at
-         FROM customers ORDER BY name"
+         FROM customers WHERE company_id = $1 ORDER BY name",
     )
+    .bind(cid)
     .fetch_all(&state.db)
     .await?;
     Ok(Json(rows))
@@ -57,22 +62,24 @@ pub async fn list_customers(State(state): State<AppState>) -> Result<Json<Vec<Cu
 
 pub async fn create_customer(
     State(state): State<AppState>,
+    axum::Extension(claims): axum::Extension<Claims>,
     Json(body): Json<CreateCustomer>,
 ) -> Result<(StatusCode, Json<Customer>)> {
+    let cid = company_id_from_claims(&claims)?;
     let id = Uuid::new_v4();
-    let row = sqlx::query_as!(
-        Customer,
-        "INSERT INTO customers (id, name, customer_type_id, country_id, email, phone, address)
-         VALUES ($1, $2, $3, $4, $5, $6, $7)
+    let row = sqlx::query_as::<_, Customer>(
+        "INSERT INTO customers (id, company_id, name, customer_type_id, country_id, email, phone, address)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
          RETURNING id, name, customer_type_id, country_id, email, phone, address, created_at",
-        id,
-        body.name,
-        body.customer_type_id,
-        body.country_id,
-        body.email,
-        body.phone,
-        body.address,
     )
+    .bind(id)
+    .bind(cid)
+    .bind(&body.name)
+    .bind(body.customer_type_id)
+    .bind(body.country_id)
+    .bind(&body.email)
+    .bind(&body.phone)
+    .bind(&body.address)
     .fetch_one(&state.db)
     .await?;
     Ok((StatusCode::CREATED, Json(row)))
@@ -108,7 +115,7 @@ pub async fn update_customer(
 }
 
 // ---------------------------------------------------------------------------
-// UOMs
+// UOMs — global reference, no company filter
 // ---------------------------------------------------------------------------
 
 pub async fn list_uoms(State(state): State<AppState>) -> Result<Json<Vec<Uom>>> {
@@ -130,55 +137,57 @@ pub struct ItemQuery {
 
 pub async fn list_items(
     State(state): State<AppState>,
+    axum::Extension(claims): axum::Extension<Claims>,
     Query(q): Query<ItemQuery>,
 ) -> Result<Json<Vec<Item>>> {
+    let cid = company_id_from_claims(&claims)?;
     let rows = match (q.item_type.as_deref(), q.search.as_deref()) {
         (Some(it), Some(s)) => {
             let pattern = format!("%{s}%");
-            sqlx::query_as!(
-                Item,
+            sqlx::query_as::<_, Item>(
                 "SELECT id, item_code, description, item_type, uom_id, fda_required, is_active,
                         created_at, reorder_point, abc_class, lifecycle_status
                  FROM items
-                 WHERE item_type = $1 AND (item_code ILIKE $2 OR description ILIKE $2)
+                 WHERE company_id = $1 AND item_type = $2 AND (item_code ILIKE $3 OR description ILIKE $3)
                  ORDER BY item_code",
-                it,
-                pattern
             )
+            .bind(cid)
+            .bind(it)
+            .bind(pattern)
             .fetch_all(&state.db)
             .await?
         }
         (Some(it), None) => {
-            sqlx::query_as!(
-                Item,
+            sqlx::query_as::<_, Item>(
                 "SELECT id, item_code, description, item_type, uom_id, fda_required, is_active,
                         created_at, reorder_point, abc_class, lifecycle_status
-                 FROM items WHERE item_type = $1 ORDER BY item_code",
-                it
+                 FROM items WHERE company_id = $1 AND item_type = $2 ORDER BY item_code",
             )
+            .bind(cid)
+            .bind(it)
             .fetch_all(&state.db)
             .await?
         }
         (None, Some(s)) => {
             let pattern = format!("%{s}%");
-            sqlx::query_as!(
-                Item,
+            sqlx::query_as::<_, Item>(
                 "SELECT id, item_code, description, item_type, uom_id, fda_required, is_active,
                         created_at, reorder_point, abc_class, lifecycle_status
-                 FROM items WHERE item_code ILIKE $1 OR description ILIKE $1
+                 FROM items WHERE company_id = $1 AND (item_code ILIKE $2 OR description ILIKE $2)
                  ORDER BY item_code",
-                pattern
             )
+            .bind(cid)
+            .bind(pattern)
             .fetch_all(&state.db)
             .await?
         }
         (None, None) => {
-            sqlx::query_as!(
-                Item,
+            sqlx::query_as::<_, Item>(
                 "SELECT id, item_code, description, item_type, uom_id, fda_required, is_active,
                         created_at, reorder_point, abc_class, lifecycle_status
-                 FROM items ORDER BY item_code"
+                 FROM items WHERE company_id = $1 ORDER BY item_code",
             )
+            .bind(cid)
             .fetch_all(&state.db)
             .await?
         }
@@ -188,25 +197,27 @@ pub async fn list_items(
 
 pub async fn create_item(
     State(state): State<AppState>,
+    axum::Extension(claims): axum::Extension<Claims>,
     Json(body): Json<CreateItem>,
 ) -> Result<(StatusCode, Json<Item>)> {
+    let cid = company_id_from_claims(&claims)?;
     let id = Uuid::new_v4();
-    let row = sqlx::query_as!(
-        Item,
-        "INSERT INTO items (id, item_code, description, item_type, uom_id, fda_required, is_active,
-                            reorder_point, abc_class)
-         VALUES ($1, $2, $3, $4, $5, $6, TRUE, $7, $8)
+    let row = sqlx::query_as::<_, Item>(
+        "INSERT INTO items (id, company_id, item_code, description, item_type, uom_id,
+                            fda_required, is_active, reorder_point, abc_class)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, TRUE, $8, $9)
          RETURNING id, item_code, description, item_type, uom_id, fda_required, is_active,
                    created_at, reorder_point, abc_class, lifecycle_status",
-        id,
-        body.item_code,
-        body.description,
-        body.item_type,
-        body.uom_id,
-        body.fda_required,
-        body.reorder_point,
-        body.abc_class,
     )
+    .bind(id)
+    .bind(cid)
+    .bind(&body.item_code)
+    .bind(&body.description)
+    .bind(&body.item_type)
+    .bind(body.uom_id)
+    .bind(body.fda_required)
+    .bind(body.reorder_point)
+    .bind(&body.abc_class)
     .fetch_one(&state.db)
     .await?;
     Ok((StatusCode::CREATED, Json(row)))
@@ -246,12 +257,16 @@ pub async fn update_item(
 // Suppliers
 // ---------------------------------------------------------------------------
 
-pub async fn list_suppliers(State(state): State<AppState>) -> Result<Json<Vec<Supplier>>> {
-    let rows = sqlx::query_as!(
-        Supplier,
+pub async fn list_suppliers(
+    State(state): State<AppState>,
+    axum::Extension(claims): axum::Extension<Claims>,
+) -> Result<Json<Vec<Supplier>>> {
+    let cid = company_id_from_claims(&claims)?;
+    let rows = sqlx::query_as::<_, Supplier>(
         "SELECT id, name, supplier_type, country_id, email, phone, address, payment_terms, created_at
-         FROM suppliers ORDER BY name"
+         FROM suppliers WHERE company_id = $1 ORDER BY name",
     )
+    .bind(cid)
     .fetch_all(&state.db)
     .await?;
     Ok(Json(rows))
@@ -259,23 +274,25 @@ pub async fn list_suppliers(State(state): State<AppState>) -> Result<Json<Vec<Su
 
 pub async fn create_supplier(
     State(state): State<AppState>,
+    axum::Extension(claims): axum::Extension<Claims>,
     Json(body): Json<CreateSupplier>,
 ) -> Result<(StatusCode, Json<Supplier>)> {
+    let cid = company_id_from_claims(&claims)?;
     let id = Uuid::new_v4();
-    let row = sqlx::query_as!(
-        Supplier,
-        "INSERT INTO suppliers (id, name, supplier_type, country_id, email, phone, address, payment_terms)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+    let row = sqlx::query_as::<_, Supplier>(
+        "INSERT INTO suppliers (id, company_id, name, supplier_type, country_id, email, phone, address, payment_terms)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
          RETURNING id, name, supplier_type, country_id, email, phone, address, payment_terms, created_at",
-        id,
-        body.name,
-        body.supplier_type,
-        body.country_id,
-        body.email,
-        body.phone,
-        body.address,
-        body.payment_terms,
     )
+    .bind(id)
+    .bind(cid)
+    .bind(&body.name)
+    .bind(&body.supplier_type)
+    .bind(body.country_id)
+    .bind(&body.email)
+    .bind(&body.phone)
+    .bind(&body.address)
+    .bind(&body.payment_terms)
     .fetch_one(&state.db)
     .await?;
     Ok((StatusCode::CREATED, Json(row)))
@@ -313,7 +330,7 @@ pub async fn update_supplier(
 }
 
 // ---------------------------------------------------------------------------
-// Item-Supplier
+// Item-Supplier — child table, no company_id
 // ---------------------------------------------------------------------------
 
 pub async fn list_item_suppliers(
@@ -356,7 +373,7 @@ pub async fn create_item_supplier(
 }
 
 // ---------------------------------------------------------------------------
-// Item-UOM Conversions
+// Item-UOM Conversions — child table, no company_id
 // ---------------------------------------------------------------------------
 
 pub async fn list_item_uom_conversions(

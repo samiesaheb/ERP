@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE inventory SET qty_available = GREATEST(0, qty_available - $1)\n         WHERE item_id = $2 AND company_id = $3",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Numeric",
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "48786eb4cdac68ba5c74eb38f19e0841380dba6fe29226170ee493344cf972c1"
+}

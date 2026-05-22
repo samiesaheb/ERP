@@ -84,7 +84,7 @@ export default function DataTable<T extends { id: string }>({
   return (
     <div>
       {(toolbar || searchable || tableId) && (
-        <div className="flex items-center gap-3 px-4 py-2.5 border-b-[0.5px] border-neutral-200">
+        <div className="flex items-center gap-3 px-4 py-2.5 border-b-[0.5px] border-neutral-200 dark:border-neutral-800">
           {toolbar && <div className="shrink-0">{toolbar}</div>}
           {searchable && (
             <input
@@ -92,14 +92,14 @@ export default function DataTable<T extends { id: string }>({
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search…"
-              className="w-full max-w-xs px-3 py-1.5 text-sm border border-neutral-300
-                         rounded bg-white placeholder-neutral-400 outline-none appearance-none
-                         focus:border-neutral-500"
+              className="w-full max-w-xs px-3 py-1.5 text-sm border border-neutral-300 dark:border-neutral-700
+                         rounded bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100
+                         placeholder-neutral-400 outline-none appearance-none focus:border-neutral-500 dark:focus:border-neutral-500"
             />
           )}
           {tableId && (
             <div className="ml-auto shrink-0">
-              <code className="px-2 py-0.5 rounded bg-neutral-100 border border-neutral-200 text-xs text-neutral-500 font-mono">
+              <code className="px-2 py-0.5 rounded bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 text-xs text-neutral-500 dark:text-neutral-400 font-mono">
                 {tableId}
               </code>
             </div>
@@ -109,15 +109,15 @@ export default function DataTable<T extends { id: string }>({
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b-[0.5px] border-neutral-200 bg-neutral-50">
+            <tr className="border-b-[0.5px] border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900/50">
               {actions && <th className="w-10 px-2 py-2.5" />}
               {columns.map((col) => (
                 <th
                   key={String(col.key)}
                   onClick={() => col.sortable && handleSort(String(col.key))}
-                  className={`px-4 py-2.5 text-left text-xs font-semibold text-neutral-500
+                  className={`px-4 py-2.5 text-left text-xs font-semibold text-neutral-500 dark:text-neutral-400
                               uppercase tracking-wide whitespace-nowrap
-                              ${col.sortable ? 'cursor-pointer select-none hover:text-neutral-700' : ''}
+                              ${col.sortable ? 'cursor-pointer select-none hover:text-neutral-700 dark:hover:text-neutral-200' : ''}
                               ${col.className ?? ''}`}
                 >
                   {col.header}
@@ -133,7 +133,7 @@ export default function DataTable<T extends { id: string }>({
               <tr>
                 <td
                   colSpan={columns.length + (actions ? 1 : 0)}
-                  className="px-4 py-8 text-center text-sm text-neutral-400"
+                  className="px-4 py-8 text-center text-sm text-neutral-400 dark:text-neutral-500"
                 >
                   No records found
                 </td>
@@ -143,7 +143,7 @@ export default function DataTable<T extends { id: string }>({
               <tr
                 key={row.id}
                 onClick={() => onRowClick?.(row)}
-                className={`border-b-[0.5px] border-neutral-100 hover:bg-neutral-50 transition-colors group
+                className={`border-b-[0.5px] border-neutral-100 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors group
                             ${onRowClick ? 'cursor-pointer' : ''}`}
               >
                 {actions && (
@@ -156,7 +156,7 @@ export default function DataTable<T extends { id: string }>({
                 {columns.map((col) => (
                   <td
                     key={String(col.key)}
-                    className={`px-4 py-3 text-neutral-700 ${col.className ?? ''}`}
+                    className={`px-4 py-3 text-neutral-700 dark:text-neutral-300 ${col.className ?? ''}`}
                   >
                     {col.render
                       ? col.render(row)

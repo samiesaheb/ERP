@@ -30,6 +30,11 @@ async fn main() -> anyhow::Result<()> {
         .expect("JWT_SECRET must be set");
     let allowed_origin = std::env::var("ALLOWED_ORIGIN")
         .unwrap_or_else(|_| "http://localhost:3000".to_string());
+    let frontend_url         = std::env::var("FRONTEND_URL")
+        .unwrap_or_else(|_| "http://localhost:3000".to_string());
+    let google_client_id     = std::env::var("GOOGLE_CLIENT_ID").ok();
+    let google_client_secret = std::env::var("GOOGLE_CLIENT_SECRET").ok();
+    let google_redirect_uri  = std::env::var("GOOGLE_REDIRECT_URI").ok();
     let port: u16 = std::env::var("PORT")
         .ok()
         .and_then(|p| p.parse().ok())
@@ -48,7 +53,14 @@ async fn main() -> anyhow::Result<()> {
 
     tracing::info!("Migrations applied");
 
-    let state = AppState { db, jwt_secret };
+    let state = AppState {
+        db,
+        jwt_secret,
+        google_client_id,
+        google_client_secret,
+        google_redirect_uri,
+        frontend_url,
+    };
 
     // CORS
     let cors = CorsLayer::new()
