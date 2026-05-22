@@ -7,7 +7,7 @@ mod state;
 use std::net::SocketAddr;
 
 use sqlx::postgres::PgPoolOptions;
-use tower_http::cors::{Any, CorsLayer};
+use tower_http::cors::{Any, AllowOrigin, CorsLayer};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt, EnvFilter};
 
 use state::AppState;
@@ -62,15 +62,19 @@ async fn main() -> anyhow::Result<()> {
         frontend_url,
     };
 
-    // CORS
+    // CORS — ALLOWED_ORIGIN may be a comma-separated list of origins
+    let allow_origin: AllowOrigin = {
+        let origins: Vec<axum::http::HeaderValue> = allowed_origin
+            .split(',')
+            .map(|s| s.trim().parse::<axum::http::HeaderValue>().expect("Invalid ALLOWED_ORIGIN entry"))
+            .collect();
+        AllowOrigin::list(origins)
+    };
     let cors = CorsLayer::new()
-        .allow_origin(
-            allowed_origin
-                .parse::<axum::http::HeaderValue>()
-                .expect("Invalid ALLOWED_ORIGIN"),
-        )
+        .allow_origin(allow_origin)
         .allow_methods(Any)
-        .allow_headers(Any);
+        .allow_headers(Any)
+        .allow_credentials(false);
 
     let app = routes::build_router(state).layer(cors);
 

@@ -39,8 +39,7 @@ export default function LoginPage() {
       const companies: { company_id: string }[] = data.companies ?? [];
 
       if (companies.length === 0) {
-        router.push('/');
-        router.refresh();
+        router.push('/company-select');
       } else if (companies.length === 1) {
         await fetch('/api/auth/select-company', {
           method: 'POST',

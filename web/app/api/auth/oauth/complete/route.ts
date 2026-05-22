@@ -25,12 +25,12 @@ export async function GET(req: NextRequest) {
     headers: { Authorization: `Bearer ${token}` },
   }).catch(() => null);
 
-  if (!companiesRes?.ok) redirect('/');
+  if (!companiesRes?.ok) redirect('/company-select');
 
   const companies: { company_id: string }[] = await companiesRes.json();
 
   if (companies.length === 0) {
-    redirect('/');
+    redirect('/company-select');
   } else if (companies.length === 1) {
     const selectRes = await fetch(`${API_URL}/auth/select-company`, {
       method: 'POST',

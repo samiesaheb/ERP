@@ -54,6 +54,9 @@ async function apiFetch<T>(
 
   if (!res.ok) {
     const body = await res.text();
+    if (res.status === 400 && body.includes('No company selected')) {
+      redirect('/company-select');
+    }
     throw new Error(`API ${res.status}: ${body}`);
   }
 
