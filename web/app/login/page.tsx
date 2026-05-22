@@ -1,21 +1,24 @@
 'use client';
 
-import { useState, FormEvent, useEffect } from 'react';
+import { useState, FormEvent, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+
+function OAuthErrorReader({ onError }: { onError: (msg: string) => void }) {
+  const searchParams = useSearchParams();
+  useEffect(() => {
+    if (searchParams.get('error') === 'oauth_failed') {
+      onError('Google sign-in failed — please try again.');
+    }
+  }, [searchParams, onError]);
+  return null;
+}
 
 export default function LoginPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [email, setEmail] = useState('admin@skyhigh.com');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    if (searchParams.get('error') === 'oauth_failed') {
-      setError('Google sign-in failed — please try again.');
-    }
-  }, [searchParams]);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -58,6 +61,10 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950 flex items-center justify-center">
+      <Suspense>
+        <OAuthErrorReader onError={setError} />
+      </Suspense>
+
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
           <h1 className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100 tracking-tight">SkyHigh MES</h1>
